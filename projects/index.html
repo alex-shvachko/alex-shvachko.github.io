@@ -216,6 +216,7 @@
     const modalClose = modalEl.querySelector('.modal-close');
     const modalContent = modalEl.querySelector('.modal-content');
     const modalBody = modalEl.querySelector('.modal-body');
+    const headerEl = document.querySelector('header');
     modalEl.style.display = 'none';
     const DPR = Math.min(devicePixelRatio || 1, 2);
 
@@ -457,6 +458,14 @@
     modalEl.style.display = 'none';
   }
   modalClose.addEventListener('click', closeModal);
+
+  function getHeaderClearance(){
+    if(!headerEl) return 0;
+    const rect = headerEl.getBoundingClientRect();
+    if(!rect) return 0;
+    const extra = document.body.classList.contains('projects-touch') ? 32 : 20;
+    return rect.bottom + extra;
+  }
   modalEl.addEventListener('click', (e)=>{ if (e.target === modalEl) closeModal(); });
   addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeModal(); });
 
@@ -480,6 +489,10 @@
     let topY = (CY - SIZE/2) / DPR - offsetTop - 50;
     let bottomY = (CY + SIZE/2) / DPR + offsetBottom;
 
+    const headerClear = getHeaderClearance();
+    if (headerClear) {
+      topY = Math.max(headerClear, topY);
+    }
     // Safety to keep on screen
     topY = Math.max(12, topY);
     bottomY = Math.min((H / DPR) - 24, bottomY);
@@ -494,6 +507,10 @@
     const cxCSS = CX / DPR;
     const offsetQuote = Math.max(140, SIZE * 0.32) / DPR;
     let quoteY = (CY - SIZE/2) / DPR - offsetQuote;
+    const headerClear = getHeaderClearance();
+    if (headerClear) {
+      quoteY = Math.max(headerClear, quoteY);
+    }
     quoteY = Math.max(12, quoteY);
     quote.style.top = `${quoteY}px`;
     quote.style.left = `${cxCSS}px`;
@@ -554,7 +571,8 @@
     let columnSpacing = 0;
 
     if (columnLayout){
-      const topGuard = 180 * DPR;
+      const headerClearPx = getHeaderClearance();
+      const topGuard = Math.max(180 * DPR, (headerClearPx || 0) * DPR);
       const bottomGuard = Math.max(topGuard + 1, H - 200 * DPR);
       const verticalSpan = Math.max(bottomGuard - topGuard, 1);
       columnSpacing = buttonLabels.length > 1
