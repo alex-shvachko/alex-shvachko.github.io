@@ -14,24 +14,19 @@ document.addEventListener('DOMContentLoaded', function() {
     { name: "Dashboards & Buisness Analytics", side: "right" },
   ];
 
-  // Get the bio element and its parent
+  const anchor = document.getElementById('tech-tree-anchor');
   const bio = document.querySelector('.bio');
-  if (!bio) return;
-  
+  if (!anchor && !bio) return;
+
   // Create container for the tech tree
   const container = document.createElement('div');
   container.className = 'tech-tree-container';
-  
-  // Insert the tech tree after the bio
-  bio.parentNode.insertBefore(container, bio.nextSibling);
 
-  // Style the container
-  container.style.position = 'relative';
-  container.style.width = '100%';
-  container.style.margin = '1rem 0 0';
-  container.style.paddingBottom = '0';
-  container.style.pointerEvents = 'none';
-  container.style.overflow = 'visible';
+  if (anchor) {
+    anchor.appendChild(container);
+  } else if (bio && bio.parentNode) {
+    bio.parentNode.insertBefore(container, bio.nextSibling);
+  }
   
   // Calculate dynamic dimensions based on skill count
   const startY = 15; // Starting Y position for first branch
@@ -41,8 +36,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const trunkLength = trunkBottom - 5;
   const viewBoxHeight = trunkBottom + extraSpace; // Extra padding at bottom
 
-  // Set a height that matches the tree without large gaps afterwards
-  container.style.height = `${viewBoxHeight}vh`;
+  // Maintain aspect ratio space for the SVG without forcing huge viewport height
+  container.style.paddingBottom = `${viewBoxHeight}%`;
 
   // Create SVG element with dynamic viewBox
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

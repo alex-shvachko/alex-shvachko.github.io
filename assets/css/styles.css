@@ -45,6 +45,62 @@ main{
   max-width:600px;
   margin:20px auto;
 }
+.tech-tree-section{
+  position:relative;
+  max-width:900px;
+  margin:clamp(48px, 10vh, 84px) auto 0;
+  padding-bottom:clamp(36px, 10vh, 72px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+#tech-tree-anchor{
+  width:100%;
+  display:flex;
+  justify-content:center;
+}
+.tech-tree-container{
+  width:min(780px, 100%);
+  margin:0 auto;
+  position:relative;
+  pointer-events:none;
+  overflow:visible;
+}
+.tech-tree-container svg{
+  width:100%;
+  height:100%;
+  display:block;
+}
+.cta-wrap{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:clamp(12px, 4vh, 40px);
+  display:flex;
+  justify-content:center;
+  margin:0;
+  pointer-events:auto;
+}
+.cta-hire{
+  display:inline-block;
+  text-decoration:none;
+  font-weight:700;
+  letter-spacing:0.02em;
+  background:#111;
+  color:#fff;
+  border-radius:999px;
+  padding:14px 24px;
+  border:1px solid rgba(0,0,0,0.85);
+  box-shadow:0 6px 18px rgba(0,0,0,0.15);
+  transition:transform .15s ease, box-shadow .2s ease, background .2s ease;
+}
+.cta-hire:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 24px rgba(0,0,0,0.18);
+}
+.cta-hire:active{
+  transform:translateY(0);
+}
 .contact-list{
   list-style:none;
   padding:0;
@@ -285,6 +341,18 @@ main{
   
   .message {
     max-width: 90%;
+  }
+  .tech-tree-section{
+    margin-top:clamp(24px, 10vh, 48px);
+    padding-bottom:clamp(48px, 18vh, 96px);
+  }
+  .cta-wrap{
+    bottom:clamp(16px, 8vh, 64px);
+  }
+  .cta-hire{
+    width:100%;
+    max-width:260px;
+    text-align:center;
   }
 }
 .gallery{
