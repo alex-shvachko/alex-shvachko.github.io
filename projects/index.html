@@ -463,7 +463,8 @@
     if(!headerEl) return 0;
     const rect = headerEl.getBoundingClientRect();
     if(!rect) return 0;
-    const extra = document.body.classList.contains('projects-touch') ? 32 : 20;
+    const isColumn = document.body.classList.contains('projects-touch');
+    const extra = isColumn ? Math.max(88, rect.height + 36) : 28;
     return rect.bottom + extra;
   }
   modalEl.addEventListener('click', (e)=>{ if (e.target === modalEl) closeModal(); });
