@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stay Real — Alex Shvachko</title>
+  <title>Alex Shvachko Portfolio</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <script defer src="assets/js/main.js"></script>
@@ -37,10 +37,10 @@
                 text-anchor="middle"
                 dominant-baseline="middle"
                 fill="#111"
-                font-family="'Outfit', system-ui, -apple-system, sans-serif"
-                font-weight="900"
-                font-size="220"
-                letter-spacing="0.10em">
+                font-family="'Sora', 'Space Grotesk', 'Outfit', system-ui, -apple-system, sans-serif"
+                font-weight="800"
+                font-size="240"
+                letter-spacing="0.12em">
             Alex Shvachko
           </text>
         </g>
@@ -49,14 +49,16 @@
 
     <p class="bio">I am a multidisciplinary creator pursuing degree at data engineering(BGU), AI enthusiast, and experienced software developer. Scroll down to see my rich tech stack</p>
 
-    <!-- End-of-page CTA -->
-    <div class="cta-wrap">
-      <a class="cta-hire" href="contact/">Hire me</a>
-    </div>
+    <section class="tech-tree-section">
+      <div id="tech-tree-anchor"></div>
+      <div class="cta-wrap">
+        <a class="cta-hire" href="contact/">Hire me</a>
+      </div>
+    </section>
   </main>
 
   <footer>
-    © <span id="year"></span> Alex Shvachko — Stay Real.
+    © <span id="year"></span> Alex Shvachko.
   </footer>
   <style>
     /* Make all text non-selectable on the home page only */
@@ -68,34 +70,6 @@
       padding: 0;
     }
     
-    /* CTA near the end of the tree */
-    .cta-wrap {
-      display: flex;
-      justify-content: center;
-      margin-top: 2rem;
-    }
-    .cta-hire {
-      display: inline-block; 
-      text-decoration: none; 
-      font-weight: 700; 
-      letter-spacing: 0.02em;
-      background: #111; 
-      color: #fff; 
-      border-radius: 999px; 
-      padding: 14px 24px; 
-      border: 1px solid rgba(0,0,0,0.85);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-      transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
-    }
-    
-    .cta-hire:hover { 
-      transform: translateY(-1px); 
-      box-shadow: 0 10px 24px rgba(0,0,0,0.18); 
-    }
-    
-    .cta-hire:active { 
-      transform: translateY(0); 
-    }
   </style>
 </body>
 </html>

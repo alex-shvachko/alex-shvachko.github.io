@@ -11,12 +11,21 @@ header{
   top:20px;
   left:50%;
   transform:translateX(-50%);
+  width:min(100%, 620px);
+  padding:0 16px;
+  box-sizing:border-box;
   z-index:10;
+}
+.nav{
+  width:100%;
+  display:flex;
+  justify-content:center;
 }
 .nav .links{
   display:flex;
   gap:12px;
   justify-content:center;
+  flex-wrap:wrap;
 }
 .pill{
   padding:8px 16px;
@@ -27,6 +36,9 @@ header{
   color:#333;
   font-size:14px;
   transition:all 0.2s ease;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 }
 .pill:hover{
   background:rgba(0,0,0,0.05);
@@ -40,6 +52,7 @@ main{
   margin:120px auto 60px;
   padding:0 20px;
   text-align:center;
+  box-sizing:border-box;
 }
 .bio{
   max-width:600px;
@@ -49,7 +62,7 @@ main{
   position:relative;
   max-width:900px;
   margin:clamp(48px, 10vh, 84px) auto 0;
-  padding-bottom:clamp(36px, 10vh, 72px);
+  padding-bottom:clamp(24px, 6vh, 48px);
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -75,7 +88,7 @@ main{
   position:absolute;
   left:50%;
   transform:translateX(-50%);
-  bottom:clamp(12px, 4vh, 40px);
+  bottom:clamp(6px, 2vh, 24px);
   display:flex;
   justify-content:center;
   margin:0;
@@ -332,6 +345,30 @@ main{
   transform: scale(0.95);
 }
 
+@media (max-width: 900px) {
+  header{
+    top:12px;
+    width:100%;
+    padding:0 12px;
+  }
+  .nav .links{
+    gap:8px;
+  }
+  .pill{
+    flex:1 1 calc(50% - 8px);
+    min-width:140px;
+    font-size:13px;
+    padding:10px 12px;
+  }
+  main{
+    margin:108px auto 48px;
+    padding:0 16px;
+  }
+  .bio{
+    margin:16px auto 8px;
+  }
+}
+
 /* Responsive Adjustments */
 @media (max-width: 600px) {
   .chat-container {
@@ -341,6 +378,16 @@ main{
   
   .message {
     max-width: 90%;
+  }
+  header{
+    padding:0 10px;
+  }
+  .nav .links{
+    gap:6px;
+  }
+  .pill{
+    flex:1 1 100%;
+    min-width:0;
   }
   .tech-tree-section{
     margin-top:clamp(24px, 10vh, 48px);

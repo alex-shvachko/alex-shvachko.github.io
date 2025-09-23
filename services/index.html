@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Services — Stay Real</title>
+  <title>Services — Alex Shvachko</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -149,6 +149,32 @@
     .service-column:hover .service-title-initial {
       opacity: 0;
     }
+
+    @media (max-width: 900px) {
+      main {
+        flex-direction: column;
+        height: auto;
+        width: 100%;
+        margin: 5rem auto 3rem;
+      }
+      .service-column {
+        flex: 1 1 100%;
+        min-height: 320px;
+      }
+      .service-column::before {
+        background: rgba(0,0,0,0.6);
+      }
+      .service-column img {
+        position: absolute;
+      }
+      .service-content {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .service-title-initial {
+        display: none;
+      }
+    }
   </style>
   <main>
     <a href="coming-soon/" class="service-column">
@@ -177,7 +203,7 @@
     </a>
   </main>
   <footer>
-    © <span id="year"></span> Alex Shvachko — Stay Real.
+    © <span id="year"></span> Alex Shvachko.
   </footer>
 </body>
 </html>

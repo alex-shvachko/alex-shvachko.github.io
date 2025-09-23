@@ -37,7 +37,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const viewBoxHeight = trunkBottom + extraSpace; // Extra padding at bottom
 
   // Maintain aspect ratio space for the SVG without forcing huge viewport height
-  container.style.paddingBottom = `${viewBoxHeight}%`;
+  const compactLayout = innerWidth <= 768 || window.matchMedia('(pointer: coarse)').matches;
+  const paddingPercent = compactLayout ? Math.max(80, viewBoxHeight * 0.75) : viewBoxHeight;
+  container.style.paddingBottom = `${paddingPercent}%`;
+  container.style.minHeight = compactLayout ? '420px' : '520px';
 
   // Create SVG element with dynamic viewBox
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
