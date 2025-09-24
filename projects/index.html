@@ -79,6 +79,29 @@
       opacity: 1; transform: scale(1.25);
     }
 
+    .button-column{
+      position: relative;
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 0 20px 240px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+    body.projects-touch .button-column{
+      padding-bottom: max(260px, 24vh);
+    }
+    body.projects-touch .button-column .skill-button{
+      position: static;
+      transform: none;
+      opacity: 1;
+      scale: 1;
+      pointer-events: auto;
+      width: min(360px, 90vw);
+    }
+
     body.projects-touch{
       overflow:auto;
       overflow-x:hidden;
@@ -429,6 +452,7 @@
   
   const buttonLabels = Object.keys(projects);
   let buttons = [];
+  let buttonColumn = null;
   const particles = [];
 
   const mouse = {x:0, y:0, active:false, vx:0, vy:0, px:0, py:0};
@@ -456,6 +480,11 @@
     modalEl.classList.remove('visible');
     modalEl.setAttribute('aria-hidden','true');
     modalEl.style.display = 'none';
+    // iOS sometimes triggers no resize when the URL bar toggles.
+    // Ensure the skill buttons stay visible after closing the modal.
+    if (transformTriggered && buttons && buttons.length){
+      buttons.forEach(btn => btn.element && btn.element.classList.add('visible'));
+    }
   }
   modalClose.addEventListener('click', closeModal);
 
@@ -464,8 +493,21 @@
     const rect = headerEl.getBoundingClientRect();
     if(!rect) return 0;
     const isColumn = document.body.classList.contains('projects-touch');
-    const extra = isColumn ? Math.max(88, rect.height + 36) : 28;
-    return rect.bottom + extra;
+    // Add generous extra space for stacked tabs on narrow iPhones
+    const css = getComputedStyle(document.documentElement);
+    const safeTop = parseInt(css.getPropertyValue('env(safe-area-inset-top)')) || 0;
+    const baseExtra = isColumn ? 140 : 32;
+    const dynamicExtra = isColumn ? Math.max(140, rect.height + 100) : 32;
+    const minBase = isColumn ? Math.max(220, Math.round(innerHeight * 0.26)) : 0;
+    let clearance = rect.bottom + Math.max(baseExtra, dynamicExtra) + safeTop;
+    if (isColumn) {
+      let boosted = Math.max(clearance * 3, minBase * 3);
+      if (innerHeight > 0) {
+        boosted = Math.min(boosted, Math.max(innerHeight - 120, minBase * 2));
+      }
+      clearance = boosted;
+    }
+    return Math.max(clearance, minBase);
   }
   modalEl.addEventListener('click', (e)=>{ if (e.target === modalEl) closeModal(); });
   addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeModal(); });
@@ -564,6 +606,10 @@
   // ----- Buttons -----
   function createButtons(useColumnLayout){
     buttons.forEach(btn => btn.element && btn.element.remove());
+    if (buttonColumn) {
+      buttonColumn.remove();
+      buttonColumn = null;
+    }
     buttons = [];
     const columnLayout = Boolean(useColumnLayout);
     const baseRadius = Math.min(W, H) * 0.25;
@@ -572,25 +618,47 @@
     let columnSpacing = 0;
 
     if (columnLayout){
+      buttonColumn = document.createElement('div');
+      buttonColumn.className = 'button-column';
+      const footerEl = document.querySelector('footer');
+      if (footerEl) {
+        document.body.insertBefore(buttonColumn, footerEl);
+      } else {
+        document.body.appendChild(buttonColumn);
+      }
       const headerClearPx = getHeaderClearance();
-      const topGuard = Math.max(180 * DPR, (headerClearPx || 0) * DPR);
-      const bottomGuard = Math.max(topGuard + 1, H - 200 * DPR);
+      const minStartCss = Math.max(220, Math.round(innerHeight * 0.26));
+      const maxTopCss = (H / DPR) - 240;
+      let topGuardCss = Math.max(headerClearPx, minStartCss);
+      if (Number.isNaN(topGuardCss)) topGuardCss = minStartCss;
+      if (isFinite(maxTopCss) && maxTopCss > minStartCss) {
+        topGuardCss = Math.min(topGuardCss, maxTopCss);
+      }
+      let topGuard = topGuardCss * DPR;
+      const bottomGuard = Math.max(topGuard + 1, H - 180 * DPR);
       const verticalSpan = Math.max(bottomGuard - topGuard, 1);
-      columnSpacing = buttonLabels.length > 1
-        ? Math.min(135 * DPR, verticalSpan / (buttonLabels.length - 1))
-        : 0;
+      if (buttonLabels.length > 1){
+        columnSpacing = verticalSpan / (buttonLabels.length - 1);
+        columnSpacing = Math.max(110 * DPR, Math.min(170 * DPR, columnSpacing));
+        columnSpacing = Math.min(columnSpacing, verticalSpan);
+      } else {
+        columnSpacing = 0;
+      }
       const totalSpan = columnSpacing * Math.max(0, buttonLabels.length - 1);
       const centeredStart = CY - totalSpan / 2;
       const maxStart = bottomGuard - totalSpan;
       columnStart = buttonLabels.length > 1
         ? Math.max(topGuard, Math.min(centeredStart, maxStart))
         : Math.max(topGuard, Math.min(CY, bottomGuard));
+      const firstButtonTop = Math.round(topGuardCss + 24);
+      buttonColumn.style.marginTop = `${firstButtonTop}px`;
     }
 
     buttonLabels.forEach((label, i) => {
       const btn = document.createElement('button');
       btn.className = 'skill-button'; btn.textContent = label;
-      document.body.appendChild(btn);
+      const host = columnLayout && buttonColumn ? buttonColumn : document.body;
+      host.appendChild(btn);
       let angle = 0;
       let x = CX;
       let y = CY;
@@ -602,8 +670,13 @@
         x = CX + Math.cos(angle) * baseRadius;
         y = CY + Math.sin(angle) * baseRadius;
       }
-      btn.style.left = (x / DPR) + 'px';
-      btn.style.top  = (y / DPR) + 'px';
+      if (!columnLayout){
+        btn.style.left = (x / DPR) + 'px';
+        btn.style.top  = (y / DPR) + 'px';
+      } else {
+        btn.style.left = '';
+        btn.style.top  = '';
+      }
       // light effect listeners
       const updateXY = (e) => {
         const r = btn.getBoundingClientRect();
@@ -637,6 +710,9 @@
     const useColumnLayout = isCoarseLayout();
     document.body.classList.toggle('projects-touch', useColumnLayout);
     createButtons(useColumnLayout);
+    if (transformTriggered) {
+      buttons.forEach(btn => btn.element.classList.add('visible'));
+    }
     positionPhrase();
     positionQuote();
 
@@ -689,6 +765,10 @@
   addEventListener('mousemove', onMove, {passive:true});
   addEventListener('touchstart', onMove, {passive:true});
   addEventListener('resize', fit);
+  addEventListener('orientationchange', () => setTimeout(fit, 50));
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => setTimeout(fit, 0));
+  }
 
   // Distance from point to cube rect (0 if inside)
   function distToCube(px, py){
