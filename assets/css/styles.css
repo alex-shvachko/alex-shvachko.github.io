@@ -517,11 +517,16 @@ header, main, footer{
 @media (max-width: 1200px){
   .logo-reveal{ height: auto; min-height: 0; padding: clamp(24px, 6vw, 48px) 0; }
   #stayreal-logo{ display: none; }
-  .logo-title{ display: block; font-size: clamp(48px, 9vw, 112px); letter-spacing: 0.08em; }
+  .logo-title{
+    display: block;
+    font-family: 'Sora','Space Grotesk','Outfit',system-ui,-apple-system,sans-serif;
+    letter-spacing: 0.06em;
+    font-size: clamp(48px, 9vw, 112px);
+  }
 }
 @media (max-width: 720px){
-  .logo-title{ font-size: clamp(36px, 12vw, 60px); letter-spacing: 0.055em; }
+  .logo-title{ font-size: clamp(36px, 12vw, 60px); letter-spacing: 0.045em; }
 }
 @media (max-width: 480px){
-  .logo-title{ font-size: clamp(32px, 14vw, 52px); letter-spacing: 0.045em; }
+  .logo-title{ font-size: clamp(32px, 14vw, 50px); letter-spacing: 0.035em; }
 }
