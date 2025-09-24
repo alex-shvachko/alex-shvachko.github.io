@@ -84,22 +84,27 @@
       width: 100%;
       max-width: 540px;
       margin: 0 auto;
-      padding: 0 20px 240px;
+      padding: 0 clamp(18px, 6vw, 28px) clamp(220px, 30vh, 340px);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 24px;
+      gap: clamp(18px, 4vh, 28px);
+      z-index: 5;
     }
     body.projects-touch .button-column{
+      align-items: stretch;
       padding-bottom: max(260px, 24vh);
     }
     body.projects-touch .button-column .skill-button{
       position: static;
       transform: none;
-      opacity: 1;
-      scale: 1;
-      pointer-events: auto;
-      width: min(360px, 90vw);
+      width: min(100%, 420px);
+      display: block;
+      margin: 0 auto;
+      padding: clamp(16px, 4.5vw, 24px) clamp(22px, 6vw, 32px);
+      font-size: clamp(16px, 4vw, 20px);
+      border-radius: clamp(32px, 14vw, 44px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.14);
     }
 
     body.projects-touch{
@@ -115,14 +120,45 @@
       display:none;
     }
     body.projects-touch .skill-button{
-      width:min(320px, 82vw);
-      padding:16px 20px;
-      font-size:16px;
+      width:100%;
+      padding:clamp(16px, 4vw, 22px) clamp(22px, 6vw, 32px);
+      font-size:clamp(15px, 3.6vw, 19px);
     }
     body.projects-touch footer{
       position:static;
       margin:48px 0 24px;
       text-align:center;
+    }
+    body.projects-touch header{
+      position:sticky;
+      top:calc(env(safe-area-inset-top) + 12px);
+      left:0;
+      transform:none;
+      width:100%;
+      padding:0 clamp(16px, 6vw, 32px);
+      box-sizing:border-box;
+      display:flex;
+      justify-content:center;
+      z-index:80;
+    }
+    body.projects-touch nav,
+    body.projects-touch .nav{
+      width:min(520px, 100%);
+    }
+    body.projects-touch .links{
+      width:100%;
+      flex-wrap:wrap;
+      gap:10px;
+      justify-content:center;
+    }
+    body.projects-touch .links .pill{
+      flex:1 1 calc(50% - 10px);
+      max-width:240px;
+      text-align:center;
+      min-width:140px;
+    }
+    body.projects-touch canvas#stage{
+      pointer-events:none;
     }
     @media (max-width: 900px){
       body.projects-touch .phrase-line{
@@ -493,21 +529,16 @@
     const rect = headerEl.getBoundingClientRect();
     if(!rect) return 0;
     const isColumn = document.body.classList.contains('projects-touch');
-    // Add generous extra space for stacked tabs on narrow iPhones
-    const css = getComputedStyle(document.documentElement);
-    const safeTop = parseInt(css.getPropertyValue('env(safe-area-inset-top)')) || 0;
-    const baseExtra = isColumn ? 140 : 32;
-    const dynamicExtra = isColumn ? Math.max(140, rect.height + 100) : 32;
-    const minBase = isColumn ? Math.max(220, Math.round(innerHeight * 0.26)) : 0;
-    let clearance = rect.bottom + Math.max(baseExtra, dynamicExtra) + safeTop;
-    if (isColumn) {
-      let boosted = Math.max(clearance * 3, minBase * 3);
-      if (innerHeight > 0) {
-        boosted = Math.min(boosted, Math.max(innerHeight - 120, minBase * 2));
-      }
-      clearance = boosted;
+    const rootStyles = getComputedStyle(document.documentElement);
+    const safeTopRaw = rootStyles.getPropertyValue('env(safe-area-inset-top)') || '0';
+    const safeTop = parseFloat(safeTopRaw) || 0;
+    if (!isColumn) {
+      return rect.bottom + safeTop + 32;
     }
-    return Math.max(clearance, minBase);
+    const visualGap = Math.max(36, rect.height * 0.3);
+    const clearance = rect.bottom + safeTop + visualGap;
+    const minClear = Math.max(180, Math.round(innerHeight * 0.22));
+    return Math.max(clearance, minClear);
   }
   modalEl.addEventListener('click', (e)=>{ if (e.target === modalEl) closeModal(); });
   addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeModal(); });
