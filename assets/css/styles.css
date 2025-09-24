@@ -455,31 +455,36 @@ footer{
   width: min(1400px, 96vw);
   height: min(60vh, 520px);
   margin: 32px auto 8px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   pointer-events: none; /* don't block links or hover states below */
 }
 
 #stayreal-logo{
-  width: min(100%, 900px);
-  height: auto;
-  display: block;
-  margin-inline: auto;
-  transform: translateX(0);
-  transition: transform .3s ease;
+  display: none;
 }
 
 .logo-title{
-  display: none;
+  display: block;
   margin: 0 auto;
-  width: min(80vw, 28ch);
-  font-family: 'Sora','Space Grotesk','Outfit',system-ui,-apple-system,sans-serif;
+  width: max-content;
+  max-width: calc(100vw - clamp(64px, 12vw, 200px));
+  padding: 0 clamp(12px, 4vw, 24px);
+  font-family: fantasy;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-align: center;
   font-size: clamp(48px, 10vw, 112px);
   line-height: 1.05;
   text-wrap: balance;
+}
+@supports (width: fit-content){
+  .logo-title{
+    width: fit-content;
+  }
 }
 
 /* optional: spacing tweaks so the name sits a bit tighter below the logo */
@@ -511,8 +516,7 @@ header, main, footer{
 }
 @media (max-width: 1200px){
   .logo-reveal{ height: auto; min-height: 0; padding: clamp(24px, 6vw, 48px) 0; }
-  #stayreal-logo{ display: none; }
-  .logo-title{ display: block; font-size: clamp(48px, 9vw, 112px); letter-spacing: 0.08em; }
+  .logo-title{ font-size: clamp(48px, 9vw, 112px); letter-spacing: 0.08em; }
 }
 @media (max-width: 720px){
   .logo-title{ font-size: clamp(36px, 12vw, 60px); letter-spacing: 0.055em; }
