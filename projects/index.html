@@ -243,7 +243,7 @@
     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <button class="modal-close" aria-label="Close">×</button>
       <div class="modal-body">
-        <h2 id="modalTitle" style="margin:0;font-size:20px;font-weight:800;letter-spacing:.2px;">Coming soon</h2>
+        <h2 id="modalTitle" style="text-align:center; margin:0;font-size:20px;font-weight:800;letter-spacing:.2px;">Coming soon</h2>
         <p style="opacity:.8;margin-top:8px;">This section will be filled with project details.</p>
       </div>
     </div>
@@ -296,15 +296,15 @@
       autoStartScheduled = true;
       if (hint){
         hint.style.opacity = '0';
-        setTimeout(() => { hint.style.display = 'none'; }, 400);
+        setTimeout(() => { hint.style.display = 'none'; }, 220);
       }
       if (quote){
         quote.style.opacity = '0';
-        setTimeout(() => { quote.style.display = 'none'; }, 400);
+        setTimeout(() => { quote.style.display = 'none'; }, 220);
       }
       setTimeout(() => {
         if (phase === 'idle') startPhraseSequence();
-      }, 600);
+      }, 320);
     }
 
   const projects = {
@@ -318,7 +318,7 @@
         <p>Ambulances were arriving to ERs and waiting on stretchers because no bed was immediately available. That delay cascades: worse patient experience, staff overload, and lower system throughput. I set out to measure the problem end-to-end and predict delays so dispatchers and ERs can act before bottlenecks form.</p>
         
         <h2>Data & Label</h2>
-        <p>436,7k+ ambulance→ER entries (2022, nationwide) with timestamps, location, patient age, clinical code, arrival hour, ER load proxies, and more.</p>
+        <p>436,7k+ ambulance->ER entries (2022, nationwide) with timestamps, location, patient age, clinical code, arrival hour, ER load proxies, and more.</p>
         <p>Engineered features: hospital size & region, shift (day/evening/night), simultaneous ambulance arrivals, and current ER occupancy proxy.</p>
         <p>Delay definition ("bottleneck") followed operational rules: ≥20 min for BLS, ≥30 min for ALS/paramedic off-load.</p>
         <p><strong>Fun (scary) fact:</strong> mean wait ≈ 36.2 min, and ~79.5% of arrivals met the "delayed" threshold—so this is systemic, not anecdotal.</p>
@@ -363,7 +363,7 @@
         <h2>What I'd Build Next (practical roadmap)</h2>
         <ul>
           <li>Per-hospital threshold calibration (precision–recall tradeoff by ops goals).</li>
-          <li>Live occupancy feed + streaming features → upgrade to online inference and ETA-aware dispatch.</li>
+          <li>Live occupancy feed + streaming features -> upgrade to online inference and ETA-aware dispatch.</li>
           <li>Cost-sensitive learning (missed-delay > false-alarm) and XGBoost/GBTs with calibrated probabilities.</li>
           <li>Tactical dashboard for dispatchers: recommended destination + predicted off-load time + confidence band.</li>
           <li>A/B test: dynamic routing versus status-quo during peak windows.</li>
@@ -470,17 +470,26 @@
     'AI Art': {
       title: 'Generative Media & Visual Systems',
       content: `
-        <img src="../assets/img/div1.png" alt="AI Art example 1" style="width:100%; border-radius:12px; margin: 8px 0 16px;" />
+        <p>Generative art is my daily craft and passion. Over the last 2+ years I've evolved a storytelling-first workflow that turns rough concepts into production-ready visuals with consistent identity, mood, and lighting.</p>
 
-        <p>I design reproducible pipelines for image and video generation using state-of-the-art multimodal models. My work focuses on creating minimal, high-fashion visuals with crisp white backgrounds, sharp lighting, and consistent wardrobe direction. Through structured prompt engineering and automation, I build systems that can generate cohesive series of portraits, cinematic motion clips, and thematic collections with precision and style.</p>
+        <p>I'm proficient with VACE, ComfyUI, Forge, Kling, Veo, Huggisfield, Leonardo, Pika, and many more. I design modular graphs, seed-stable pipelines, and reproducible prompt recipes so results can be recreated exactly or evolved deliberately.</p>
 
-        <img src="../assets/img/div2.png" alt="AI Art example 2" style="width:100%; border-radius:12px; margin: 16px 0;" />
+        <p>Beyond generation, I can train high-quality, consistent LoRA models: dataset curation, tagging and cleaning, parameter search, and style alignment so characters stay on-model across sessions and shots.</p>
 
-        <p>To ensure reliability and scalability, I develop batch pipelines with n8n for automated prompt execution, seed tracking, and reproducible reruns. Each project is guided by a style framework that defines composition, lighting language, and accessory constraints, enabling consistency across different generative platforms. My practice also includes curating outputs, building theme libraries, and aligning results to brand-level aesthetics.</p>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin: 8px 0 20px;">
+          <p style="margin:0 6px 4px; font-weight:600; letter-spacing:.2px; text-transform:uppercase; font-size:12px; opacity:.85; text-align:center;">Before</p>
+          <img src="../assets/img/draft.png" alt="Before: base draft prior to refinements" style="max-width:900px; width:100%; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.35);" />
+          <p style="margin:8px 6px 0; font-weight:600; letter-spacing:.2px; text-transform:uppercase; font-size:12px; opacity:.85; text-align:center;">After</p>
+          <img src="../assets/img/final_disney.png" alt="After: final Disney-inspired render after my workflow" style="max-width:900px; width:100%; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.35);" />
+        </div>
 
-        <p>This approach combines creativity with engineering discipline: every image or clip is not just a one-off generation, but part of a controlled, repeatable workflow. The outcome is a body of work that demonstrates both artistic direction and technical mastery in generative AI.</p>
+        <p>The pipeline blends creative direction with engineering discipline: controlled prompts, negative prompt libraries, shot lists, costume and prop constraints, LUT-aware lighting, and automated upscaling or restoration when needed.</p>
 
-        <img src="../assets/img/div3.png" alt="AI Art example 3" style="width:100%; border-radius:12px; margin: 16px 0 8px;" />
+        <p>For teams, I document every run (seeds, parameters, node hashes) and automate batches with n8n so iterations are traceable, schedulable, and cost-aware.</p>
+
+        <p>This closing showcase proves how expansive the pipeline can be, addressing the possibilities and the diversity of characters you can bring to life.</p>
+
+        <img src="../assets/img/div3.png" alt="Showcase of diverse AI-generated characters" style="width:100%; border-radius:12px; margin: 20px 0 8px;" />
       `
     }
   };
@@ -497,7 +506,7 @@
     const project = projects[projectTitle];
     if (project) {
       modalBody.innerHTML = `
-        <h2 id="modalTitle" style="margin:0;font-size:20px;font-weight:800;letter-spacing:.2px;">${project.title}</h2>
+        <h2 id="modalTitle" style="text-align:center; margin:0;font-size:20px;font-weight:800;letter-spacing:.2px;">${project.title}</h2>
         ${project.content}
         <div style="margin-top: 40px; text-align: center;">
           <a href="/#contact-info" class="pill" style="display: inline-block; text-decoration: none; background: white; color: #111; padding: 12px 24px; font-weight: 600; border-radius: 24px; transition: all 0.2s ease; border: 1px solid #eee;">
@@ -610,12 +619,12 @@
     positionPhrase();
     showPhrase();
 
-    // Reveal 1/4 every 1.0s (slower cadence)
+    // Reveal 1/4 every 0.5s for a snappier cadence
     const schedule = [
-      { t: 0,     line: 'top',    idx: 0 },
-      { t: 1000,  line: 'top',    idx: 1 },
-      { t: 2000,  line: 'bottom', idx: 0 },
-      { t: 3000,  line: 'bottom', idx: 1 },
+      { t: 0,    line: 'top',    idx: 0 },
+      { t: 500,  line: 'top',    idx: 1 },
+      { t: 1000, line: 'bottom', idx: 0 },
+      { t: 1500, line: 'bottom', idx: 1 },
     ];
     schedule.forEach(item => {
       phraseTimeouts.push(setTimeout(() => {
@@ -625,12 +634,12 @@
       }, item.t));
     });
 
-    // After last reveal at 3000ms, wait +2000ms => 5000ms total, then dismember (extra time to read)
+    // After last reveal at 1500ms, wait +1000ms => 2500ms total, then dismember faster
     phraseTimeouts.push(setTimeout(() => {
       hidePhrase();         // fade out text
-      triggerTransform();   // start particle → buttons
+      triggerTransform();   // start particle -> buttons
       phase = 'dismember';
-    }, 5000));
+    }, 2500));
   }
 
   // ----- Buttons -----
@@ -719,7 +728,7 @@
       btn.addEventListener('pointerdown', (e) => {
         updateXY(e);
         btn.classList.add('lit');
-        setTimeout(() => btn.classList.remove('lit'), 450);
+        setTimeout(() => btn.classList.remove('lit'), 280);
       });
       btn.addEventListener('click', () => openModal(label));
       buttons.push({ element: btn, x, y, angle, radius: columnLayout ? 0 : baseRadius });
@@ -777,7 +786,7 @@
 
     // show buttons
     buttons.forEach((btn, i) => {
-      setTimeout(() => btn.element.classList.add('visible'), i * 100);
+      setTimeout(() => btn.element.classList.add('visible'), i * 70);
     });
 
     // particles fly to buttons (slightly slower launch)
@@ -840,9 +849,9 @@
       if (p.flying && p.targetButton){
         const dx = p.targetButton.x - p.x, dy = p.targetButton.y - p.y;
         const dist = Math.hypot(dx, dy) || 1;
-        if (dist < 12 * DPR){ p.disappeared = true; continue; } // must get closer → slightly longer flight
+        if (dist < 12 * DPR){ p.disappeared = true; continue; } // must get closer -> slightly longer flight
 
-        const force = 0.06; // gentler attraction → slower break
+        const force = 0.06; // gentler attraction -> slower break
         p.vx += (dx / dist) * force; p.vy += (dy / dist) * force;
         p.vx += (Math.random()-0.5)*0.5; p.vy += (Math.random()-0.5)*0.5;
         p.vx *= 0.98; p.vy *= 0.98;
