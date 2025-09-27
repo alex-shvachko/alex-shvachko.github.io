@@ -1,11 +1,20 @@
+:root{
+  --font-body: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: 'Oswald', 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+}
 body{
   margin:0;
   background:#ffffff;
   color:#111;
-  font-family:'Outfit', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
 }
+
+h1, h2, h3, h4, h5, h6{
+  font-family: var(--font-heading);
+}
+
 header{
   position:fixed;
   top:20px;
@@ -531,6 +540,7 @@ footer{
 }
 /* was: clamp(22px, 3.4vw, 44px) */
 .phrase-line{
+  font-family: var(--font-heading);
   font-size: clamp(32px, 4.8vw, 72px);
 }
 
@@ -563,7 +573,7 @@ footer{
   width: max-content;
   max-width: calc(100vw - clamp(64px, 12vw, 200px));
   padding: 0 clamp(12px, 4vw, 24px);
-  font-family: fantasy;
+  font-family: var(--font-heading);
   font-weight: 800;
   letter-spacing: 0.08em;
   text-align: center;
