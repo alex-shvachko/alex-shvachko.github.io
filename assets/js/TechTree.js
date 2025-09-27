@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
     text.setAttribute('text-anchor', 'middle');
     text.setAttribute('font-size', '1.95');
     text.setAttribute('fill', '#ffffff');
-    text.setAttribute('font-family', 'system-ui, -apple-system, sans-serif');
+    text.setAttribute('font-family', 'Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif');
     text.setAttribute('font-weight', '600');
     text.textContent = skill.name;
     chipGroup.appendChild(text);

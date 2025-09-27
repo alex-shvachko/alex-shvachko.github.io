@@ -6,8 +6,14 @@
     <title>Digital Marketing Services</title>
   <link rel="icon" type="image/jpeg" href="../../assets/img/logo.jpg">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --font-body: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+            --font-heading: 'Oswald', 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+
         * {
             margin: 0;
             padding: 0;
@@ -15,12 +21,16 @@
         }
 
         body {
-            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            font-family: var(--font-body);
             line-height: 1.6;
             color: #111;
             background-color: #ffffff;
             -webkit-font-smoothing: antialiased;
             text-rendering: optimizeLegibility;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
         }
 
         .container {
