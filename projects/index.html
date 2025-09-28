@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Projects — Alex Shvachko</title>
+  <title>Projects â€” Alex Shvachko</title>
   <link rel="icon" type="image/jpeg" href="../assets/img/logo.jpg">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -231,8 +231,8 @@
 <body>
   <div id="particles-js"></div>
   <canvas id="stage" aria-label="Interactive cube particle field"></canvas>
-  <div class="hint" id="hint">Move your cursor to the center to transform the cube • Tap center on mobile</div>
-  <div id="quote" class="cube-quote">"Curiosity has its own reason for existing." — Albert Einstein</div>
+  <div class="hint" id="hint">Move your cursor to the center to transform the cube â€¢ Tap center on mobile</div>
+  <div id="quote" class="cube-quote">"Curiosity has its own reason for existing." â€” Albert Einstein</div>
 
   <!-- phrase containers (filled by JS) -->
   <div id="phraseTop" class="phrase-line" aria-hidden="true"></div>
@@ -241,7 +241,7 @@
   <!-- reusable black modal popup -->
   <div id="modal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <button class="modal-close" aria-label="Close">×</button>
+      <button class="modal-close" aria-label="Close">Ã—</button>
       <div class="modal-body">
         <h2 id="modalTitle" style="text-align:center; margin:0;font-size:20px;font-weight:800;letter-spacing:.2px;">Coming soon</h2>
         <p style="opacity:.8;margin-top:8px;">This section will be filled with project details.</p>
@@ -259,7 +259,7 @@
     </nav>
   </header>
   <footer>
-    &copy; <span id="year">2025</span> Alex Shvachko.
+    © 2025 Alex Shvachko.
   </footer>
 
   <script>
@@ -320,8 +320,8 @@
         <h2>Data & Label</h2>
         <p>436,7k+ ambulance->ER entries (2022, nationwide) with timestamps, location, patient age, clinical code, arrival hour, ER load proxies, and more.</p>
         <p>Engineered features: hospital size & region, shift (day/evening/night), simultaneous ambulance arrivals, and current ER occupancy proxy.</p>
-        <p>Delay definition ("bottleneck") followed operational rules: ≥20 min for BLS, ≥30 min for ALS/paramedic off-load.</p>
-        <p><strong>Fun (scary) fact:</strong> mean wait ≈ 36.2 min, and ~79.5% of arrivals met the "delayed" threshold—so this is systemic, not anecdotal.</p>
+        <p>Delay definition ("bottleneck") followed operational rules: â‰¥20 min for BLS, â‰¥30 min for ALS/paramedic off-load.</p>
+        <p><strong>Fun (scary) fact:</strong> mean wait â‰ˆ 36.2 min, and ~79.5% of arrivals met the "delayed" thresholdâ€”so this is systemic, not anecdotal.</p>
         
         <h2>Approach</h2>
         <p>Cleaning + feature engineering; categorical encoding & normalization; train/valid splits with cross-validation.</p>
@@ -330,18 +330,18 @@
         
         <h2>Results (Classifier)</h2>
         <p>Optimized for high recall (better to flag potential delays than miss them):</p>
-        <p>Test F1: 0.885 Precision: 0.801 Recall: 0.989<br>
-        Accuracy: 0.797 Specificity: 0.055 (expected tradeoff)<br>
+        <p>Test F1: 0.885â€ƒPrecision: 0.801â€ƒRecall: 0.989<br>
+        Accuracy: 0.797â€ƒSpecificity: 0.055 (expected tradeoff)<br>
         ROC-AUC: 0.692 (room to lift with richer real-time features)</p>
         <p><em>Translation:</em> the model catches almost all delay cases; it intentionally over-alerts when capacity is tight. (Threshold can be tuned per hospital.)</p>
         
         <h2>What drives delay (feature importance)</h2>
         <ul>
-          <li>Patient age—older patients increase off-load time (bed type/triage complexity).</li>
-          <li>ER occupancy % at arrival—the denser the unit, the slower the handoff.</li>
-          <li>Arrival hour/shift and simultaneous ambulance load—crowding effects.</li>
-          <li>Clinical code (chief complaint)—certain cases require more prep.</li>
-          <li>Geography/facility size and crew/base metadata—local operating patterns.</li>
+          <li>Patient ageâ€”older patients increase off-load time (bed type/triage complexity).</li>
+          <li>ER occupancy % at arrivalâ€”the denser the unit, the slower the handoff.</li>
+          <li>Arrival hour/shift and simultaneous ambulance loadâ€”crowding effects.</li>
+          <li>Clinical code (chief complaint)â€”certain cases require more prep.</li>
+          <li>Geography/facility size and crew/base metadataâ€”local operating patterns.</li>
         </ul>
         
         <h2>Key Insights (operational)</h2>
@@ -354,7 +354,7 @@
         
         <h2>Challenges</h2>
         <ul>
-          <li>Single-year view (2022)—good for a first pass, but more years would solidify seasonality trends.</li>
+          <li>Single-year view (2022)â€”good for a first pass, but more years would solidify seasonality trends.</li>
           <li>Timing discrepancies between EMS and hospital clocks; imperfect visibility into exact "bed ready" state.</li>
           <li>Label imbalance (many "delays") pushes the model toward recall; specificity is low by design and needs per-site thresholding.</li>
           <li>Limited direct signals about real-time bed availability and triage severity at minute-resolution.</li>
@@ -362,7 +362,7 @@
         
         <h2>What I'd Build Next (practical roadmap)</h2>
         <ul>
-          <li>Per-hospital threshold calibration (precision–recall tradeoff by ops goals).</li>
+          <li>Per-hospital threshold calibration (precisionâ€“recall tradeoff by ops goals).</li>
           <li>Live occupancy feed + streaming features -> upgrade to online inference and ETA-aware dispatch.</li>
           <li>Cost-sensitive learning (missed-delay > false-alarm) and XGBoost/GBTs with calibrated probabilities.</li>
           <li>Tactical dashboard for dispatchers: recommended destination + predicted off-load time + confidence band.</li>
@@ -372,7 +372,7 @@
       `
     },
     'Machine Learning': {
-      title: 'Wafer Scratch Detection — Semiconductor Yield Optimization',
+      title: 'Wafer Scratch Detection â€” Semiconductor Yield Optimization',
       content: `
         <div style="display:flex; gap:12px; align-items:center; justify-content:center; margin: 4px 0 16px;">
           <figure style="flex:1; margin:0;">
@@ -413,8 +413,8 @@
         <h2>Key Insights</h2>
         <ul>
           <li>Wafer yield alone was not sufficient; spatial arrangement of defects was the decisive factor.</li>
-          <li>Local density windows (5×5, 7×7, 10×10 neighborhoods) and line-detection features contributed most to model performance.</li>
-          <li>Explainability analysis showed that proximity to existing bad dies and scratch “corridor ratios” were strong predictors of systematic scratches.</li>
+          <li>Local density windows (5Ã—5, 7Ã—7, 10Ã—10 neighborhoods) and line-detection features contributed most to model performance.</li>
+          <li>Explainability analysis showed that proximity to existing bad dies and scratch â€œcorridor ratiosâ€ were strong predictors of systematic scratches.</li>
         </ul>
 
         <h2>Challenges</h2>
@@ -443,8 +443,8 @@
       title: 'n8n Automations & Marketing Workflows',
       content: `
         <blockquote style="margin:0 0 12px; padding-left:14px; border-left:3px solid rgba(255,255,255,0.2); opacity:.9;">
-          «A computer can never be held accountable. Therefore a computer must never make a management decision.»<br>
-          <span style="opacity:.7; font-size:12px;">— IBM, 1979</span>
+          Â«A computer can never be held accountable. Therefore a computer must never make a management decision.Â»<br>
+          <span style="opacity:.7; font-size:12px;">â€” IBM, 1979</span>
         </blockquote>
 
         <div style="text-align:center; margin: 8px 0 16px;">
@@ -457,13 +457,13 @@
 
         <p>One of my key projects is a full auto-marketing workflow:</p>
         <ul>
-          <li><strong>Content Research & Planning</strong> — automated web scraping, trend monitoring, and data enrichment to feed content ideas.</li>
-          <li><strong>AI-Assisted Creation</strong> — connecting to LLMs for script drafting, caption generation, and visual prompt preparation.</li>
-          <li><strong>Scheduling & Publishing</strong> — automated multi-platform posting with optimal timing based on engagement analytics.</li>
-          <li><strong>Audience Engagement</strong> — auto-responses and lead capture flows to keep interactions active while staying authentic.</li>
-          <li><strong>Analytics Feedback Loop</strong> — collecting KPIs from platforms and feeding them back into the pipeline for iterative optimization.</li>
+          <li><strong>Content Research & Planning</strong> â€” automated web scraping, trend monitoring, and data enrichment to feed content ideas.</li>
+          <li><strong>AI-Assisted Creation</strong> â€” connecting to LLMs for script drafting, caption generation, and visual prompt preparation.</li>
+          <li><strong>Scheduling & Publishing</strong> â€” automated multi-platform posting with optimal timing based on engagement analytics.</li>
+          <li><strong>Audience Engagement</strong> â€” auto-responses and lead capture flows to keep interactions active while staying authentic.</li>
+          <li><strong>Analytics Feedback Loop</strong> â€” collecting KPIs from platforms and feeding them back into the pipeline for iterative optimization.</li>
         </ul>
-        <p>This setup acts as a self-updating growth engine: it researches, creates, publishes, engages, and learns—all without manual intervention, while still leaving room for human creativity and strategy.</p>
+        <p>This setup acts as a self-updating growth engine: it researches, creates, publishes, engages, and learnsâ€”all without manual intervention, while still leaving room for human creativity and strategy.</p>
       `
     },
     'DB Managment': { title: 'Databases and Big Data', content: 'Coming soon...' },
@@ -947,7 +947,7 @@ function draw(){
         }
       }
     } else {
-      // normal solid cube — snapped to pixels for crisp edges
+      // normal solid cube â€” snapped to pixels for crisp edges
       const x = Math.round(CX - SIZE/2);
       const y = Math.round(CY - SIZE/2);
       const s = Math.ceil(SIZE) + 1; // slight overdraw
@@ -991,5 +991,6 @@ function draw(){
   </script>
 </body>
 </html>
+
 
 
