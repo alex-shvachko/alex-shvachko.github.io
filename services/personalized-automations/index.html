@@ -1,0 +1,353 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Automate Your Life - Alex Shvachko</title>
+  <link rel="icon" type="image/jpeg" href="../../assets/img/logo.jpg">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script defer src="../../assets/js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script defer src="../../assets/js/particles-config.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: var(--font-body, 'Inter', sans-serif);
+      color: #0f172a;
+      background: radial-gradient(circle at 30% -10%, #ffffff 0%, #eaf1ff 65%, #e0e9ff 100%) fixed;
+      min-height: 100vh;
+    }
+
+    #particles-js {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      opacity: 0.18;
+    }
+
+    header,
+    main,
+    footer {
+      position: relative;
+      z-index: 2;
+    }
+
+    header {
+      padding: 1.5rem 0;
+    }
+
+    .automation-main {
+      width: min(100%, 1100px);
+      margin: clamp(2rem, 6vw, 5rem) auto;
+      padding: 0 clamp(1.5rem, 5vw, 3rem) clamp(4rem, 8vw, 6rem);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(3rem, 7vw, 5rem);
+      align-items: center;
+      text-align: center;
+    }
+
+    .hero {
+      display: grid;
+      gap: clamp(1.2rem, 2.5vw, 1.8rem);
+      place-items: center;
+    }
+
+    .hero-title {
+      font-family: var(--font-heading, 'Oswald', sans-serif);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      margin: 0;
+    }
+
+    .hero-text {
+      margin: 0;
+      line-height: 1.8;
+      max-width: 720px;
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: rgba(15, 23, 42, 0.74);
+    }
+
+    .portfolio {
+      display: grid;
+      gap: clamp(1.2rem, 3vw, 2rem);
+      place-items: center;
+      width: 100%;
+    }
+
+    .portfolio-overline {
+      font-size: 0.95rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(15, 23, 42, 0.55);
+      margin: 0;
+    }
+
+    .portfolio-title {
+      font-family: var(--font-heading, 'Oswald', sans-serif);
+      font-size: clamp(2.4rem, 5vw, 3.2rem);
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .portfolio-card {
+      display: block;
+      width: min(100%, 256px);
+      aspect-ratio: 720 / 512;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.14), 0 24px 60px rgba(15, 23, 42, 0.16);
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+      cursor: pointer;
+    }
+
+    .portfolio-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.18), 0 32px 90px rgba(15, 23, 42, 0.2);
+    }
+
+    .portfolio-card:focus-visible {
+      outline: 3px solid #2563eb;
+      outline-offset: 4px;
+    }
+
+    .portfolio-card img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(1.5rem, 6vw, 4rem);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-window {
+      width: min(100%, 820px);
+      background: #050505;
+      color: #f8fafc;
+      border-radius: 34px;
+      border: 1px solid rgba(248, 250, 252, 0.12);
+      padding: clamp(1.5rem, 4vw, 3rem);
+      display: grid;
+      text-align: center;
+      gap: clamp(1.4rem, 3vw, 2rem);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+      transform: translateY(24px);
+      opacity: 0;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+    }
+
+    .modal-backdrop.active .modal-window {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .modal-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+
+    .modal-title {
+      font-family: var(--font-heading, 'Oswald', sans-serif);
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      text-align: center;
+      margin: 0;
+    }
+    .modal-close {
+      align-self: flex-end;
+      appearance: none;
+      background: rgba(248, 250, 252, 0.1);
+      color: #f8fafc;
+      border: 1px solid rgba(248, 250, 252, 0.24);
+      border-radius: 999px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .modal-body {
+      display: grid;
+      gap: 1.5rem;
+      color: rgba(248, 250, 252, 0.85);
+      line-height: 1.8;
+      text-align: center;
+    }
+
+    .modal-body img {
+      width: 100%;
+      border-radius: 24px;
+      border: 1px solid rgba(248, 250, 252, 0.2);
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .modal-actions .pill {
+      text-decoration: none;
+    }
+
+    .modal-actions .modal-download {
+      background: #0f172a;
+      color: #0f172a;
+      border: 1px solid #0b1120;
+    }
+
+    .modal-actions .modal-download:hover {
+      background: #0b1120;
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 0 2rem;
+      color: rgba(15, 23, 42, 0.55);
+      font-size: 0.95rem;
+    }
+
+        @media (max-width: 780px) {
+      .modal-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+      .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+    }
+  </style>
+</head>
+<body>
+  <div id="particles-js"></div>
+  <header>
+    <nav class="nav" style="display: flex; justify-content: center; width: 100%;">
+      <div class="links" style="justify-content: center;">
+        <a class="pill" href="../../">Home</a>
+        <a class="pill" href="../../projects/">Projects</a>
+        <a class="pill active" href="../../services/">Services</a>
+      </div>
+    </nav>
+  </header>
+  <main class="automation-main">
+    <section class="hero" aria-labelledby="automate-life-title">
+      <h1 class="hero-title" id="automate-life-title">Automate your life</h1>
+      <p class="hero-text">I build intuitive automations that lighten the load on the routines that slow you down. From scheduling to data entry, I translate repetitive work into reliable workflows that just run. My focus is on helping founders and teams reclaim time and calm through bespoke automation in tools like n8n, Make, and custom APIs. I also partner with small businesses to deploy robust RAG-supported AI agents that understand their knowledge bases and respond with nuance. Together we'll shape systems that keep improving so you can stay focused on what matters.</p>
+    </section>
+
+    <section class="portfolio" aria-labelledby="portfolio-title">
+      <p class="portfolio-overline">Below is my free portfolio</p>
+      <h2 class="portfolio-title" id="portfolio-title">Free Portfolio - Backend n8n Workflows</h2>
+      <button class="portfolio-card" type="button" id="cv-tailor-trigger" aria-haspopup="dialog" aria-controls="cv-tailor-modal" aria-label="View details for the CV Tailoring System">
+        <img src="../../assets/img/cv_tailors.jpg" alt="Preview of the CV Tailoring system workflow">
+      </button>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="cv-tailor-modal" role="dialog" aria-modal="true" aria-labelledby="cv-tailor-title" aria-hidden="true">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title" id="cv-tailor-title">CV Tailoring System</h3>
+        <button class="modal-close" type="button" id="cv-tailor-close">Close</button>
+      </div>
+      <div class="modal-body">
+        <p>This automation ingests job listings, aligns them with your candidate profile, and orchestrates bespoke resume outputs through n8n. It enriches context with vector-indexed knowledge, keeps recruiters' requirements front and center, and ships polished PDFs without manual tinkering.</p>
+        <img src="../../assets/img/cv_tailors_proj.png" alt="Screenshot of the CV tailoring automation project">
+      </div>
+      <div class="modal-actions">
+        <a class="pill modal-download" href="../../assets/media/CV Tailoring Workflow.json" download>Download Workflow</a>
+        <a class="pill" href="../../#contact-info">Hire Me</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 Alex Shvachko.
+  </footer>
+
+  <script>
+    (function () {
+      const trigger = document.getElementById('cv-tailor-trigger');
+      const modal = document.getElementById('cv-tailor-modal');
+      const closeBtn = document.getElementById('cv-tailor-close');
+
+      if (!trigger || !modal || !closeBtn) return;
+
+      const openModal = () => {
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        closeBtn.focus({ preventScroll: true });
+      };
+
+      const closeModal = () => {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        trigger.focus({ preventScroll: true });
+      };
+
+      trigger.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+          closeModal();
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && modal.classList.contains('active')) {
+          closeModal();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

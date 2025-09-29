@@ -1,0 +1,329 @@
+{
+  "name": "CV Tailoring Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "assistant",
+        "assistantId": {
+          "__rl": true,
+          "value": "asst_yyxbdlBkJCvKJvHRyBj8VzGz",
+          "mode": "list",
+          "cachedResultName": "Match Score Asssistant"
+        },
+        "prompt": "define",
+        "text": "=Take my resume content:\n{{ $json.text }}\nAnd job description:\n{{ $items(\"Send JD\")[0].json.chatInput }}\nUsing the job description and my CV abowe, return a single-paragraph evaluation exactly in the format specified above, focusing on skills alignment, summary relevance, explicit coverage of JD requirements, and ATS keyword matching; highlight concrete strengths, call out missing must-haves and any red flags (seniority, tech gaps, domain fit), and finish with two tailoring tips; do not add information that isn’t in my CV.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        128,
+        96
+      ],
+      "id": "8bd78e8b-0442-4bb7-8279-4608a7d5e277",
+      "name": "Match Score",
+      "credentials": {
+        "openAiApi": {
+          "id": "PodpE3FklXXwNz8Y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "assistant",
+        "assistantId": {
+          "__rl": true,
+          "value": "asst_wqIeLNNAFZWibWaqq9lBxqdY",
+          "mode": "list",
+          "cachedResultName": "Tailor Exper Asssitant"
+        },
+        "prompt": "define",
+        "text": "=Using my CV, the job description, and the prior match report, return a single paragraph in the format above. In Summary diffs, quote short fragments from my current summary and show the precise rewritten fragments that better reflect JD language while staying fully truthful to my CV. In Skills remap, reorder or swap emphasis from lower-value items for this JD to higher-priority items already present in my CV, using JD terminology only when it’s a strict synonym of my skills; do not invent new technologies. Only if the parsed match score is below 70/100, add exactly one minimal Optional Ed/Exp add suggestion drawn from facts already in my CV; otherwise write Optional Ed/Exp add: None.\nJob Description:\n{{ $items(\"Send JD\")[0].json.chatInput }}\nMy resume content:\n{{ $('Parse CV').item.json.text }}\nPrevious HR report:\n{{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        544,
+        96
+      ],
+      "id": "ddea3935-a0c6-4ed1-9d0b-b509f0060014",
+      "name": "Improcements to Current CV",
+      "credentials": {
+        "openAiApi": {
+          "id": "PodpE3FklXXwNz8Y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -544,
+        -32
+      ],
+      "id": "e6cd13d3-f138-4afc-bf96-e333e93c823a",
+      "name": "Send JD",
+      "webhookId": "5030b2a3-325e-410d-b621-6a8934d46538"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/Base/CV.pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -32
+      ],
+      "id": "43192cf4-bf1e-4ee3-8b80-c9850089aa83",
+      "name": "Read CV(PDF)"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -32
+      ],
+      "id": "07f8f168-4abc-4959-833a-35377ea5599d",
+      "name": "Parse CV"
+    },
+    {
+      "parameters": {
+        "resource": "assistant",
+        "assistantId": {
+          "__rl": true,
+          "value": "asst_bbs5wmZC4cvizwhKVMYtrkY4",
+          "mode": "list",
+          "cachedResultName": "Personal Note Assistant"
+        },
+        "prompt": "define",
+        "text": "=Take my resume content:\n{{ $json.text }}\nAnd job description:\n{{ $items(\"Send JD\")[0].json.chatInput }}\nAnd compose for me a personal note for this job.\nWrite 3-4 sentences, 1st person(like its me), start with telling about myself(Data Engeneering student final year with 1+ of experience in production) and then explain why i'm appropriate candidate for this job based on my CV add show curiosity and excitement about the job.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        128,
+        -192
+      ],
+      "id": "595c4516-e516-4e5b-b209-a8887f96569d",
+      "name": "Personal Note Creator",
+      "credentials": {
+        "openAiApi": {
+          "id": "PodpE3FklXXwNz8Y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "=Matching Score: {{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        384,
+        96
+      ],
+      "id": "90ec6673-b665-470c-a31a-73b2ec159b53",
+      "name": "Report matching score"
+    },
+    {
+      "parameters": {
+        "message": "=CV Tailoring: {{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        800,
+        96
+      ],
+      "id": "5391681e-9d3c-417a-9f6b-646b56142ddd",
+      "name": "Report Tailoring"
+    },
+    {
+      "parameters": {
+        "message": "=Personal Note: {{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        464,
+        -192
+      ],
+      "id": "03a29899-35c6-4cd5-971c-5d791d8f1626",
+      "name": "Report Personal Note"
+    },
+    {
+      "parameters": {
+        "content": "## Setup Guide\n1. Open workflow in n8n\n2. For Docker version: create a folder named \"Basic\" and put there your base CV, call the file \"CV.pdf\"\nImport it to main diecroy of container\nFor desktop version:\nAdd to the folder where your n8n runs folder named \"Basic\" and put there your base CV, call the file \"CV.pdf\"\n3. Send to the workflow chat Job Desciption and enjoy :)",
+        "height": 416,
+        "width": 496
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -272
+      ],
+      "id": "475cfab7-1fb2-42e5-9d66-2fdbb3aaa6f1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Personal note creation",
+        "height": 272,
+        "width": 576,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        112,
+        -272
+      ],
+      "id": "0013294c-0627-4fae-b498-8a19239bbee3",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Matching score reporing",
+        "height": 288,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        112,
+        16
+      ],
+      "id": "d5478190-83c1-4be1-87df-cae5e6ecea37",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Final tailoring report",
+        "height": 288,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        528,
+        16
+      ],
+      "id": "60c39915-0161-4c78-9eec-325ee78e80d7",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Match Score": {
+      "main": [
+        [
+          {
+            "node": "Improcements to Current CV",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Report matching score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Improcements to Current CV": {
+      "main": [
+        [
+          {
+            "node": "Report Tailoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send JD": {
+      "main": [
+        [
+          {
+            "node": "Read CV(PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read CV(PDF)": {
+      "main": [
+        [
+          {
+            "node": "Parse CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse CV": {
+      "main": [
+        [
+          {
+            "node": "Match Score",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Personal Note Creator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Personal Note Creator": {
+      "main": [
+        [
+          {
+            "node": "Report Personal Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "373aec24-fdd1-4974-bf86-3634eb4d69e8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3fb4284c9f7ce23333a8a74366886a7bb88185f6bf25969e66f3157e57a5cbe0"
+  },
+  "id": "bHUuTNJFJQDt9qBq",
+  "tags": []
+}
