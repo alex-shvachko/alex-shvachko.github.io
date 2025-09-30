@@ -227,6 +227,8 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <script defer src="../assets/js/particles-config.js"></script>
+  <script data-goatcounter="https://alex-port-acc.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
   <div id="particles-js"></div>
@@ -320,8 +322,8 @@
         <h2>Data & Label</h2>
         <p>436,7k+ ambulance->ER entries (2022, nationwide) with timestamps, location, patient age, clinical code, arrival hour, ER load proxies, and more.</p>
         <p>Engineered features: hospital size & region, shift (day/evening/night), simultaneous ambulance arrivals, and current ER occupancy proxy.</p>
-        <p>Delay definition ("bottleneck") followed operational rules: â‰¥20 min for BLS, â‰¥30 min for ALS/paramedic off-load.</p>
-        <p><strong>Fun (scary) fact:</strong> mean wait â‰ˆ 36.2 min, and ~79.5% of arrivals met the "delayed" threshold&mdash;so this is systemic, not anecdotal.</p>
+        <p>Delay definition ("bottleneck") followed operational rules: 20 min for BLS, 30 min for ALS/paramedic off-load.</p>
+        <p><strong>Fun (scary) fact:</strong> mean wait 36.2 min, and ~79.5% of arrivals met the "delayed" threshold&mdash;so this is systemic, not anecdotal.</p>
         
         <h2>Approach</h2>
         <p>Cleaning + feature engineering; categorical encoding & normalization; train/valid splits with cross-validation.</p>
@@ -443,7 +445,7 @@
       title: 'n8n Automations & Marketing Workflows',
       content: `
         <blockquote style="margin:0 0 12px; padding-left:14px; border-left:3px solid rgba(255,255,255,0.2); opacity:.9;">
-          Â«A computer can never be held accountable. Therefore a computer must never make a management decision.Â»<br>
+          «A computer can never be held accountable. Therefore a computer must never make a management decision.»<br>
           <span style="opacity:.7; font-size:12px;">&mdash; IBM, 1979</span>
         </blockquote>
 
@@ -518,12 +520,22 @@
       modalEl.classList.add('visible');
       modalEl.setAttribute('aria-hidden', 'false');
       modalContent.scrollTop = 0;
+      window.goatcounter?.count({
+        path: 'event/modal/open',
+        title: `Modal Open - ${project.title}`,
+        event: true
+      });
     }
   }
   function closeModal(){
     modalEl.classList.remove('visible');
     modalEl.setAttribute('aria-hidden','true');
     modalEl.style.display = 'none';
+    window.goatcounter?.count({
+      path: 'event/modal/close',
+      title: 'Modal Close',
+      event: true
+    });
     // iOS sometimes triggers no resize when the URL bar toggles.
     // Ensure the skill buttons stay visible after closing the modal.
     if (transformTriggered && buttons && buttons.length){
@@ -695,7 +707,9 @@
 
     buttonLabels.forEach((label, i) => {
       const btn = document.createElement('button');
-      btn.className = 'skill-button'; btn.textContent = label;
+      btn.className = 'skill-button';
+      btn.textContent = label;
+      btn.setAttribute('data-goatcounter-click', 'project:open');
       const host = columnLayout && buttonColumn ? buttonColumn : document.body;
       host.appendChild(btn);
       let angle = 0;
@@ -783,6 +797,11 @@
   function triggerTransform(){
     if (transformTriggered) return;
     transformTriggered = true;
+    window.goatcounter?.count({
+      path: 'event/animation/cube_transform_start',
+      title: 'Cube Transform Start',
+      event: true
+    });
 
     // show buttons
     buttons.forEach((btn, i) => {
@@ -861,7 +880,14 @@
 
     const remaining = particles.filter(p => !p.disappeared);
     if (remaining.length === 0 && !transformComplete){
-      transformComplete = true; phase = 'done'; clearPhraseTimers();
+      transformComplete = true;
+      phase = 'done';
+      clearPhraseTimers();
+      window.goatcounter?.count({
+        path: 'event/animation/cube_transform_complete',
+        title: 'Cube Transform Complete',
+        event: true
+      });
     }
   }
   function drawCellSnapped(cx, cy, w, h, opacity = 1) {
