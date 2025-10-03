@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -12,11 +12,10 @@
   <script defer src="assets/js/main.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <script defer src="assets/js/particles-config.js"></script>
-  <script defer src="assets/js/TechTree.js"></script>
   <script data-goatcounter="https://alex-port-acc.goatcounter.com/count"
           async src="//gc.zgo.at/count.js"></script>
 </head>
-<body>
+<body class="home">
   <div id="particles-js"></div>
 
   <header>
@@ -50,45 +49,169 @@
       <h1 class="logo-title">Alex Shvachko</h1>
     </div>
 
-    <p class="bio">I am a multidisciplinary creator pursuing degree at data engineering(BGU), AI enthusiast, and experienced software developer. Scroll down to see my rich tech stack</p>
+    <p class="bio">I am a multidisciplinary creator pursuing degree at data engineering(BGU), AI enthusiast, and experienced software developer. Scroll down to explore my experience timeline and recent work.</p>
 
-    <section class="tech-tree-section">
-      <div id="tech-tree-anchor"></div>
-
-      <section class="contact-section" id="contact-info" aria-label="Resume and contact">
-        <div class="contact-intro">
-          <h2 class="contact-heading">Resume & Contact</h2>
-          <p class="contact-subheading">Download my CV or reach out directly.</p>
-        </div>
-        <div class="contact-layout">
-          <div class="cv-preview">
-            <object data="assets/media/Alex%20Shvachko%20-%20CV.pdf" type="application/pdf" width="100%" height="100%">
-              <p>Your browser can't preview PDFs. View it here:
-                <a href="assets/media/Alex%20Shvachko%20-%20CV.pdf" target="_blank" rel="noopener" data-goatcounter-click="cv:open:fallback">Open the CV</a>
-              </p>
-            </object>
+        <section class="skills-section" id="skills" aria-label="Skills">
+      <header class="skills-header">
+        <h2 class="skills-heading">My Skills</h2>
+        <div class="skills-sep"></div>
+      </header>
+      <div class="skills-legend" aria-hidden="true">
+        <div class="legend-item"><span class="skills-dot proficient"></span> Proficient</div>
+        <div class="legend-item"><span class="skills-dot intermediate"></span> Intermediate</div>
+        <div class="legend-item"><span class="skills-dot exploring"></span> Exploring</div>
+        <div class="legend-item"><span class="skills-dot familiar"></span> Familiar</div>
+      </div>
+      <div class="skills-grid">
+        <div class="skill-card">
+          <div class="card-head">
+            <h3 class="card-title">AI &amp; Machine Learning</h3>
           </div>
-          <div class="contact-details">
-            <div class="cv-actions">
-              <a class="pill" href="assets/media/Alex%20Shvachko%20-%20CV.pdf" target="_blank" rel="noopener" data-goatcounter-click="cv:open">Open Full CV</a>
-              <a class="pill" href="assets/media/Alex%20Shvachko%20-%20CV.pdf" download data-goatcounter-click="cv:download">Download PDF</a>
-            </div>
-            <h3 class="contact-title">Get in Touch</h3>
-            <ul class="contact-list">
-              <li>Email: <a href="mailto:alex.shvachko.wrk@gmail.com" data-goatcounter-click="contact:email">alex.shvachko.wrk@gmail.com</a></li>
-              <li>Phone: <a href="tel:+9720587380259" data-goatcounter-click="contact:phone">+972 058-738-0259</a></li>
-              <li>Instagram: <a href="https://www.instagram.com/alex_sh111?igsh=NHQwbHN4ZTJ1aHpl&utm_source=qr" target="_blank" rel="noopener" data-goatcounter-click="contact:instagram">alex_sh111</a></li>
-              <li>LinkedIn: <a href="https://www.linkedin.com/in/alex-shvachko-71573823a/" target="_blank" rel="noopener" data-goatcounter-click="contact:linkedin">Alex Shvachko</a></li>
-              <li>High Resolution Image Portfolio: <span>available upon request</span></li>
+          <div class="skill-list">
+            <div class="skill-chip lvl-intermediate">Scikit Learn</div>
+            <div class="skill-chip lvl-exploring">XGBoost</div>
+            <div class="skill-chip lvl-intermediate">NumPy</div>
+            <div class="skill-chip lvl-intermediate">Pandas</div>
+            <div class="skill-chip lvl-exploring">LLM Prompting</div>
+            <div class="skill-chip lvl-intermediate">AI Model Ops</div>
+            <div class="skill-chip lvl-familiar">Computer Vision</div>
+          </div>
+        </div>
+        <div class="skill-card">
+          <div class="card-head">
+            <h3 class="card-title">Cloud Architecture &amp; MLOps</h3>
+          </div>
+          <div class="skill-list">
+            <div class="skill-chip lvl-proficient">RESTful APIs</div>
+            <div class="skill-chip lvl-proficient">Microservices</div>
+            <div class="skill-chip lvl-proficient">Spring Boot</div>
+            <div class="skill-chip lvl-intermediate">CI/CD Pipelines</div>
+            <div class="skill-chip lvl-intermediate">Containerization</div>
+            <div class="skill-chip lvl-familiar">Monitoring &amp; Observability</div>
+          </div>
+        </div>
+        <div class="skill-card">
+          <div class="card-head">
+            <h3 class="card-title">Programming</h3>
+          </div>
+          <div class="skill-list">
+            <div class="skill-chip lvl-intermediate">Python</div>
+            <div class="skill-chip lvl-proficient">Java</div>
+            <div class="skill-chip lvl-proficient">JavaScript</div>
+            <div class="skill-chip lvl-intermediate">TypeScript</div>
+            <div class="skill-chip lvl-proficient">C</div>
+            <div class="skill-chip lvl-intermediate">SQL</div>
+            <div class="skill-chip lvl-proficient">HTML</div>
+            <div class="skill-chip lvl-proficient">CSS</div>
+          </div>
+        </div>
+        <div class="skill-card">
+          <div class="card-head">
+            <h3 class="card-title">Data Science</h3>
+          </div>
+          <div class="skill-list">
+            <div class="skill-chip lvl-intermediate">Elasticsearch</div>
+            <div class="skill-chip lvl-proficient">Data Pipelines</div>
+            <div class="skill-chip lvl-proficient">Analytics Engineering</div>
+            <div class="skill-chip lvl-exploring">Experimentation</div>
+            <div class="skill-chip lvl-proficient">Dashboards</div>
+            <div class="skill-chip lvl-familiar">Data Storytelling</div>
+          </div>
+        </div>
+        <div class="skill-card">
+          <div class="card-head">
+            <h3 class="card-title">AI Art</h3>
+          </div>
+          <div class="skill-list">
+            <div class="skill-chip lvl-exploring">Stable Diffusion</div>
+            <div class="skill-chip lvl-exploring">Midjourney</div>
+            <div class="skill-chip lvl-familiar">RunwayML</div>
+            <div class="skill-chip lvl-familiar">ComfyUI</div>
+            <div class="skill-chip lvl-intermediate">Prompt Crafting</div>
+            <div class="skill-chip lvl-exploring">ControlNet</div>
+          </div>
+        </div>
+      </div>
+    </section><section class="experience-section" id="experience" aria-label="Professional experience timeline">
+      <header class="experience-header">
+        <h2 class="experience-heading">Experience</h2>
+        <p class="experience-lead">Hands-on impact across data platforms and AI education.</p>
+      </header>
+      
+      <div class="experience-timeline" role="list">
+        <div class="experience-timeline-line" aria-hidden="true"></div>
+        <article class="experience-item experience-item--right" role="listitem">
+          <span class="experience-period">2024 &ndash; Present</span>
+          <h3 class="experience-title">Software Engineer (Data/ML Focus)</h3>
+          <p class="experience-company">Millimedical Solutions (Startup)</p>
+          <div class="experience-achievements">
+            <h4 class="experience-achievements-title">Key Achievements</h4>
+            <ul class="experience-achievement-list">
+              <li>
+                <span class="experience-bullet" aria-hidden="true"></span>
+                <span>Designed and optimized a large-scale data pipeline (C#, SQL, Python) for longitudinal medical analytics, reducing query time by 60%.</span>
+              </li>
+              <li>
+                <span class="experience-bullet" aria-hidden="true"></span>
+                <span>Enabled 20+ researchers to process 1B+ rows efficiently for ongoing clinical studies.</span>
+              </li>
             </ul>
           </div>
+        </article>
+        <article class="experience-item experience-item--left" role="listitem">
+          <span class="experience-period">2023 &ndash; 2024</span>
+          <h3 class="experience-title">AI Course Tutor</h3>
+          <p class="experience-company">Cyber Education Center</p>
+          <div class="experience-achievements">
+            <h4 class="experience-achievements-title">Key Achievements</h4>
+            <ul class="experience-achievement-list">
+              <li>
+                <span class="experience-bullet" aria-hidden="true"></span>
+                <span>Tutored 40+ students in Python and core AI concepts, reducing program dropout by 20% while leading collaborative projects.</span>
+              </li>
+              <li>
+                <span class="experience-bullet" aria-hidden="true"></span>
+                <span>Developed an AI-driven pipeline that automated homework reporting and surfaced personalized feedback.</span>
+              </li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="contact-section" id="contact-info" aria-label="Resume and contact">
+      <div class="contact-intro">
+        <h2 class="contact-heading">Resume &amp; Contact</h2>
+        <p class="contact-subheading">Download my CV or reach out directly.</p>
+      </div>
+      <div class="contact-layout">
+          <div class="cv-preview">
+          <object data="assets/media/Alex%20Shvachko%20-%20CV.pdf#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf" width="100%" height="100%" style="border:0; outline:0;">
+            <p>Your browser can't preview PDFs. View it here:
+              <a href="assets/media/Alex%20Shvachko%20-%20CV.pdf" target="_blank" rel="noopener" data-goatcounter-click="cv:open:fallback">Open the CV</a>
+            </p>
+          </object>
+          </div>
+        <div class="contact-details">
+          <div class="cv-actions">
+            <a class="pill" href="assets/media/Alex%20Shvachko%20-%20CV.pdf" target="_blank" rel="noopener" data-goatcounter-click="cv:open">Open Full CV</a>
+            <a class="pill" href="assets/media/Alex%20Shvachko%20-%20CV.pdf" download data-goatcounter-click="cv:download">Download PDF</a>
+          </div>
+          <h3 class="contact-title">Get in Touch</h3>
+          <ul class="contact-list">
+            <li>Email: <a href="mailto:alex.shvachko.wrk@gmail.com" data-goatcounter-click="contact:email">alex.shvachko.wrk@gmail.com</a></li>
+            <li>Phone: <a href="tel:+9720587380259" data-goatcounter-click="contact:phone">+972 058-738-0259</a></li>
+            <li>Instagram: <a href="https://www.instagram.com/alex_sh111?igsh=NHQwbHN4ZTJ1aHpl&utm_source=qr" target="_blank" rel="noopener" data-goatcounter-click="contact:instagram">alex_sh111</a></li>
+            <li>LinkedIn: <a href="https://www.linkedin.com/in/alex-shvachko-71573823a/" target="_blank" rel="noopener" data-goatcounter-click="contact:linkedin">Alex Shvachko</a></li>
+            <li>High Resolution Image Portfolio: <span>available upon request</span></li>
+          </ul>
         </div>
-      </section>
+      </div>
     </section>
   </main>
 
   <footer>
-    © 2025 Alex Shvachko.
+    c 2025 Alex Shvachko.
   </footer>
   <style>
     /* Make all text non-selectable on the home page only */
@@ -103,4 +226,8 @@
   </style>
 </body>
 </html>
+
+
+
+
 
