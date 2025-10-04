@@ -1,4 +1,4 @@
-<!doctype html>
+ï»¿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -16,9 +16,16 @@
     body {
       margin: 0;
       font-family: var(--font-body, 'Inter', sans-serif);
-      color: #111;
-      background: #ffffff;
+      color: #0f172a;
+      background: radial-gradient(circle at 30% -10%, #ffffff 0%, #eaf1ff 65%, #e0e9ff 100%) fixed;
       min-height: 100vh;
+    }
+
+    #particles-js {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      opacity: 0.18;
     }
 
     header,
@@ -63,7 +70,7 @@
       line-height: 1.8;
       max-width: 720px;
       font-size: clamp(1rem, 2vw, 1.2rem);
-      color: rgba(17, 17, 17, 0.68);
+      color: rgba(15, 23, 42, 0.74);
     }
 
     .portfolio {
@@ -77,7 +84,7 @@
       font-size: 0.95rem;
       letter-spacing: 0.28em;
       text-transform: uppercase;
-      color: rgba(17, 17, 17, 0.48);
+      color: rgba(15, 23, 42, 0.55);
       margin: 0;
     }
 
@@ -96,19 +103,19 @@
       overflow: hidden;
       border: 0;
       padding: 0;
-      background: #ffffff;
-      box-shadow: 0 0 0 1px rgba(17, 17, 17, 0.08), 0 24px 50px rgba(17, 17, 17, 0.12);
+      background: transparent;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.14), 0 24px 60px rgba(15, 23, 42, 0.16);
       transition: transform 0.4s ease, box-shadow 0.4s ease;
       cursor: pointer;
     }
 
     .portfolio-card:hover {
       transform: translateY(-8px) scale(1.02);
-      box-shadow: 0 0 0 1px rgba(17, 17, 17, 0.12), 0 34px 70px rgba(17, 17, 17, 0.16);
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.18), 0 32px 90px rgba(15, 23, 42, 0.2);
     }
 
     .portfolio-card:focus-visible {
-      outline: 3px solid rgba(17, 17, 17, 0.6);
+      outline: 3px solid #2563eb;
       outline-offset: 4px;
     }
 
@@ -123,7 +130,7 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(17, 17, 17, 0.35);
+      background: rgba(15, 23, 42, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -141,15 +148,16 @@
 
     .modal-window {
       width: min(100%, 820px);
-      background: #ffffff;
-      color: #111;
-      border-radius: 30px;
-      border: 1px solid rgba(17, 17, 17, 0.08);
+      background: #050505;
+      color: #f8fafc;
+      border-radius: 34px;
+      border: 1px solid rgba(248, 250, 252, 0.12);
       padding: clamp(1.5rem, 4vw, 3rem);
       display: grid;
+      position: relative;
       text-align: center;
       gap: clamp(1.4rem, 3vw, 2rem);
-      box-shadow: 0 40px 90px rgba(17, 17, 17, 0.15);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
       transform: translateY(24px);
       opacity: 0;
       transition: transform 0.35s ease, opacity 0.35s ease;
@@ -176,10 +184,13 @@
     }
     .modal-close {
       align-self: flex-end;
+      position: absolute;
+      top: clamp(0.75rem, 2vw, 1.4rem);
+      right: clamp(0.75rem, 2vw, 1.4rem);
       appearance: none;
-      background: rgba(17, 17, 17, 0.08);
-      color: #111;
-      border: 1px solid rgba(17, 17, 17, 0.12);
+      background: rgba(248, 250, 252, 0.1);
+      color: #f8fafc;
+      border: 1px solid rgba(248, 250, 252, 0.24);
       border-radius: 999px;
       padding: 0.35rem 0.9rem;
       font-size: 0.9rem;
@@ -191,7 +202,7 @@
     .modal-body {
       display: grid;
       gap: 1.5rem;
-      color: rgba(17, 17, 17, 0.75);
+      color: rgba(248, 250, 252, 0.85);
       line-height: 1.8;
       text-align: center;
     }
@@ -199,8 +210,8 @@
     .modal-body img {
       width: 100%;
       border-radius: 24px;
-      border: 1px solid rgba(17, 17, 17, 0.08);
-      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(248, 250, 252, 0.2);
+      background: rgba(15, 23, 42, 0.6);
     }
 
     .modal-actions {
@@ -215,19 +226,19 @@
     }
 
     .modal-actions .modal-download {
-      background: #111;
-      color: #fff;
-      border: 1px solid #111;
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid #0b1120;
     }
 
     .modal-actions .modal-download:hover {
-      background: #1f1f1f;
+      background: #0b1120;
     }
 
     footer {
       text-align: center;
       padding: 3rem 0 2rem;
-      color: rgba(17, 17, 17, 0.55);
+      color: rgba(15, 23, 42, 0.55);
       font-size: 0.95rem;
     }
 
@@ -271,6 +282,9 @@
       <button class="portfolio-card" type="button" id="cv-tailor-trigger" aria-haspopup="dialog" aria-controls="cv-tailor-modal" aria-label="View details for the CV Tailoring System">
         <img src="../../assets/img/cv_tailors.jpg" alt="Preview of the CV Tailoring system workflow">
       </button>
+      <button class="portfolio-card" type="button" id="rag-workflow-trigger" aria-haspopup="dialog" aria-controls="rag-modal" aria-label="View details for the RAG Assistant Workflow">
+        <img src="../../assets/img/logo_RAG.jpg" alt="Preview of the RAG-enabled automation workflow">
+      </button>
     </section>
   </main>
 
@@ -291,23 +305,88 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="rag-modal" role="dialog" aria-modal="true" aria-labelledby="rag-title" aria-hidden="true">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title" id="rag-title">RAG Assistant Workflow</h3>
+        <button class="modal-close" type="button" id="rag-close">Close</button>
+      </div>
+      <div class="modal-body">
+        <p>This is one of my original n8n automations upgraded to work with Pinecone DB. It is a clear way to understand how model context and retrieval-augmented generation interact, especially when you can trace every step of the data flow inside the Pinecone dashboard.</p>
+        <img src="../../assets/img/rag_Screen.png" alt="Screenshot of the RAG automation workflow inside n8n and Pinecone">
+      </div>
+      <div class="modal-actions">
+        <a class="pill modal-download" href="../../assets/media/RAG_in_n8n.json" download>Download Workflow</a>
+        <a class="pill" href="../../#contact-info">Hire Me</a>
+      </div>
+    </div>
+  </div>
   <footer>
-    © 2025 Alex Shvachko.
+    &copy; 2025 Alex Shvachko.
   </footer>
 
-  </body>
+  <script>
+    (function () {
+      const configs = [
+        { triggerId: 'cv-tailor-trigger', modalId: 'cv-tailor-modal', closeId: 'cv-tailor-close' },
+        { triggerId: 'rag-workflow-trigger', modalId: 'rag-modal', closeId: 'rag-close' }
+      ];
+
+      const openModals = new Set();
+      const managed = [];
+
+      const toggleScrollLock = () => {
+        document.body.style.overflow = openModals.size ? 'hidden' : '';
+      };
+
+      configs.forEach(({ triggerId, modalId, closeId }) => {
+        const trigger = document.getElementById(triggerId);
+        const modal = document.getElementById(modalId);
+        const closeBtn = document.getElementById(closeId);
+
+        if (!trigger || !modal || !closeBtn) return;
+
+        let returnFocus = trigger;
+
+        const openModal = () => {
+          returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : trigger;
+          modal.classList.add('active');
+          modal.setAttribute('aria-hidden', 'false');
+          openModals.add(modalId);
+          toggleScrollLock();
+          closeBtn.focus({ preventScroll: true });
+        };
+
+        const closeModal = () => {
+          modal.classList.remove('active');
+          modal.setAttribute('aria-hidden', 'true');
+          openModals.delete(modalId);
+          toggleScrollLock();
+          if (returnFocus && typeof returnFocus.focus === 'function') {
+            returnFocus.focus({ preventScroll: true });
+          }
+        };
+
+        trigger.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (event) => {
+          if (event.target === modal) closeModal();
+        });
+
+        managed.push({ modal, closeModal });
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        for (const { modal, closeModal } of managed) {
+          if (modal.classList.contains('active')) {
+            closeModal();
+            break;
+          }
+        }
+      });
+    })();
+  </script>
+</body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
 
