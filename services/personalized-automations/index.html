@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -16,16 +16,9 @@
     body {
       margin: 0;
       font-family: var(--font-body, 'Inter', sans-serif);
-      color: #0f172a;
-      background: radial-gradient(circle at 30% -10%, #ffffff 0%, #eaf1ff 65%, #e0e9ff 100%) fixed;
+      color: #111;
+      background: #ffffff;
       min-height: 100vh;
-    }
-
-    #particles-js {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      opacity: 0.18;
     }
 
     header,
@@ -70,7 +63,7 @@
       line-height: 1.8;
       max-width: 720px;
       font-size: clamp(1rem, 2vw, 1.2rem);
-      color: rgba(15, 23, 42, 0.74);
+      color: rgba(17, 17, 17, 0.68);
     }
 
     .portfolio {
@@ -84,7 +77,7 @@
       font-size: 0.95rem;
       letter-spacing: 0.28em;
       text-transform: uppercase;
-      color: rgba(15, 23, 42, 0.55);
+      color: rgba(17, 17, 17, 0.48);
       margin: 0;
     }
 
@@ -103,19 +96,19 @@
       overflow: hidden;
       border: 0;
       padding: 0;
-      background: transparent;
-      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.14), 0 24px 60px rgba(15, 23, 42, 0.16);
+      background: #ffffff;
+      box-shadow: 0 0 0 1px rgba(17, 17, 17, 0.08), 0 24px 50px rgba(17, 17, 17, 0.12);
       transition: transform 0.4s ease, box-shadow 0.4s ease;
       cursor: pointer;
     }
 
     .portfolio-card:hover {
       transform: translateY(-8px) scale(1.02);
-      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.18), 0 32px 90px rgba(15, 23, 42, 0.2);
+      box-shadow: 0 0 0 1px rgba(17, 17, 17, 0.12), 0 34px 70px rgba(17, 17, 17, 0.16);
     }
 
     .portfolio-card:focus-visible {
-      outline: 3px solid #2563eb;
+      outline: 3px solid rgba(17, 17, 17, 0.6);
       outline-offset: 4px;
     }
 
@@ -130,7 +123,7 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.4);
+      background: rgba(17, 17, 17, 0.35);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -148,15 +141,15 @@
 
     .modal-window {
       width: min(100%, 820px);
-      background: #050505;
-      color: #f8fafc;
-      border-radius: 34px;
-      border: 1px solid rgba(248, 250, 252, 0.12);
+      background: #ffffff;
+      color: #111;
+      border-radius: 30px;
+      border: 1px solid rgba(17, 17, 17, 0.08);
       padding: clamp(1.5rem, 4vw, 3rem);
       display: grid;
       text-align: center;
       gap: clamp(1.4rem, 3vw, 2rem);
-      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 40px 90px rgba(17, 17, 17, 0.15);
       transform: translateY(24px);
       opacity: 0;
       transition: transform 0.35s ease, opacity 0.35s ease;
@@ -184,9 +177,9 @@
     .modal-close {
       align-self: flex-end;
       appearance: none;
-      background: rgba(248, 250, 252, 0.1);
-      color: #f8fafc;
-      border: 1px solid rgba(248, 250, 252, 0.24);
+      background: rgba(17, 17, 17, 0.08);
+      color: #111;
+      border: 1px solid rgba(17, 17, 17, 0.12);
       border-radius: 999px;
       padding: 0.35rem 0.9rem;
       font-size: 0.9rem;
@@ -198,7 +191,7 @@
     .modal-body {
       display: grid;
       gap: 1.5rem;
-      color: rgba(248, 250, 252, 0.85);
+      color: rgba(17, 17, 17, 0.75);
       line-height: 1.8;
       text-align: center;
     }
@@ -206,8 +199,8 @@
     .modal-body img {
       width: 100%;
       border-radius: 24px;
-      border: 1px solid rgba(248, 250, 252, 0.2);
-      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(17, 17, 17, 0.08);
+      background: rgba(255, 255, 255, 0.6);
     }
 
     .modal-actions {
@@ -222,19 +215,19 @@
     }
 
     .modal-actions .modal-download {
-      background: #0f172a;
-      color: #0f172a;
-      border: 1px solid #0b1120;
+      background: #111;
+      color: #fff;
+      border: 1px solid #111;
     }
 
     .modal-actions .modal-download:hover {
-      background: #0b1120;
+      background: #1f1f1f;
     }
 
     footer {
       text-align: center;
       padding: 3rem 0 2rem;
-      color: rgba(15, 23, 42, 0.55);
+      color: rgba(17, 17, 17, 0.55);
       font-size: 0.95rem;
     }
 
@@ -299,47 +292,14 @@
   </div>
 
   <footer>
-    © 2025 Alex Shvachko.
+    � 2025 Alex Shvachko.
   </footer>
 
-  <script>
-    (function () {
-      const trigger = document.getElementById('cv-tailor-trigger');
-      const modal = document.getElementById('cv-tailor-modal');
-      const closeBtn = document.getElementById('cv-tailor-close');
-
-      if (!trigger || !modal || !closeBtn) return;
-
-      const openModal = () => {
-        modal.classList.add('active');
-        modal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-        closeBtn.focus({ preventScroll: true });
-      };
-
-      const closeModal = () => {
-        modal.classList.remove('active');
-        modal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-        trigger.focus({ preventScroll: true });
-      };
-
-      trigger.addEventListener('click', openModal);
-      closeBtn.addEventListener('click', closeModal);
-      modal.addEventListener('click', (event) => {
-        if (event.target === modal) {
-          closeModal();
-        }
-      });
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && modal.classList.contains('active')) {
-          closeModal();
-        }
-      });
-    })();
-  </script>
-</body>
+  </body>
 </html>
+
+
+
 
 
 
