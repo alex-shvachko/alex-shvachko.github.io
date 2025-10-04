@@ -76,7 +76,8 @@ body.home main{ max-width:1320px; }
 .skills-legend .legend-item{ display:flex; align-items:center; gap:8px; color:rgba(17,17,17,0.8); font-size:14px; letter-spacing:0.02em; }
 .skills-dot{ width:10px; height:10px; border-radius:50%; border:1px solid rgba(17,17,17,0.3); }
 .skills-grid{ display:grid; gap:clamp(16px, 3vw, 24px); grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.skill-card{ border:1px solid rgba(17,17,17,0.12); background:#f3f3f5; border-radius:18px; padding:clamp(18px, 3.6vw, 26px); }
+.skill-card{ border:1px solid rgba(17,17,17,0.12); background:#f3f3f5; border-radius:18px; padding:clamp(18px, 3.6vw, 26px); transition:transform .22s ease, box-shadow .22s ease; }
+.skill-card:hover{ transform: translateY(-6px); box-shadow:0 18px 36px rgba(17,17,17,0.16); }
 .skill-card .card-head{ display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:12px; }
 .skill-card .card-title{ margin:0; font-size:clamp(24px, 3.5vw, 30px); font-weight:400; letter-spacing:0.03em; }
 .skill-list{ display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
@@ -99,9 +100,12 @@ body.home main{ max-width:1320px; }
   .skill-list{ display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
 }
 
-.experience-section{\r\n  width:100%;
+.experience-section{
+  width:100%;
+  max-width:1100px;
   --tl-gap: clamp(100px, 12vw, 168px);
-  --dot: 14px;\n  --line-offset: 36px;
+  --dot: 14px;
+  --line-offset: 50%;
   --line-width: 3px;
   margin:clamp(48px, 12vh, 96px) auto clamp(64px, 12vh, 120px);
   padding:clamp(32px, 5vw, 48px);
@@ -126,42 +130,6 @@ body.home main{ max-width:1320px; }
   font-size:clamp(16px, 2.2vw, 18px);
   text-align:center;
 }
-.experience-stats{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:clamp(18px, 4vw, 26px);
-  padding-bottom:clamp(20px, 4vw, 30px);
-  margin-bottom:clamp(34px, 7vw, 54px);
-  border-bottom:1px solid rgba(17,17,17,0.12);
-  flex-wrap:wrap;
-}
-.experience-stat{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  color:rgba(17,17,17,0.65);
-  font-size:14px;
-  letter-spacing:0.04em;
-  text-transform:uppercase;
-}
-.experience-highlight{
-  color:#111;
-  font-size:16px;
-  font-weight:600;
-  letter-spacing:0.02em;
-}
-.experience-icon{
-  width:20px;
-  height:20px;
-  fill:rgba(17,17,17,0.7);
-}
-.experience-divider{
-  width:4px;
-  height:4px;
-  border-radius:50%;
-  background:rgba(17,17,17,0.2);
-}
 .experience-timeline{
   position:relative;
   display:flex;
@@ -177,6 +145,7 @@ body.home main{ max-width:1320px; }
   background:rgba(17,17,17,0.45);
   border-radius:999px;
   pointer-events:none;
+  transform:translateX(-50%);
 }
 .experience-item{
   position:relative;
@@ -198,7 +167,7 @@ body.home main{ max-width:1320px; }
   border-radius:50%;
   background:#111;
   box-shadow:0 0 0 6px rgba(17,17,17,0.1);
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
 }
 .experience-period{
   display:inline-block;
@@ -261,7 +230,6 @@ body.home main{ max-width:1320px; }
 }
 @media (min-width: 980px){
   .experience-section{
-    --line-offset: 50%;
     padding:clamp(44px, 6vw, 64px) clamp(48px, 6vw, 80px);
   }
   .experience-timeline{
@@ -314,35 +282,33 @@ body.home main{ max-width:1320px; }
     text-align:left;
   }
 }
-
-@media (max-width: 640px){
-  .skill-list{ display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
+@media (max-width: 900px){
+  .experience-section{
+    max-width:min(700px, 100%);
+  }
 }
-
-.experience-section{ --line-offset:28px; }
+@media (max-width: 640px){
+  .experience-section{
+    --line-offset:28px;
+    max-width:100%;
+  }
+  .experience-timeline-line{
+    transform:none;
+  }
   .experience-item{
     padding-left:60px;
   }
-
+}
 @media (max-width: 600px){
   .experience-item{
     padding:clamp(24px, 8vw, 32px) clamp(18px, 6vw, 28px);
     padding-left:56px;
   }
   .experience-item::before{
-    content:"";
-    position:absolute;
     left: calc(var(--line-offset) + var(--line-width)/2 - var(--dot)/2);
-    top:50%;
-    width: var(--dot);
-    height: var(--dot);
-    border-radius:50%;
-    background:#111;
-    box-shadow:0 0 0 6px rgba(17,17,17,0.1);
     transform: translateY(-50%);
   }
 }
-
 .contact-section{
   width:min(960px, 94%);
   margin:clamp(64px, 14vh, 140px) auto clamp(48px, 9vh, 100px);
@@ -813,5 +779,9 @@ header, main, footer{
 @media (max-width: 480px){
   .logo-title{ font-size: clamp(32px, 14vw, 52px); letter-spacing: 0.045em; }
 }
+
+
+
+
 
 
