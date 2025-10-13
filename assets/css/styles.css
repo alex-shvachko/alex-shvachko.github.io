@@ -254,7 +254,7 @@ body.home main{ max-width:1320px; }
     padding-left:clamp(32px, 3vw, 44px);
   }
   .experience-item--left::before{
-    left: calc(100% + var(--tl-gap)/2);
+    left: calc(100% + var(--tl-gap)/2 + 1px);
     transform: translate(-50%, -50%);
   }
   .experience-item--right{
@@ -265,7 +265,7 @@ body.home main{ max-width:1320px; }
     text-align:left;
   }
   .experience-item--right::before{
-    left: calc((0px - var(--tl-gap))/2);
+    left: calc((-2px - var(--tl-gap))/2);
     transform: translate(-50%, -50%);
   }
   .experience-item--right .experience-period,
