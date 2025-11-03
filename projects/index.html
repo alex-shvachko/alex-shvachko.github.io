@@ -1,1039 +1,618 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Projects &mdash; Alex Shvachko</title>
+  <title>What can a Data Engineer build in 2025?</title>
   <link rel="icon" type="image/jpeg" href="../assets/img/logo.jpg">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/styles.css">
   <style>
-    body{
-      margin:0;
-      color:#111;
-      font-family: var(--font-body);
-      -webkit-font-smoothing:antialiased; 
-      text-rendering:optimizeLegibility;
-      overflow: hidden; /* Keep overflow hidden for this specific page's animation */
-    }
-    canvas#stage{
-      position:fixed; 
-      inset:0; 
-      width:100vw; 
-      height:100vh; 
-      display:block; 
-      z-index: 1; /* Behind other content */
-      background: transparent;
-    }
-    .hint{position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
-      background:rgba(0,0,0,.04); border:1px solid rgba(0,0,0,.07); color:#333;
-      padding:8px 12px; border-radius:12px; font-size:12px; letter-spacing:.2px; z-index:100;
-      transition: opacity 0.3s ease;}
-
-    .cube-quote{
-      position:fixed;
-      left:50%;
-      transform:translateX(-50%);
-      color:#111;
-      font-size:16px;
-      z-index:5;
-      text-align:center;
-      transition:opacity 0.3s ease;
+    body.projects{
+      line-height: 1.55;
     }
 
-    .skill-button {
-      position: fixed;
-      transform: translate(-50%, -50%);
-      background: #111; color: white; border: none;
-      padding: 18px 36px; border-radius: 36px; /* bigger */
-      font-family: var(--font-heading); font-weight: 600; font-size: 18px; /* bigger */
-      cursor: pointer; opacity: 0; pointer-events: none; z-index: 2;
-      transition: all 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.1);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.12); scale: 0.5;
-      overflow: hidden; /* for light effect mask */
-      --x: 50%; --y: 50%;
-    }
-    .skill-button.visible { opacity: 1; pointer-events: auto; scale: 1; }
-
-    /* natural light effect on click */
-    .skill-button::after{
-      content: '';
-      position: absolute;
-      left: calc(var(--x) - 60px);
-      top: calc(var(--y) - 60px);
-      width: 120px; height: 120px;
-      border-radius: 50%;
-      pointer-events: none;
-      background: radial-gradient(circle at center,
-        rgba(255,255,255,0.85) 0%,
-        rgba(255,255,255,0.55) 30%,
-        rgba(255,255,255,0.12) 60%,
-        rgba(255,255,255,0) 75%);
-      mix-blend-mode: screen;
-      opacity: 0; transform: scale(0.6);
-      transition: opacity .6s ease, transform .6s ease;
-      filter: blur(0.5px);
-    }
-    .skill-button.lit::after{
-      opacity: 1; transform: scale(1.25);
-    }
-
-    .button-column{
+    main.projects-main{
       position: relative;
-      width: 100%;
-      max-width: 540px;
-      margin: 0 auto;
-      padding: 0 clamp(18px, 6vw, 28px) clamp(220px, 30vh, 340px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: clamp(18px, 4vh, 28px);
-      z-index: 5;
-    }
-    body.projects-touch .button-column{
-      align-items: stretch;
-      padding-bottom: max(260px, 24vh);
-    }
-    body.projects-touch .button-column .skill-button{
-      position: static;
-      transform: none;
-      width: min(100%, 420px);
-      display: block;
-      margin: 0 auto;
-      padding: clamp(16px, 4.5vw, 24px) clamp(22px, 6vw, 32px);
-      font-size: clamp(16px, 4vw, 20px);
-      border-radius: clamp(32px, 14vw, 44px);
-      box-shadow: 0 12px 32px rgba(0,0,0,0.14);
+      z-index: 1;
+      max-width: 1180px;
+      margin: clamp(160px, 22vh, 220px) auto clamp(96px, 12vh, 140px);
+      padding: 0 clamp(20px, 8vw, 72px);
+      box-sizing: border-box;
+      text-align: left;
     }
 
-    body.projects-touch{
-      overflow:auto;
-      overflow-x:hidden;
+    .projects-hero{
+      max-width: 820px;
+      margin: 0 auto clamp(56px, 12vh, 96px);
+      text-align: center;
     }
-    body.projects-touch canvas#stage{
-      position:absolute;
-      height:100vh;
+
+    .projects-hero h1{
+      margin: 0 0 24px;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: clamp(42px, 6.8vw, 70px);
+      letter-spacing: -0.8px;
+      color: #111;
     }
-    body.projects-touch .hint,
-    body.projects-touch .cube-quote{
-      display:none;
+
+    .projects-hero p{
+      font-size: clamp(18px, 2vw, 22px);
+      color: rgba(17,17,17,0.72);
+      margin: 0 auto;
+      max-width: 640px;
+      line-height: 1.65;
     }
-    body.projects-touch .skill-button{
-      width:100%;
-      padding:clamp(16px, 4vw, 22px) clamp(22px, 6vw, 32px);
-      font-size:clamp(15px, 3.6vw, 19px);
+
+    .projects-section{
+      margin-bottom: clamp(64px, 11vh, 104px);
     }
-    body.projects-touch footer{
-      position:static;
-      margin:48px 0 24px;
-      text-align:center;
+
+    .projects-section__heading{
+      margin-bottom: clamp(24px, 5vw, 36px);
+      text-align: center;
     }
-    body.projects-touch header{
-      position:sticky;
-      top:calc(env(safe-area-inset-top) + 12px);
-      left:0;
-      transform:none;
-      width:100%;
-      padding:0 clamp(16px, 6vw, 32px);
-      box-sizing:border-box;
-      display:flex;
-      justify-content:center;
-      z-index:80;
+
+    .projects-section__heading h2{
+      margin: 0 0 12px;
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(17,17,17,0.54);
     }
-    body.projects-touch nav,
-    body.projects-touch .nav{
-      width:min(520px, 100%);
+
+    .projects-section__heading p{
+      margin: 0 auto;
+      max-width: 540px;
+      font-size: 1rem;
+      color: rgba(17,17,17,0.68);
+      line-height: 1.7;
     }
-    body.projects-touch .links{
-      width:100%;
-      flex-wrap:wrap;
-      gap:10px;
-      justify-content:center;
+
+    .projects-grid{
+      display: grid;
+      gap: clamp(22px, 3.4vw, 36px);
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     }
-    body.projects-touch .links .pill{
-      flex:1 1 calc(50% - 10px);
-      max-width:240px;
-      text-align:center;
-      min-width:140px;
+
+    .project-card{
+      position: relative;
+      padding: clamp(22px, 4vw, 30px);
+      border-radius: 24px;
+      border: 1px solid rgba(17,17,17,0.08);
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+      overflow: hidden;
+      cursor: pointer;
     }
-    body.projects-touch canvas#stage{
-      pointer-events:none;
+
+    .project-card::before{
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(17,17,17,0.07) 0%, rgba(17,17,17,0) 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
     }
-    @media (max-width: 900px){
-      body.projects-touch .phrase-line{
-        font-size:clamp(24px, 7vw, 48px);
+
+    .project-card:hover{
+      transform: translateY(-6px);
+      border-color: rgba(17,17,17,0.2);
+      box-shadow: 0 22px 46px rgba(17,17,17,0.14);
+    }
+
+    .project-card:hover::before{
+      opacity: 1;
+    }
+
+    .project-card:focus-visible{
+      outline: 2px solid #111;
+      outline-offset: 4px;
+    }
+
+    .project-card__meta{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-heading);
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(17,17,17,0.45);
+      margin-bottom: 18px;
+    }
+
+    .project-card__title{
+      margin: 0 0 16px;
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      letter-spacing: -0.3px;
+      color: #111;
+    }
+
+    .project-card__description{
+      margin: 0 0 22px;
+      color: rgba(17,17,17,0.72);
+      font-size: 0.98rem;
+      line-height: 1.65;
+    }
+
+    .project-card__tags{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .project-card__tag{
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(17,17,17,0.12);
+      background: rgba(17,17,17,0.06);
+      font-family: var(--font-heading);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(17,17,17,0.66);
+    }
+
+    .project-card__icon{
+      font-size: 1.1rem;
+      transition: transform 0.3s ease;
+    }
+
+    .project-card:hover .project-card__icon{
+      transform: translate(4px, -4px);
+    }
+
+    .modal-backdrop{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      padding: 32px 18px;
+    }
+
+    .modal-backdrop.visible{
+      display: flex;
+    }
+
+    .modal-content{
+      width: min(90vw, 860px);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #050505;
+      color: #f5f5f5;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 28px 72px rgba(0,0,0,0.55);
+      padding: clamp(24px, 4vw, 36px);
+      position: relative;
+    }
+
+    .modal-close{
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .modal-close:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.18);
+    }
+
+    .modal-body{
+      margin-top: 24px;
+      font-size: 0.98rem;
+      line-height: 1.7;
+    }
+
+    .modal-body h2{
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      margin-top: 0;
+      margin-bottom: 18px;
+      text-align: center;
+      letter-spacing: -0.2px;
+    }
+
+    footer{
+      position: relative;
+      z-index: 1;
+      margin: 0 auto clamp(40px, 10vh, 72px);
+      text-align: center;
+      font-size: 0.8rem;
+      color: rgba(17,17,17,0.5);
+    }
+
+    @media (max-width: 820px){
+      main.projects-main{
+        padding: 0 clamp(18px, 7vw, 32px);
+      }
+      .project-card{
+        border-radius: 20px;
+      }
+      .modal-content{
+        width: min(94vw, 720px);
       }
     }
 
-    .nav { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; }
-    .links { display: flex; gap: 12px; }
-    .pill { padding: 8px 16px; background: rgba(255,255,255,0.9);
-      border:1px solid rgba(0,0,0,0.1); border-radius:20px; text-decoration:none;
-      color:#333; font-size:14px; transition: all 0.2s ease; }
-    .pill:hover { background: rgba(0,0,0,0.05); }
-    .pill.active { background: #111; color: white; }
-
-    footer { position: fixed; bottom: 20px; right: 20px; font-size: 12px; color: rgba(0,0,0,0.6); z-index: 100; }
-
-    /* Phrase lines (bigger + farther) */
-    .phrase-line{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      font-weight: 900;
-      font-size: clamp(36px, 5vw, 84px); /* bigger */
-      letter-spacing: .4px; color: #111;
-      z-index: 5; opacity: 0; transition: opacity .35s ease;
-      pointer-events: none; white-space: nowrap; mix-blend-mode: normal;
+    @media (max-width: 640px){
+      header{
+        width: min(100%, 520px);
+      }
+      .projects-hero h1{
+        font-size: clamp(34px, 11vw, 48px);
+      }
+      .modal-content{
+        width: 100%;
+        padding: clamp(20px, 6vw, 28px);
+      }
+      .modal-body{
+        font-size: 0.94rem;
+      }
     }
-    .phrase-line.visible{ opacity: 1; }
-    .phrase-line .segment{
-      display: inline-block; opacity: 0; transform: translateY(10px);
-      transition: opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1);
-      margin: 0 .32em;
-    }
-    .phrase-line .segment.revealed{ opacity: 1; transform: translateY(0); }
-
-    /* Modal (black popup) */
-    .modal-backdrop{
-      position: fixed; inset: 0; z-index: 9999;
-      background: rgba(0,0,0,0.8);
-      opacity: 0; pointer-events: none;
-      transition: opacity .28s ease;
-    }
-    .modal-backdrop.visible{ opacity:1; pointer-events:auto; }
-    .modal-content{
-      position: absolute; left:50%; top:50%; transform: translate(-50%,-50%);
-      width: min(90vw, 860px); min-height: 60vh;
-      background: #000; color: #fff;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px; box-shadow: 0 24px 72px rgba(0,0,0,0.5);
-      padding: 24px 24px 32px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    .modal-close{
-      position:absolute; right:12px; top:10px;
-      width:36px; height:36px; border-radius:10px;
-      background: rgba(255,255,255,0.06); color:#fff;
-      border: 1px solid rgba(255,255,255,0.12);
-      cursor: pointer; font-size:20px; line-height: 1;
-      display:flex; align-items:center; justify-content:center;
-      transition: background .2s ease, transform .2s ease;
-    }
-    .modal-close:hover{ background: rgba(255,255,255,0.12); transform: translateY(-1px); }
-    .modal-body{ margin-top: 28px; color:#ddd; font-size: 15px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <script defer src="../assets/js/particles-config.js"></script>
   <script data-goatcounter="https://alex-port-acc.goatcounter.com/count"
           async src="//gc.zgo.at/count.js"></script>
 </head>
-<body>
+<body class="projects">
   <div id="particles-js"></div>
-  <canvas id="stage" aria-label="Interactive cube particle field"></canvas>
-  <div class="hint" id="hint">Move your cursor to the center to transform the cube &bull; Tap center on mobile</div>
-  <div id="quote" class="cube-quote">"Curiosity has its own reason for existing." &mdash; Albert Einstein</div>
-
-  <!-- phrase containers (filled by JS) -->
-  <div id="phraseTop" class="phrase-line" aria-hidden="true"></div>
-  <div id="phraseBottom" class="phrase-line" aria-hidden="true"></div>
-
-  <!-- reusable black modal popup -->
-  <div id="modal" class="modal-backdrop" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <button class="modal-close" aria-label="Close">&times;</button>
-      <div class="modal-body">
-        <h2 id="modalTitle" style="text-align:center; margin:0;font-size:20px;font-weight:800;letter-spacing:.2px;">Coming soon</h2>
-        <p style="opacity:.8;margin-top:8px;">This section will be filled with project details.</p>
-      </div>
-    </div>
-  </div>
 
   <header>
     <nav class="nav">
-      <div class="links">
+      <div class="links" style="justify-content: center;">
         <a class="pill" href="../" data-goatcounter-click="nav:home">Home</a>
         <a class="pill active" href="../projects/" data-goatcounter-click="nav:projects">Projects</a>
         <a class="pill" href="../services/" data-goatcounter-click="nav:services">Services</a>
       </div>
     </nav>
   </header>
+
+  <main class="projects-main" aria-labelledby="projects-title">
+    <section class="projects-hero">
+      <h1 id="projects-title">What can a Data Engineer build in 2025?</h1>
+      <p>A curated cross-section of production systems delivered across analytics, machine learning, platform engineering, and generative art.</p>
+    </section>
+
+    <section class="projects-section" aria-labelledby="section-data-science">
+      <div class="projects-section__heading">
+        <h2 id="section-data-science">Data Science</h2>
+        <p>Predictive analytics that surface signals hidden in operational noise.</p>
+      </div>
+      <div class="projects-grid">
+        <article class="project-card" data-project="data-science" role="button" tabindex="0" aria-label="Open project: Ambulances at the Door">
+          <div class="project-card__meta">
+            <span>2022</span>
+            <span class="project-card__icon" aria-hidden="true">&nearr;</span>
+          </div>
+          <h3 class="project-card__title">Ambulances at the Door: Predicting ER Off-Load Delays</h3>
+          <p class="project-card__description">Nationwide EMS dataset + Random Forest model to predict bottlenecks before they strand patients on stretchers.</p>
+          <ul class="project-card__tags">
+            <li class="project-card__tag">Python</li>
+            <li class="project-card__tag">Random Forest</li>
+            <li class="project-card__tag">Healthcare Ops</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="projects-section" aria-labelledby="section-ai-ml">
+      <div class="projects-section__heading">
+        <h2 id="section-ai-ml">AI &amp; ML</h2>
+        <p>Applied machine learning systems that automate complex decisions at scale.</p>
+      </div>
+      <div class="projects-grid">
+        <article class="project-card" data-project="machine-learning" role="button" tabindex="0" aria-label="Open project: Wafer Scratch Detection">
+          <div class="project-card__meta">
+            <span>2024</span>
+            <span class="project-card__icon" aria-hidden="true">&nearr;</span>
+          </div>
+          <h3 class="project-card__title">Wafer Scratch Detection for Semiconductor Yield</h3>
+          <p class="project-card__description">Spatial ML pipeline that flags elongated scratch patterns hiding inside millions of wafer dies.</p>
+          <ul class="project-card__tags">
+            <li class="project-card__tag">Python</li>
+            <li class="project-card__tag">XGBoost</li>
+            <li class="project-card__tag">SHAP</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="projects-section" aria-labelledby="section-automations">
+      <div class="projects-section__heading">
+        <h2 id="section-automations">Automations</h2>
+        <p>Operational automations that remove repetitive work and keep growth loops accountable.</p>
+      </div>
+      <div class="projects-grid">
+        <article class="project-card" data-project="automations" role="button" tabindex="0" aria-label="Open project: n8n Automations & Marketing Workflows">
+          <div class="project-card__meta">
+            <span>2023</span>
+            <span class="project-card__icon" aria-hidden="true">&nearr;</span>
+          </div>
+          <h3 class="project-card__title">n8n Automations &amp; Marketing Workflows</h3>
+          <p class="project-card__description">A stack of n8n and Make automations orchestrating lead capture, CRM hygiene, and campaign analytics.</p>
+          <ul class="project-card__tags">
+            <li class="project-card__tag">n8n</li>
+            <li class="project-card__tag">Make</li>
+            <li class="project-card__tag">Analytics</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="projects-section" aria-labelledby="section-ai-art">
+      <div class="projects-section__heading">
+        <h2 id="section-ai-art">AI Art</h2>
+        <p>Creative experiments that blend generative AI with real-time storytelling.</p>
+      </div>
+      <div class="projects-grid">
+        <article class="project-card" data-project="ai-art" role="button" tabindex="0" aria-label="Open project: Generative Media & Visual Systems">
+          <div class="project-card__meta">
+            <span>2024</span>
+            <span class="project-card__icon" aria-hidden="true">&nearr;</span>
+          </div>
+          <h3 class="project-card__title">Generative Media &amp; Visual Systems</h3>
+          <p class="project-card__description">Production-ready AI art pipeline blending prompt craft, custom LoRA training, and automated batch orchestration.</p>
+          <ul class="project-card__tags">
+            <li class="project-card__tag">ComfyUI</li>
+            <li class="project-card__tag">LoRA</li>
+            <li class="project-card__tag">Automation</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+    <div id="projectModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button type="button" class="modal-close" aria-label="Close project details">&times;</button>
+        <div class="modal-body">
+          <h2 id="modalTitle"></h2>
+          <div id="modalContent"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <footer>
-    © 2025 Alex Shvachko.
+    &copy; 2025 Alex Shvachko.
   </footer>
 
   <script>
-  (function(){
-  const cvs = document.getElementById('stage');
-  const ctx = cvs.getContext('2d');
-  const hint = document.getElementById('hint');
-  const phraseTop = document.getElementById('phraseTop');
-  const phraseBottom = document.getElementById('phraseBottom');
-  const quote = document.getElementById('quote');
-  const modalEl = document.getElementById('modal');
-    const modalClose = modalEl.querySelector('.modal-close');
-    const modalContent = modalEl.querySelector('.modal-content');
-    const modalBody = modalEl.querySelector('.modal-body');
-    const headerEl = document.querySelector('header');
-    modalEl.style.display = 'none';
-    const DPR = Math.min(devicePixelRatio || 1, 2);
-
-    let W=0, H=0, last=performance.now();
-    let GRID = 105, SIZE = 0, CX=0, CY=0, CELL=0;
-
-    // State machine: 'idle' -> 'phrase' -> 'dismember' -> 'done'
-    let phase = 'idle';
-    let transformTriggered = false;
-    let transformProgress = 0;
-    let transformComplete = false;
-    let distortionAmount = 0;
-    const coarseQuery = window.matchMedia('(pointer: coarse)');
-    const isCoarseLayout = () => coarseQuery.matches || innerWidth <= 900;
-    let autoStartScheduled = false;
-
-    function scheduleAutoStart(){
-      if (autoStartScheduled) return;
-      autoStartScheduled = true;
-      if (hint){
-        hint.style.opacity = '0';
-        setTimeout(() => { hint.style.display = 'none'; }, 220);
-      }
-      if (quote){
-        quote.style.opacity = '0';
-        setTimeout(() => { quote.style.display = 'none'; }, 220);
-      }
-      setTimeout(() => {
-        if (phase === 'idle') startPhraseSequence();
-      }, 320);
-    }
-
-  const projects = {
-    'Data Science': {
-      title: 'Ambulances at the Door: Predicting ER Off-Load Delays (Israel, 2022)',
-      content: `
-        <div style="text-align: center; margin-bottom: 1rem;">
-          <img src="../assets/img/er.png" alt="ER Off-Load Delay Analysis" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-        </div>
-        <h2>Backstory</h2>
-        <p>Ambulances were arriving to ERs and waiting on stretchers because no bed was immediately available. That delay cascades: worse patient experience, staff overload, and lower system throughput. I set out to measure the problem end-to-end and predict delays so dispatchers and ERs can act before bottlenecks form.</p>
-        
-        <h2>Data & Label</h2>
-        <p>436,7k+ ambulance->ER entries (2022, nationwide) with timestamps, location, patient age, clinical code, arrival hour, ER load proxies, and more.</p>
-        <p>Engineered features: hospital size & region, shift (day/evening/night), simultaneous ambulance arrivals, and current ER occupancy proxy.</p>
-        <p>Delay definition ("bottleneck") followed operational rules: 20 min for BLS, 30 min for ALS/paramedic off-load.</p>
-        <p><strong>Fun (scary) fact:</strong> mean wait 36.2 min, and ~79.5% of arrivals met the "delayed" threshold&mdash;so this is systemic, not anecdotal.</p>
-        
-        <h2>Approach</h2>
-        <p>Cleaning + feature engineering; categorical encoding & normalization; train/valid splits with cross-validation.</p>
-        <p>Tried logistic regression; moved to Random Forest to capture non-linear interactions and mixed feature types.</p>
-        <p>Imputation and sanity checks for extreme ages/outliers; visual analysis of seasonality & hourly patterns.</p>
-        
-        <h2>Results (Classifier)</h2>
-        <p>Optimized for high recall (better to flag potential delays than miss them):</p>
-        <p>Test F1: 0.885&emsp;Precision: 0.801&emsp;Recall: 0.989<br>
-        Accuracy: 0.797&emsp;Specificity: 0.055 (expected tradeoff)<br>
-        ROC-AUC: 0.692 (room to lift with richer real-time features)</p>
-        <p><em>Translation:</em> the model catches almost all delay cases; it intentionally over-alerts when capacity is tight. (Threshold can be tuned per hospital.)</p>
-        
-        <h2>What drives delay (feature importance)</h2>
-        <ul>
-          <li>Patient age&mdash;older patients increase off-load time (bed type/triage complexity).</li>
-          <li>ER occupancy % at arrival&mdash;the denser the unit, the slower the handoff.</li>
-          <li>Arrival hour/shift and simultaneous ambulance load&mdash;crowding effects.</li>
-          <li>Clinical code (chief complaint)&mdash;certain cases require more prep.</li>
-          <li>Geography/facility size and crew/base metadata&mdash;local operating patterns.</li>
-        </ul>
-        
-        <h2>Key Insights (operational)</h2>
-        <ul>
-          <li>Capacity, not paperwork, is the bottleneck. Delay tracks ER occupancy and batch arrivals.</li>
-          <li>Routing beats waiting. Steering borderline cases to nearby, less-crowded ERs should reduce queueing.</li>
-          <li>Age-aware triage prep (bed readiness before wheels-stop) can cut minutes where it matters most.</li>
-          <li>Seasonality & time-of-day patterns are real; staff scheduling can be aligned to predicted peaks.</li>
-        </ul>
-        
-        <h2>Challenges</h2>
-        <ul>
-          <li>Single-year view (2022)&mdash;good for a first pass, but more years would solidify seasonality trends.</li>
-          <li>Timing discrepancies between EMS and hospital clocks; imperfect visibility into exact "bed ready" state.</li>
-          <li>Label imbalance (many "delays") pushes the model toward recall; specificity is low by design and needs per-site thresholding.</li>
-          <li>Limited direct signals about real-time bed availability and triage severity at minute-resolution.</li>
-        </ul>
-        
-        <h2>What I'd Build Next (practical roadmap)</h2>
-        <ul>
-          <li>Per-hospital threshold calibration (precision&ndash;recall tradeoff by ops goals).</li>
-          <li>Live occupancy feed + streaming features -> upgrade to online inference and ETA-aware dispatch.</li>
-          <li>Cost-sensitive learning (missed-delay > false-alarm) and XGBoost/GBTs with calibrated probabilities.</li>
-          <li>Tactical dashboard for dispatchers: recommended destination + predicted off-load time + confidence band.</li>
-          <li>A/B test: dynamic routing versus status-quo during peak windows.</li>
-        </ul>
-        
-      `
-    },
-    'Machine Learning': {
-      title: 'Wafer Scratch Detection &mdash; Semiconductor Yield Optimization',
-      content: `
-        <div style="display:flex; gap:12px; align-items:center; justify-content:center; margin: 4px 0 16px;">
-          <figure style="flex:1; margin:0;">
-            <img src="../assets/img/wafer_map_input.png" alt="Wafer map input" style="width:100%; height:auto; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); background:#111;" />
-            <figcaption style="font-size:12px; opacity:.8; margin-top:6px; text-align:center;">Input wafer map</figcaption>
-          </figure>
-          <figure style="flex:1; margin:0;">
-            <img src="../assets/img/wafer_map_target.png" alt="Wafer map target (scratch)" style="width:100%; height:auto; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); background:#111;" />
-            <figcaption style="font-size:12px; opacity:.8; margin-top:6px; text-align:center;">Target (scratch) label</figcaption>
-          </figure>
-        </div>
-        <h2>Backstory</h2>
-        <p>Semiconductor fabrication produces thousands of dies per wafer, where even minor defects can cascade into massive production losses. Among these, scratch patterns are particularly challenging to detect: they often appear as subtle, elongated streaks hidden within dense arrays of mostly functional dies. Manual inspection is slow and inconsistent, making automation essential.</p>
-
-        <h2>Approach</h2>
-        <p>I developed a machine learning pipeline to automatically detect wafer scratches and distinguish them from random die failures. The process included:</p>
-        <ul>
-          <li>Data preprocessing of large-scale wafer maps with millions of dies.</li>
-          <li>Feature engineering around spatial patterns: neighborhood bad-die density, distance to wafer edge, radial orientation, and clustering metrics.</li>
-          <li>Training a highly imbalanced binary classifier, optimized to maximize recall on scratch wafers while keeping false alarms manageable.</li>
-          <li>Applying explainability tools (SHAP values) to identify the features that drove detection (e.g., density of local bad dies, corridor ratios, radial alignment).</li>
-        </ul>
-
-        <div style="text-align:center; margin: 16px 0;">
-          <img src="../assets/img/my_results.png" alt="Model results visualization" style="max-width:100%; height:auto; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);" />
-          <div style="font-size:12px; opacity:.8; margin-top:6px;">My model results on evaluation wafers</div>
-        </div>
-
-        <h2>Results</h2>
-        <ul>
-          <li>ROC-AUC: 0.9984</li>
-          <li>Accuracy: 99.7% overall</li>
-          <li>F1-score for scratch class: 0.808, with recall of 0.826 (catching most scratch wafers).</li>
-          <li>Model consistently separated scratch patterns from random die distributions, as validated across multiple wafer sets.</li>
-          <li>Visual overlays confirmed that detected scratch regions aligned with the true elongated defect patterns.</li>
-        </ul>
-
-        <h2>Key Insights</h2>
-        <ul>
-          <li>Wafer yield alone was not sufficient; spatial arrangement of defects was the decisive factor.</li>
-          <li>Local density windows (5&times;5, 7&times;7, 10&times;10 neighborhoods) and line-detection features contributed most to model performance.</li>
-          <li>Explainability analysis showed that proximity to existing bad dies and scratch &ldquo;corridor ratios&rdquo; were strong predictors of systematic scratches.</li>
-        </ul>
-
-        <h2>Challenges</h2>
-        <ul>
-          <li>Severe class imbalance (scratch wafers were rare) required careful sampling and threshold tuning.</li>
-          <li>Need to balance recall (catching scratches) against specificity (avoiding false alarms on random failures).</li>
-          <li>Wafer patterns are high-dimensional but sparse; engineering interpretable spatial features was crucial.</li>
-        </ul>
-
-        <h2>Impact & Next Steps</h2>
-        <p>This system demonstrates how ML can augment semiconductor QA, replacing manual inspection with scalable, explainable automation. Next steps would include:</p>
-        <ul>
-          <li>Real-time deployment on wafer production lines.</li>
-          <li>Integration with optical image data for multimodal detection.</li>
-          <li>Adaptive thresholds tuned to fab-specific defect distributions.</li>
-        </ul>
-
-        <div style="text-align:center; margin-top: 16px;">
-          <img src="../assets/img/metrics_scratch_Detection.png" alt="Scratch detection metrics" style="max-width:100%; height:auto; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);" />
-          <div style="font-size:12px; opacity:.8; margin-top:6px;">Metrics: Scratch Detection</div>
-        </div>
-      `
-    },
-    'Data Engineering': { title: 'Data Engineering Project', content: 'Coming soon...' },
-    'Automations': {
-      title: 'n8n Automations & Marketing Workflows',
-      content: `
-        <blockquote style="margin:0 0 12px; padding-left:14px; border-left:3px solid rgba(255,255,255,0.2); opacity:.9;">
-          «A computer can never be held accountable. Therefore a computer must never make a management decision.»<br>
-          <span style="opacity:.7; font-size:12px;">&mdash; IBM, 1979</span>
-        </blockquote>
-
-        <div style="text-align:center; margin: 8px 0 16px;">
-          <img src="../assets/img/n8n_marketing.png" alt="n8n marketing automation workflow" style="max-width:100%; height:auto; border-radius:12px; box-shadow: 0 8px 28px rgba(0,0,0,0.45);" />
-        </div>
-
-        <p>I design and implement end-to-end automation workflows in n8n, with a focus on marketing and content operations. My automations combine data collection, content generation, scheduling, and engagement tracking into seamless pipelines that remove repetitive work and accelerate growth.</p>
-
-        <p style="opacity:.95;">Each run costs less than <strong>$0.05</strong> and delivers a full package: robust data engineering, aggregation and advanced metrics, followed by <strong>OpenAI advanced reasoning</strong> to support a clear decision (publish, iterate, or pause). This gives you measurable impact at minimal cost.</p>
-
-        <p>One of my key projects is a full auto-marketing workflow:</p>
-        <ul>
-          <li><strong>Content Research & Planning</strong> &mdash; automated web scraping, trend monitoring, and data enrichment to feed content ideas.</li>
-          <li><strong>AI-Assisted Creation</strong> &mdash; connecting to LLMs for script drafting, caption generation, and visual prompt preparation.</li>
-          <li><strong>Scheduling & Publishing</strong> &mdash; automated multi-platform posting with optimal timing based on engagement analytics.</li>
-          <li><strong>Audience Engagement</strong> &mdash; auto-responses and lead capture flows to keep interactions active while staying authentic.</li>
-          <li><strong>Analytics Feedback Loop</strong> &mdash; collecting KPIs from platforms and feeding them back into the pipeline for iterative optimization.</li>
-        </ul>
-        <p>This setup acts as a self-updating growth engine: it researches, creates, publishes, engages, and learns&mdash;all without manual intervention, while still leaving room for human creativity and strategy.</p>
-      `
-    },
-    'DB Managment': { title: 'Databases and Big Data', content: 'Coming soon...' },
-    'AI Art': {
-      title: 'Generative Media & Visual Systems',
-      content: `
-        <p>Generative art is my daily craft and passion. Over the last 2+ years I've evolved a storytelling-first workflow that turns rough concepts into production-ready visuals with consistent identity, mood, and lighting.</p>
-
-        <p>I'm proficient with VACE, ComfyUI, Forge, Kling, Veo, Huggisfield, Leonardo, Pika, and many more. I design modular graphs, seed-stable pipelines, and reproducible prompt recipes so results can be recreated exactly or evolved deliberately.</p>
-
-        <p>Beyond generation, I can train high-quality, consistent LoRA models: dataset curation, tagging and cleaning, parameter search, and style alignment so characters stay on-model across sessions and shots.</p>
-
-        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin: 8px 0 20px;">
-          <p style="margin:0 6px 4px; font-weight:600; letter-spacing:.2px; text-transform:uppercase; font-size:12px; opacity:.85; text-align:center;">Before</p>
-          <img src="../assets/img/draft.png" alt="Before: base draft prior to refinements" style="max-width:900px; width:100%; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.35);" />
-          <p style="margin:8px 6px 0; font-weight:600; letter-spacing:.2px; text-transform:uppercase; font-size:12px; opacity:.85; text-align:center;">After</p>
-          <img src="../assets/img/final_disney.png" alt="After: final Disney-inspired render after my workflow" style="max-width:900px; width:100%; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.35);" />
-        </div>
-
-        <p>The pipeline blends creative direction with engineering discipline: controlled prompts, negative prompt libraries, shot lists, costume and prop constraints, LUT-aware lighting, and automated upscaling or restoration when needed.</p>
-
-        <p>For teams, I document every run (seeds, parameters, node hashes) and automate batches with n8n so iterations are traceable, schedulable, and cost-aware.</p>
-
-        <p>This closing showcase proves how expansive the pipeline can be, addressing the possibilities and the diversity of characters you can bring to life.</p>
-
-        <img src="../assets/img/div3.png" alt="Showcase of diverse AI-generated characters" style="width:100%; border-radius:12px; margin: 20px 0 8px;" />
-      `
-    }
-  };
-  
-  const buttonLabels = Object.keys(projects);
-  let buttons = [];
-  let buttonColumn = null;
-  const particles = [];
-
-  const mouse = {x:0, y:0, active:false, vx:0, vy:0, px:0, py:0};
-
-  // ----- Modal helpers -----
-  function openModal(projectTitle) {
-    const project = projects[projectTitle];
-    if (project) {
-      const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      modalBody.innerHTML = `
-        <h2 id="modalTitle" style="text-align:center; margin:0;font-size:20px;font-weight:800;letter-spacing:.2px;">${project.title}</h2>
-        ${project.content}
+    (function(){
+      const modalEl = document.getElementById('projectModal');
+      const modalClose = modalEl.querySelector('.modal-close');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalContent = document.getElementById('modalContent');
+      const hireCta = `
         <div style="margin-top: 40px; text-align: center;">
-          <a href="/#contact-info" class="pill" data-analytics="hire" style="display: inline-block; text-decoration: none; background: white; color: #111; padding: 12px 24px; font-weight: 600; border-radius: 24px; transition: all 0.2s ease; border: 1px solid #eee;">
+          <a href="/#contact-info" class="pill" style="display: inline-block; text-decoration: none; background: white; color: #111; padding: 12px 24px; font-weight: 600; border-radius: 24px; transition: all 0.2s ease; border: 1px solid #eee;">
             Hire Me
           </a>
         </div>
       `;
-      modalEl.style.display = 'block';
-      modalEl.classList.add('visible');
-      modalEl.setAttribute('aria-hidden', 'false');
-      modalContent.scrollTop = 0;
-      window.goatcounter?.count({
-        path: 'event/modal/open',
-        title: `Modal Open - ${project.title}`,
-        event: true
-      });
-      const hireLink = modalBody.querySelector('a[data-analytics="hire"]');
-      if (hireLink) {
-        hireLink.addEventListener('click', () => {
-          window.goatcounter?.count({
-            path: `event/hire/click/${slug}`,
-            title: `Hire Me Click - ${project.title}`,
-            event: true
-          });
-        });
-      }
-    }
-  }
-  function closeModal(){
-    modalEl.classList.remove('visible');
-    modalEl.setAttribute('aria-hidden','true');
-    modalEl.style.display = 'none';
-    window.goatcounter?.count({
-      path: 'event/modal/close',
-      title: 'Modal Close',
-      event: true
-    });
-    // iOS sometimes triggers no resize when the URL bar toggles.
-    // Ensure the skill buttons stay visible after closing the modal.
-    if (transformTriggered && buttons && buttons.length){
-      buttons.forEach(btn => btn.element && btn.element.classList.add('visible'));
-    }
-  }
-  modalClose.addEventListener('click', closeModal);
 
-  function getHeaderClearance(){
-    if(!headerEl) return 0;
-    const rect = headerEl.getBoundingClientRect();
-    if(!rect) return 0;
-    const isColumn = document.body.classList.contains('projects-touch');
-    const rootStyles = getComputedStyle(document.documentElement);
-    const safeTopRaw = rootStyles.getPropertyValue('env(safe-area-inset-top)') || '0';
-    const safeTop = parseFloat(safeTopRaw) || 0;
-    if (!isColumn) {
-      return rect.bottom + safeTop + 32;
-    }
-    const visualGap = Math.max(36, rect.height * 0.3);
-    const clearance = rect.bottom + safeTop + visualGap;
-    const minClear = Math.max(180, Math.round(innerHeight * 0.22));
-    return Math.max(clearance, minClear);
-  }
-  modalEl.addEventListener('click', (e)=>{ if (e.target === modalEl) closeModal(); });
-  addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeModal(); });
-
-  // ----- Phrase helpers -----
-  const phraseTimeouts = [];
-  const topSegments = ['What can a','data engineer'];
-  const bottomSegments = ['build','in 2025?'];
-
-  function clearPhraseTimers(){ while (phraseTimeouts.length) clearTimeout(phraseTimeouts.pop()); }
-  function buildPhrase(){
-    phraseTop.innerHTML = topSegments.map(t => `<span class="segment">${t}</span>`).join(' ');
-    phraseBottom.innerHTML = bottomSegments.map(t => `<span class="segment">${t}</span>`).join(' ');
-  }
-  function positionPhrase(){
-    const cxCSS = CX / DPR;
-
-    // Farther from cube edges (scaled + mins)
-    const offsetTop    = Math.max(140, SIZE * 0.32) / DPR;
-    const offsetBottom = Math.max(160, SIZE * 0.36) / DPR;
-
-    let topY = (CY - SIZE/2) / DPR - offsetTop - 50;
-    let bottomY = (CY + SIZE/2) / DPR + offsetBottom;
-
-    const headerClear = getHeaderClearance();
-    if (headerClear) {
-      topY = Math.max(headerClear, topY);
-    }
-    // Safety to keep on screen
-    topY = Math.max(12, topY);
-    bottomY = Math.min((H / DPR) - 24, bottomY);
-
-    phraseTop.style.top = `${topY}px`;
-    phraseBottom.style.top = `${bottomY}px`;
-    phraseTop.style.left = phraseBottom.style.left = `${cxCSS}px`;
-  }
-
-  function positionQuote(){
-    if(!quote) return;
-    const cxCSS = CX / DPR;
-    const offsetQuote = Math.max(140, SIZE * 0.32) / DPR;
-    let quoteY = (CY - SIZE/2) / DPR - offsetQuote;
-    const headerClear = getHeaderClearance();
-    if (headerClear) {
-      quoteY = Math.max(headerClear, quoteY);
-    }
-    quoteY = Math.max(12, quoteY);
-    quote.style.top = `${quoteY}px`;
-    quote.style.left = `${cxCSS}px`;
-  }
-  function showPhrase(){
-    phraseTop.classList.add('visible');
-    phraseBottom.classList.add('visible');
-  }
-  function hidePhrase(){
-    phraseTop.classList.remove('visible');
-    phraseBottom.classList.remove('visible');
-    phraseTop.querySelectorAll('.segment').forEach(s => s.classList.remove('revealed'));
-    phraseBottom.querySelectorAll('.segment').forEach(s => s.classList.remove('revealed'));
-  }
-  function startPhraseSequence(){
-    if (phase !== 'idle') return;
-    phase = 'phrase';
-    hint.style.opacity = '0';
-    if(quote){
-      quote.style.opacity = '0';
-      setTimeout(() => { quote.style.display = 'none'; }, 300);
-    }
-    buildPhrase();
-    positionPhrase();
-    showPhrase();
-
-    // Reveal 1/4 every 0.5s for a snappier cadence
-    const schedule = [
-      { t: 0,    line: 'top',    idx: 0 },
-      { t: 500,  line: 'top',    idx: 1 },
-      { t: 1000, line: 'bottom', idx: 0 },
-      { t: 1500, line: 'bottom', idx: 1 },
-    ];
-    schedule.forEach(item => {
-      phraseTimeouts.push(setTimeout(() => {
-        const lineEl = item.line === 'top' ? phraseTop : phraseBottom;
-        const seg = lineEl.querySelectorAll('.segment')[item.idx];
-        if (seg) seg.classList.add('revealed');
-      }, item.t));
-    });
-
-    // After last reveal at 1500ms, wait +1000ms => 2500ms total, then dismember faster
-    phraseTimeouts.push(setTimeout(() => {
-      hidePhrase();         // fade out text
-      triggerTransform();   // start particle -> buttons
-      phase = 'dismember';
-    }, 2500));
-  }
-
-  // ----- Buttons -----
-  function createButtons(useColumnLayout){
-    buttons.forEach(btn => btn.element && btn.element.remove());
-    if (buttonColumn) {
-      buttonColumn.remove();
-      buttonColumn = null;
-    }
-    buttons = [];
-    const columnLayout = Boolean(useColumnLayout);
-    const baseRadius = Math.min(W, H) * 0.25;
-    const angleStep = columnLayout ? 0 : (Math.PI * 2) / buttonLabels.length;
-    let columnStart = 0;
-    let columnSpacing = 0;
-
-    if (columnLayout){
-      buttonColumn = document.createElement('div');
-      buttonColumn.className = 'button-column';
-      const footerEl = document.querySelector('footer');
-      if (footerEl) {
-        document.body.insertBefore(buttonColumn, footerEl);
-      } else {
-        document.body.appendChild(buttonColumn);
-      }
-      const headerClearPx = getHeaderClearance();
-      const minStartCss = Math.max(220, Math.round(innerHeight * 0.26));
-      const maxTopCss = (H / DPR) - 240;
-      let topGuardCss = Math.max(headerClearPx, minStartCss);
-      if (Number.isNaN(topGuardCss)) topGuardCss = minStartCss;
-      if (isFinite(maxTopCss) && maxTopCss > minStartCss) {
-        topGuardCss = Math.min(topGuardCss, maxTopCss);
-      }
-      let topGuard = topGuardCss * DPR;
-      const bottomGuard = Math.max(topGuard + 1, H - 180 * DPR);
-      const verticalSpan = Math.max(bottomGuard - topGuard, 1);
-      if (buttonLabels.length > 1){
-        columnSpacing = verticalSpan / (buttonLabels.length - 1);
-        columnSpacing = Math.max(110 * DPR, Math.min(170 * DPR, columnSpacing));
-        columnSpacing = Math.min(columnSpacing, verticalSpan);
-      } else {
-        columnSpacing = 0;
-      }
-      const totalSpan = columnSpacing * Math.max(0, buttonLabels.length - 1);
-      const centeredStart = CY - totalSpan / 2;
-      const maxStart = bottomGuard - totalSpan;
-      columnStart = buttonLabels.length > 1
-        ? Math.max(topGuard, Math.min(centeredStart, maxStart))
-        : Math.max(topGuard, Math.min(CY, bottomGuard));
-      const firstButtonTop = Math.round(topGuardCss + 24);
-      buttonColumn.style.marginTop = `${firstButtonTop}px`;
-    }
-
-    buttonLabels.forEach((label, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'skill-button';
-      btn.textContent = label;
-      const host = columnLayout && buttonColumn ? buttonColumn : document.body;
-      host.appendChild(btn);
-      let angle = 0;
-      let x = CX;
-      let y = CY;
-      if (columnLayout){
-        const spacing = columnSpacing;
-        y = columnStart + (spacing * i);
-      } else {
-        angle = i * angleStep - Math.PI/2;
-        x = CX + Math.cos(angle) * baseRadius;
-        y = CY + Math.sin(angle) * baseRadius;
-      }
-      if (!columnLayout){
-        btn.style.left = (x / DPR) + 'px';
-        btn.style.top  = (y / DPR) + 'px';
-      } else {
-        btn.style.left = '';
-        btn.style.top  = '';
-      }
-      // light effect listeners
-      const updateXY = (e) => {
-        const r = btn.getBoundingClientRect();
-        const cx = (e.clientX - r.left);
-        const cy = (e.clientY - r.top);
-        btn.style.setProperty('--x', cx + 'px');
-        btn.style.setProperty('--y', cy + 'px');
+      const projectsData = {
+        'data-science': {
+          title: 'Ambulances at the Door: Predicting ER Off-Load Delays (Israel, 2022)',
+          content: `
+            <div style="text-align: center; margin-bottom: 1rem;">
+              <img src="../assets/img/er.png" alt="ER Off-Load Delay Analysis" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            </div>
+            <h2>Backstory</h2>
+            <p>Ambulances were arriving to ERs and waiting on stretchers because no bed was immediately available. That delay cascades: worse patient experience, staff overload, and lower system throughput. I set out to measure the problem end-to-end and predict delays so dispatchers and ERs can act before bottlenecks form.</p>
+            <h2>Data &amp; Label</h2>
+            <p>436.7k+ ambulance-to-ER entries (2022, nationwide) with timestamps, location, patient age, clinical code, arrival hour, ER load proxies, and more.</p>
+            <p>Engineered features: hospital size &amp; region, shift (day/evening/night), simultaneous ambulance arrivals, and current ER occupancy proxy.</p>
+            <p>Delay definition (&ldquo;bottleneck&rdquo;) followed operational rules: 20 min for BLS, 30 min for ALS/paramedic off-load.</p>
+            <p><strong>Fun (scary) fact:</strong> mean wait 36.2 min, and ~79.5% of arrivals met the &ldquo;delayed&rdquo; threshold&mdash;so this is systemic, not anecdotal.</p>
+            <h2>Approach</h2>
+            <p>Cleaning + feature engineering; categorical encoding &amp; normalization; train/valid splits with cross-validation.</p>
+            <p>Tried logistic regression; moved to Random Forest to capture non-linear interactions and mixed feature types.</p>
+            <p>Imputation and sanity checks for extreme ages/outliers; visual analysis of seasonality &amp; hourly patterns.</p>
+            <h2>Results (Classifier)</h2>
+            <p>Optimized for high recall (better to flag potential delays than miss them):</p>
+            <p>Test F1: 0.885&emsp;Precision: 0.801&emsp;Recall: 0.989<br>
+            Accuracy: 0.797&emsp;Specificity: 0.055 (expected tradeoff)<br>
+            ROC-AUC: 0.692 (room to lift with richer real-time features)</p>
+            <p><em>Translation:</em> the model catches almost all delay cases; it intentionally over-alerts when capacity is tight. (Threshold can be tuned per hospital.)</p>
+            <h2>What drives delay (feature importance)</h2>
+            <ul>
+              <li>Patient age&mdash;older patients increase off-load time (bed type/triage complexity).</li>
+              <li>ER occupancy % at arrival&mdash;the denser the unit, the slower the handoff.</li>
+              <li>Arrival hour/shift and simultaneous ambulance load&mdash;crowding effects.</li>
+              <li>Clinical code (chief complaint)&mdash;certain cases require more prep.</li>
+              <li>Geography/facility size and crew/base metadata&mdash;local operating patterns.</li>
+            </ul>
+            <h2>Key Insights (operational)</h2>
+            <ul>
+              <li>Capacity, not paperwork, is the bottleneck. Delay tracks ER occupancy and batch arrivals.</li>
+              <li>Routing beats waiting. Steering borderline cases to nearby, less-crowded ERs should reduce queueing.</li>
+              <li>Age-aware triage prep (bed readiness before wheels-stop) can cut minutes where it matters most.</li>
+              <li>Seasonality &amp; time-of-day patterns are real; staff scheduling can be aligned to predicted peaks.</li>
+            </ul>
+            <h2>Challenges</h2>
+            <ul>
+              <li>Single-year view (2022)&mdash;good for a first pass, but more years would solidify seasonality trends.</li>
+              <li>Timing discrepancies between EMS and hospital clocks; imperfect visibility into exact &ldquo;bed ready&rdquo; state.</li>
+              <li>Label imbalance (many &ldquo;delays&rdquo;) pushes the model toward recall; specificity is low by design and needs per-site thresholding.</li>
+              <li>Limited direct signals about real-time bed availability and triage severity at minute-resolution.</li>
+            </ul>
+            <h2>What I'd Build Next (practical roadmap)</h2>
+            <ul>
+              <li>Per-hospital threshold calibration (precision&ndash;recall tradeoff by ops goals).</li>
+              <li>Live occupancy feed + streaming features to upgrade to online inference and ETA-aware dispatch.</li>
+              <li>Cost-sensitive learning (missed-delay &gt; false-alarm) and gradient-boosted trees with calibrated probabilities.</li>
+              <li>Tactical dashboard for dispatchers: recommended destination + predicted off-load time + confidence band.</li>
+              <li>A/B test: dynamic routing versus status-quo during peak windows.</li>
+            </ul>
+          `
+        },
+        'machine-learning': {
+          title: 'Wafer Scratch Detection &mdash; Semiconductor Yield Optimization',
+          content: `
+            <div style="display:flex; gap:12px; align-items:center; justify-content:center; margin: 4px 0 16px; flex-wrap:wrap;">
+              <figure style="flex:1 1 280px; margin:0;">
+                <img src="../assets/img/wafer_map_input.png" alt="Wafer map input" style="width:100%; height:auto; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); background:#111;">
+                <figcaption style="font-size:12px; opacity:.8; margin-top:6px; text-align:center;">Input wafer map</figcaption>
+              </figure>
+              <figure style="flex:1 1 280px; margin:0;">
+                <img src="../assets/img/wafer_map_target.png" alt="Wafer map target (scratch)" style="width:100%; height:auto; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); background:#111;">
+                <figcaption style="font-size:12px; opacity:.8; margin-top:6px; text-align:center;">Target (scratch) label</figcaption>
+              </figure>
+            </div>
+            <h2>Backstory</h2>
+            <p>Semiconductor fabrication produces thousands of dies per wafer, where even minor defects can cascade into massive production losses. Among these, scratch patterns are particularly challenging to detect: they often appear as subtle, elongated streaks hidden within dense arrays of mostly functional dies. Manual inspection is slow and inconsistent, making automation essential.</p>
+            <h2>Approach</h2>
+            <p>I developed a machine learning pipeline to automatically detect wafer scratches and distinguish them from random die failures. The process included:</p>
+            <ul>
+              <li>Data preprocessing of large-scale wafer maps with millions of dies.</li>
+              <li>Feature engineering around spatial patterns: neighborhood bad-die density, distance to wafer edge, radial orientation, and clustering metrics.</li>
+              <li>Training a highly imbalanced binary classifier, optimized to maximize recall on scratch wafers while keeping false alarms manageable.</li>
+              <li>Applying explainability tools (SHAP values) to identify the features that drove detection (e.g., density of local bad dies, corridor ratios, radial alignment).</li>
+            </ul>
+            <div style="text-align:center; margin: 16px 0;">
+              <img src="../assets/img/my_results.png" alt="Model results visualization" style="max-width:100%; height:auto; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+              <div style="font-size:12px; opacity:.8; margin-top:6px;">Model results on evaluation wafers</div>
+            </div>
+            <h2>Results</h2>
+            <ul>
+              <li>ROC-AUC: 0.9984</li>
+              <li>Accuracy: 99.7% overall</li>
+              <li>F1-score for scratch class: 0.808, with recall of 0.826 (catching most scratch wafers).</li>
+              <li>Model consistently separated scratch patterns from random die distributions, as validated across multiple wafer sets.</li>
+              <li>Visual overlays confirmed that detected scratch regions aligned with the true elongated defect patterns.</li>
+            </ul>
+            <h2>Key Insights</h2>
+            <ul>
+              <li>Wafer yield alone was not sufficient; spatial arrangement of defects was the decisive factor.</li>
+              <li>Local density windows (5&times;5, 7&times;7, 10&times;10 neighborhoods) and line-detection features contributed most to model performance.</li>
+              <li>Explainability analysis showed that proximity to existing bad dies and scratch &ldquo;corridor ratios&rdquo; were strong predictors of systematic scratches.</li>
+            </ul>
+            <h2>Challenges</h2>
+            <ul>
+              <li>Severe class imbalance (scratch wafers were rare) required careful sampling and threshold tuning.</li>
+              <li>Need to balance recall (catching scratches) against specificity (avoiding false alarms on random failures).</li>
+              <li>Wafer patterns are high-dimensional but sparse; engineering interpretable spatial features was crucial.</li>
+            </ul>
+            <h2>Impact &amp; Next Steps</h2>
+            <p>This system demonstrates how ML can augment semiconductor QA, replacing manual inspection with scalable, explainable automation. Next steps would include:</p>
+            <ul>
+              <li>Real-time deployment on wafer production lines.</li>
+              <li>Integration with optical image data for multimodal detection.</li>
+              <li>Adaptive thresholds tuned to fab-specific defect distributions.</li>
+            </ul>
+            <div style="text-align:center; margin-top: 16px;">
+              <img src="../assets/img/metrics_scratch_Detection.png" alt="Scratch detection metrics" style="max-width:100%; height:auto; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+              <div style="font-size:12px; opacity:.8; margin-top:6px;">Metrics: Scratch Detection</div>
+            </div>
+          `
+        },
+        'automations': {
+          title: 'n8n Automations &amp; Marketing Workflows',
+          content: `
+            <blockquote style="margin:0 0 12px; padding-left:14px; border-left:3px solid rgba(255,255,255,0.2); opacity:.9;">
+              &ldquo;A computer can never be held accountable. Therefore a computer must never make a management decision.&rdquo;<br>
+              <span style="opacity:.7; font-size:12px;">&mdash; IBM, 1979</span>
+            </blockquote>
+            <div style="text-align:center; margin: 8px 0 16px;">
+              <img src="../assets/img/n8n_marketing.png" alt="n8n marketing automation workflow" style="max-width:100%; height:auto; border-radius:12px; box-shadow: 0 8px 28px rgba(0,0,0,0.45);">
+            </div>
+            <p>I design and implement end-to-end automation workflows in n8n, with a focus on marketing and content operations. My automations combine data collection, content generation, scheduling, and engagement tracking into seamless pipelines that remove repetitive work and accelerate growth.</p>
+            <p style="opacity:.95;">Each run costs less than <strong>$0.05</strong> and delivers a full package: robust data engineering, aggregation and advanced metrics, followed by <strong>OpenAI advanced reasoning</strong> to support a clear decision (publish, iterate, or pause). This gives you measurable impact at minimal cost.</p>
+            <p>One of my key projects is a full auto-marketing workflow:</p>
+            <ul>
+              <li><strong>Content Research &amp; Planning</strong> &mdash; automated web scraping, trend monitoring, and data enrichment to feed content ideas.</li>
+              <li><strong>AI-Assisted Creation</strong> &mdash; connecting to LLMs for script drafting, caption generation, and visual prompt preparation.</li>
+              <li><strong>Scheduling &amp; Publishing</strong> &mdash; automated multi-platform posting with optimal timing based on engagement analytics.</li>
+              <li><strong>Audience Engagement</strong> &mdash; auto-responses and lead capture flows to keep interactions active while staying authentic.</li>
+              <li><strong>Analytics Feedback Loop</strong> &mdash; collecting KPIs from platforms and feeding them back into the pipeline for iterative optimization.</li>
+            </ul>
+            <p>This setup acts as a self-updating growth engine: it researches, creates, publishes, engages, and learns&mdash;all without manual intervention, while still leaving room for human creativity and strategy.</p>
+          `
+        },
+        'ai-art': {
+          title: 'Generative Media &amp; Visual Systems',
+          content: `
+            <p>Generative art is my daily craft and passion. Over the last 2+ years I've evolved a storytelling-first workflow that turns rough concepts into production-ready visuals with consistent identity, mood, and lighting.</p>
+            <p>I'm proficient with VACE, ComfyUI, Forge, Kling, Veo, Huggisfield, Leonardo, Pika, and more. I design modular graphs, seed-stable pipelines, and reproducible prompt recipes so results can be recreated exactly or evolved deliberately.</p>
+            <p>Beyond generation, I can train high-quality, consistent LoRA models: dataset curation, tagging and cleaning, parameter search, and style alignment so characters stay on-model across sessions and shots.</p>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin: 8px 0 20px;">
+              <p style="margin:0 6px 4px; font-weight:600; letter-spacing:.2px; text-transform:uppercase; font-size:12px; opacity:.85; text-align:center;">Before</p>
+              <img src="../assets/img/draft.png" alt="Before: base draft prior to refinements" style="max-width:900px; width:100%; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.35);">
+              <p style="margin:8px 6px 0; font-weight:600; letter-spacing:.2px; text-transform:uppercase; font-size:12px; opacity:.85; text-align:center;">After</p>
+              <img src="../assets/img/final_disney.png" alt="After: final Disney-inspired render after my workflow" style="max-width:900px; width:100%; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.35);">
+            </div>
+            <p>The pipeline blends creative direction with engineering discipline: controlled prompts, negative prompt libraries, shot lists, costume and prop constraints, LUT-aware lighting, and automated upscaling or restoration when needed.</p>
+            <p>For teams, I document every run (seeds, parameters, node hashes) and automate batches with n8n so iterations are traceable, schedulable, and cost-aware.</p>
+            <p>This closing showcase proves how expansive the pipeline can be, addressing the possibilities and the diversity of characters you can bring to life.</p>
+            <img src="../assets/img/div3.png" alt="Showcase of diverse AI-generated characters" style="width:100%; border-radius:12px; margin: 20px 0 8px;">
+          `
+        }
       };
-      btn.addEventListener('pointermove', updateXY);
-      btn.addEventListener('pointerdown', (e) => {
-        updateXY(e);
-        btn.classList.add('lit');
-        setTimeout(() => btn.classList.remove('lit'), 280);
-      });
-      btn.addEventListener('click', () => {
-        const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        window.goatcounter?.count({
-          path: `event/project/open/${slug}`,
-          title: `Project Open - ${label}`,
-          event: true
-        });
-        openModal(label);
-      });
-      buttons.push({ element: btn, x, y, angle, radius: columnLayout ? 0 : baseRadius });
-    });
-  }
 
-  function fit(){
-    W = cvs.width  = Math.floor(innerWidth * DPR);
-    H = cvs.height = Math.floor(innerHeight * DPR);
-    cvs.style.width = innerWidth+'px'; cvs.style.height = innerHeight+'px';
+      function openModal(key){
+        const project = projectsData[key];
+        if (!project) return;
+        modalTitle.innerHTML = project.title;
+        modalContent.innerHTML = project.content + hireCta;
+        modalEl.classList.add('visible');
+        modalEl.setAttribute('aria-hidden', 'false');
+        modalClose.focus({ preventScroll: true });
+      }
 
-    SIZE = Math.floor(Math.min(W,H) * 0.34);
-    CX = Math.floor(W*0.5); CY = Math.floor(H*0.5);
+      function closeModal(){
+        modalEl.classList.remove('visible');
+        modalEl.setAttribute('aria-hidden', 'true');
+      }
 
-    GRID = Math.max(60, Math.min(150, Math.round(SIZE/6)));
-    CELL = SIZE / GRID;
-
-    const useColumnLayout = isCoarseLayout();
-    document.body.classList.toggle('projects-touch', useColumnLayout);
-    createButtons(useColumnLayout);
-    if (transformTriggered) {
-      buttons.forEach(btn => btn.element.classList.add('visible'));
-    }
-    positionPhrase();
-    positionQuote();
-
-    if (useColumnLayout) scheduleAutoStart();
-
-    if (phase === 'idle') {
-      particles.length = 0;
-      const startX = CX - SIZE/2 + CELL/2;
-      const startY = CY - SIZE/2 + CELL/2;
-      for(let gy=0; gy<GRID; gy++){
-        for(let gx=0; gx<GRID; gx++){
-          const hx = startX + gx*CELL, hy = startY + gy*CELL;
-          particles.push({ x:hx, y:hy, vx:0, vy:0, homeX:hx, homeY:hy,
-            mass:0.8+Math.random()*0.6, targetButton:null, flying:false, disappeared:false });
+      modalClose.addEventListener('click', closeModal);
+      modalEl.addEventListener('click', (event) => {
+        if (event.target === modalEl) {
+          closeModal();
         }
-      }
-    }
-  }
-
-  function onMove(e){
-    if (transformComplete) return;
-    const cx = (e.touches? e.touches[0].clientX : e.clientX) * DPR;
-    const cy = (e.touches? e.touches[0].clientY : e.clientY) * DPR;
-    mouse.vx = (cx - mouse.px) * 0.6 + mouse.vx * 0.4;
-    mouse.vy = (cy - mouse.py) * 0.6 + mouse.vy * 0.4;
-    mouse.px = cx; mouse.py = cy; mouse.x = cx; mouse.y = cy; mouse.active = true;
-  }
-
-  function triggerTransform(){
-    if (transformTriggered) return;
-    transformTriggered = true;
-    window.goatcounter?.count({
-      path: 'event/animation/cube_transform_start',
-      title: 'Cube Transform Start',
-      event: true
-    });
-
-    // show buttons
-    buttons.forEach((btn, i) => {
-      setTimeout(() => btn.element.classList.add('visible'), i * 70);
-    });
-
-    // particles fly to buttons (slightly slower launch)
-    particles.forEach(p => {
-      const buttonIndex = Math.floor(Math.random() * buttons.length);
-      p.targetButton = buttons[buttonIndex];
-      p.flying = true;
-      const dx = p.targetButton.x - p.x, dy = p.targetButton.y - p.y;
-      const dist = Math.hypot(dx, dy) || 1;
-      const speed = 1.6 + Math.random() * 2.2; // slower initial speed
-      p.vx = (dx / dist) * speed; p.vy = (dy / dist) * speed;
-    });
-  }
-
-  addEventListener('mousemove', onMove, {passive:true});
-  addEventListener('touchstart', onMove, {passive:true});
-  addEventListener('resize', fit);
-  addEventListener('orientationchange', () => setTimeout(fit, 50));
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => setTimeout(fit, 0));
-  }
-
-  // Distance from point to cube rect (0 if inside)
-  function distToCube(px, py){
-    const dx = Math.max(Math.abs(px - CX) - SIZE/2, 0);
-    const dy = Math.max(Math.abs(py - CY) - SIZE/2, 0);
-    return Math.hypot(dx, dy);
-  }
-
-  function step(dt){
-    if (!transformTriggered && phase === 'idle') {
-      if (mouse.active) {
-        const d = distToCube(mouse.x, mouse.y);
-        const limit = SIZE * 0.50;
-        const prox = Math.max(0, 1 - d / limit);
-        const speed = Math.hypot(mouse.vx, mouse.vy);
-        const speedBoost = Math.min(1, speed / (28 * DPR));
-        const target = Math.max(0, Math.min(1, (prox * 0.9 + speedBoost * 0.3) * 0.25));
-        // Faster easing towards target (reduce perceived delay to ~0.8x)
-        distortionAmount += (target - distortionAmount) * 0.00625;
-      } else {
-        distortionAmount *= 0.92;
-      }
-    }
-
-    if (!transformTriggered) {
-      if (mouse.active && phase === 'idle') {
-        const dToCenter = Math.hypot(mouse.x - CX, mouse.y - CY);
-        if (dToCenter <= 40 * DPR) startPhraseSequence();
-      }
-      return;
-    }
-
-    transformProgress = Math.min(1, transformProgress + dt * 0.008);
-
-    for (let i=particles.length-1; i>=0; i--){
-      const p = particles[i];
-      if (p.disappeared) continue;
-
-      if (p.flying && p.targetButton){
-        const dx = p.targetButton.x - p.x, dy = p.targetButton.y - p.y;
-        const dist = Math.hypot(dx, dy) || 1;
-        if (dist < 12 * DPR){ p.disappeared = true; continue; } // must get closer -> slightly longer flight
-
-        const force = 0.06; // gentler attraction -> slower break
-        p.vx += (dx / dist) * force; p.vy += (dy / dist) * force;
-        p.vx += (Math.random()-0.5)*0.5; p.vy += (Math.random()-0.5)*0.5;
-        p.vx *= 0.98; p.vy *= 0.98;
-        p.x += p.vx * (dt * 0.1); p.y += p.vy * (dt * 0.1);
-      }
-    }
-
-    const remaining = particles.filter(p => !p.disappeared);
-    if (remaining.length === 0 && !transformComplete){
-      transformComplete = true;
-      phase = 'done';
-      clearPhraseTimers();
-      window.goatcounter?.count({
-        path: 'event/animation/cube_transform_complete',
-        title: 'Cube Transform Complete',
-        event: true
       });
-    }
-  }
-  function drawCellSnapped(cx, cy, w, h, opacity = 1) {
-  // final pixel-aligned rectangle with +1 px overdraw to kill seams
-  const ix = Math.round(cx - w / 2);
-  const iy = Math.round(cy - h / 2);
-  const iw = Math.ceil(w) + 1;
-  const ih = Math.ceil(h) + 1;
-  if (opacity !== 1) ctx.globalAlpha = opacity;
-  ctx.fillRect(ix, iy, iw, ih);
-  if (opacity !== 1) ctx.globalAlpha = 1;
-}
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && modalEl.classList.contains('visible')) {
+          closeModal();
+        }
+      });
 
-function draw(){
-  // Clear/fade
-  if (!transformTriggered) {
-    ctx.clearRect(0,0,W,H);
-  } else {
-    // Fade previous frame for a trailing effect during particle phase
-    ctx.save();
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.fillStyle = 'rgba(0,0,0,0.06)'; // adjust alpha to control trail length
-    ctx.fillRect(0,0,W,H);
-    ctx.restore();
-  }
-  if (transformComplete) return;
-
-  if (!transformTriggered) {
-    ctx.save();
-    ctx.fillStyle = '#111111';
-
-    if (distortionAmount > 0 && mouse.active) {
-      const gridRes = 32;
-      const cellW = SIZE / gridRes;
-      const cellH = SIZE / gridRes;
-      const startX = CX - SIZE/2 + cellW/2;
-      const startY = CY - SIZE/2 + cellH/2;
-
-      const maxEffect = SIZE * 0.80;
-      const baseHole  = Math.max(12 * DPR, SIZE * 0.12);
-      const hole      = baseHole + distortionAmount * SIZE * 0.10;
-
-      for (let gy = 0; gy < gridRes; gy++) {
-        for (let gx = 0; gx < gridRes; gx++) {
-          const ox = startX + gx * cellW;
-          const oy = startY + gy * cellH;
-
-          const dx = ox - mouse.x;
-          const dy = oy - mouse.y;
-          const dist = Math.hypot(dx, dy) + 1e-4;
-
-          if (dist > maxEffect) {
-            // snap normal cells too
-            drawCellSnapped(ox, oy, cellW, cellH);
-            continue;
+      document.querySelectorAll('.project-card[data-project]').forEach((card) => {
+        const key = card.getAttribute('data-project');
+        card.addEventListener('click', () => openModal(key));
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openModal(key);
           }
-
-          const t = dist / maxEffect;
-          const focus = 1 - t;
-
-          const baseTheta = focus * focus * (0.95 * Math.max(0.35, distortionAmount));
-          const cross = mouse.vx * dy - mouse.vy * dx;
-          const theta = baseTheta * (cross >= 0 ? 1 : -1);
-
-          const cos = Math.cos(theta), sin = Math.sin(theta);
-          let rx = cos * dx - sin * dy;
-          let ry = sin * dx + cos * dy;
-
-          const radialGain = 1 + focus * focus * (1.05 + 1.25 * distortionAmount);
-          rx *= radialGain; ry *= radialGain;
-
-          const nx = mouse.x + rx;
-          const ny = mouse.y + ry;
-
-          if (Math.hypot(nx - mouse.x, ny - mouse.y) < hole) continue;
-
-          const scale = Math.max(0.25, Math.min(1, 1 - focus * (0.75 + 0.5 * distortionAmount)));
-          const w = cellW * scale;
-          const h = cellH * scale;
-
-          // draw cell at its FINAL pixel rect (no transforms) with a 1px overdraw inside helper
-          drawCellSnapped(nx, ny, w, h);
-        }
-      }
-    } else {
-      // normal solid cube - snapped to pixels for crisp edges
-      const x = Math.round(CX - SIZE/2);
-      const y = Math.round(CY - SIZE/2);
-      const s = Math.ceil(SIZE) + 1; // slight overdraw
-      ctx.fillRect(x, y, s, s);
-    }
-
-    ctx.restore();
-  } else {
-    // Particles flying to buttons (keep snapped/overdraw too)
-    ctx.fillStyle = '#111111';
-    for (const p of particles) {
-      if (p.disappeared) continue;
-
-      let opacity = 1;
-      if (p.flying && p.targetButton) {
-        const dx = p.targetButton.x - p.x;
-        const dy = p.targetButton.y - p.y;
-        const dist = Math.hypot(dx, dy);
-        opacity = Math.max(0, Math.min(1, dist / (30 * DPR)));
-      }
-
-      if (opacity > 0) {
-        const s = Math.ceil(CELL * 0.8) + 1; // +1px to kill seams
-        const x = Math.round(p.x - s/2);
-        const y = Math.round(p.y - s/2);
-        if (opacity !== 1) ctx.globalAlpha = opacity;
-        ctx.fillRect(x, y, s, s);
-        if (opacity !== 1) ctx.globalAlpha = 1;
-      }
-    }
-  }
-}
-
-
-  function frame(now){
-    const dt = Math.min(60, now - last); last = now; step(dt); draw(); requestAnimationFrame(frame);
-  }
-
-  fit(); buildPhrase(); positionPhrase(); requestAnimationFrame(frame);
-})();
+        });
+      });
+    })();
   </script>
 </body>
 </html>
-
-
