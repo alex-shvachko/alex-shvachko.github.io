@@ -1,52 +1,220 @@
 import * as THREE from './vendor/three.module.js';
+import { GLTFLoader } from './vendor/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from './vendor/addons/loaders/DRACOLoader.js';
+import { EffectComposer } from './vendor/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from './vendor/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from './vendor/addons/postprocessing/ShaderPass.js';
+import { UnrealBloomPass } from './vendor/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from './vendor/addons/postprocessing/OutputPass.js';
+import { SMAAPass } from './vendor/addons/postprocessing/SMAAPass.js';
+import { Robot } from './scene/robot.js';
+import { ButterflyController } from './scene/butterfly.js';
+import {
+  LAYOUT, buildEnvironment, placeTree, buildGround, buildRocks,
+  buildPond, buildRoots, buildLights, buildScreenLight,
+  buildMotes, buildFallingLeaves, updateFallingLeaves, buildTreeline,
+} from './scene/world.js';
 
 const canvas = document.querySelector('#scene');
-const interactionTarget = canvas.parentElement;
-const fallbackImage = document.querySelector('.scene-fallback');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color('#718339');
-scene.fog = new THREE.Fog('#718339', 9, 28);
-const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, .1, 40);
-camera.position.set(0, 3.1, 10.5); camera.lookAt(0, 2.3, 0);
+const stage = canvas.parentElement;
+
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75)); renderer.setSize(innerWidth, innerHeight);
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.25;
-  interactionTarget.classList.add('is-webgl');
-} catch (error) {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+} catch {
   canvas.remove();
 }
-scene.add(new THREE.HemisphereLight('#e9efbd', '#34421f', 2.2));
-const sun = new THREE.DirectionalLight('#ffe2a5', 4); sun.position.set(-5, 9, 5); sun.castShadow = true; scene.add(sun);
-const material = color => new THREE.MeshStandardMaterial({ color, roughness: .85, flatShading: true });
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(35, 35), material('#586a2d')); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-const water = new THREE.Mesh(new THREE.CircleGeometry(4.2, 32), new THREE.MeshStandardMaterial({ color: '#2d7166', roughness: .18, metalness: .12, transparent: true, opacity: .88 })); water.rotation.x = -Math.PI / 2; water.position.set(0, .035, 1.1); scene.add(water);
-const trunkMat = material('#63371e'), leafMat = material('#38591e'), grassMat = material('#4e791f');
-for (let i = 0; i < 15; i++) { const x = (i % 2 ? 1 : -1) * (5 + Math.random() * 4), z = -5 + Math.random() * 8, s = .8 + Math.random() * 1.4; const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.18 * s, .28 * s, 2.5 * s, 6), trunkMat); trunk.position.set(x, 1.25 * s, z); trunk.castShadow = true; scene.add(trunk); const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(1.35 * s, 0), leafMat); crown.position.set(x, 3.25 * s, z); crown.castShadow = true; scene.add(crown); }
-for (let i = 0; i < 100; i++) { const blade = new THREE.Mesh(new THREE.ConeGeometry(.09, .65 + Math.random() * .8, 3), grassMat); const side = i % 2 ? 1 : -1; blade.position.set(side * (3.6 + Math.random() * 4.5), .35, Math.random() * 8 - 4); blade.rotation.z = (Math.random() - .5) * .35; blade.castShadow = true; scene.add(blade); }
-const robot = new THREE.Group(); robot.position.set(0, .3, -.4); scene.add(robot);
-const body = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.35, 1.05), material('#8f401c')); body.position.y = 1.3; body.castShadow = true; robot.add(body);
-const head = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.05, .82), material('#0b1716')); head.position.set(0, 2.45, 0); head.castShadow = true; robot.add(head);
-const eye = new THREE.Mesh(new THREE.SphereGeometry(.3, 16, 8), new THREE.MeshStandardMaterial({ color: '#9ee7e1', emissive: '#46d4d2', emissiveIntensity: 2 })); eye.position.set(0, 2.5, .43); robot.add(eye);
-for (const side of [-1, 1]) { const arm = new THREE.Mesh(new THREE.CylinderGeometry(.16, .2, .95, 6), material('#d5d5be')); arm.position.set(side * 1.05, 1.65, 0); arm.rotation.z = side * .45; arm.castShadow = true; robot.add(arm); }
-const leaves = []; const leafColors = ['#bc8735', '#c75f32', '#8a5e2c'];
-for (let i = 0; i < 26; i++) { const leaf = new THREE.Mesh(new THREE.PlaneGeometry(.2, .32), material(leafColors[i % 3])); leaf.position.set((Math.random() - .5) * 10, 1 + Math.random() * 6, -4 + Math.random() * 8); leaf.userData = { phase: Math.random() * 6.28, speed: .25 + Math.random() * .4 }; scene.add(leaf); leaves.push(leaf); }
-const pointer = { x: 0, y: 0 }, cameraControl = { theta: 0, phi: .08, radius: 10.5, dragging: false, x: 0, y: 0 }, fallbackView = { x: 0, y: 0, zoom: 1 };
-const updateFallbackView = () => {
-  fallbackImage.style.animation = 'none';
-  fallbackImage.style.transform = `translate3d(${fallbackView.x}px, ${fallbackView.y}px, 0) scale(${fallbackView.zoom})`;
-};
-const startDrag = event => { cameraControl.dragging = true; cameraControl.x = event.clientX; cameraControl.y = event.clientY; };
-const moveCamera = event => { pointer.x = event.clientX / innerWidth - .5; pointer.y = event.clientY / innerHeight - .5; if (!cameraControl.dragging) return; const dx = event.clientX - cameraControl.x, dy = event.clientY - cameraControl.y; cameraControl.theta -= dx * .006; cameraControl.phi = THREE.MathUtils.clamp(cameraControl.phi - dy * .004, -.08, .9); fallbackView.x = THREE.MathUtils.clamp(fallbackView.x + dx * .34, -120, 120); fallbackView.y = THREE.MathUtils.clamp(fallbackView.y + dy * .34, -100, 100); updateFallbackView(); cameraControl.x = event.clientX; cameraControl.y = event.clientY; };
-const stopDrag = () => { cameraControl.dragging = false; };
-interactionTarget.addEventListener('pointerdown', event => { event.preventDefault(); startDrag(event); interactionTarget.setPointerCapture?.(event.pointerId); });
-interactionTarget.addEventListener('pointermove', event => { event.preventDefault(); moveCamera(event); });
-interactionTarget.addEventListener('pointerup', event => { stopDrag(); interactionTarget.releasePointerCapture?.(event.pointerId); });
-interactionTarget.addEventListener('pointercancel', stopDrag);
-interactionTarget.addEventListener('wheel', event => { event.preventDefault(); cameraControl.radius = THREE.MathUtils.clamp(cameraControl.radius + event.deltaY * .012, 6.2, 16); fallbackView.zoom = THREE.MathUtils.clamp(fallbackView.zoom - event.deltaY * .001, .9, 1.65); updateFallbackView(); }, { passive: false });
-addEventListener('resize', () => { if (!renderer) return; camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+if (!renderer) throw new Error('WebGL unavailable; the still fallback stands in.');
+
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 160);
+
+/* ------------------------------------------------------------------ camera rig */
+const FOCUS = new THREE.Vector3(0.25, 1.60, 4.2);
+const rig = { theta: 0.34, phi: 0.09, radius: 8.6, dragging: false, x: 0, y: 0 };
+const LIMIT = { phi: [-0.12, 0.62], radius: [5.2, 13.5], theta: [-0.72, 1.0] };
+
+function orbitTarget(out) {
+  const reach = Math.cos(rig.phi) * rig.radius;
+  return out.set(
+    FOCUS.x + Math.sin(rig.theta) * reach,
+    FOCUS.y + Math.sin(rig.phi) * rig.radius,
+    FOCUS.z + Math.cos(rig.theta) * reach);
+}
+camera.position.copy(orbitTarget(new THREE.Vector3()));
+camera.lookAt(FOCUS);
+
+/* ----------------------------------------------------------------- composition */
+buildEnvironment(scene, renderer);
+buildLights(scene);
+buildGround(scene);
+buildTreeline(scene);
+buildRocks(scene);
+const water = buildPond(scene, LAYOUT.sun);
+const screenLight = buildScreenLight(scene);
+const motes = buildMotes(scene);
+
+/* --------------------------------------------------------------------- loading */
+const draco = new DRACOLoader().setDecoderPath('./assets/js/vendor/addons/libs/draco/');
+const loader = new GLTFLoader().setDRACOLoader(draco);
+
+const pointer = new THREE.Vector2(0, 0);
+let robot = null;
+let butterfly = null;
+let fallingLeaves = null;
+
+const ready = (async () => {
+  const [treeGltf, robotModel] = await Promise.all([
+    loader.loadAsync('./assets/models/oak-tree.glb'),
+    Robot.load(loader, './assets/models/robot-postman.glb'),
+  ]);
+
+  const { leaves } = placeTree(treeGltf, scene);
+  fallingLeaves = buildFallingLeaves(scene, leaves[0]?.material);
+
+  robot = robotModel;
+  robot.root.position.copy(LAYOUT.robot.pos);
+  robot.root.rotation.y = LAYOUT.robot.rotY;
+  robot.root.scale.setScalar(LAYOUT.robot.scale);
+  scene.add(robot.root);
+
+  // Roots reuse the real bark texture so the growth over him reads as the tree's.
+  const trunkMesh = treeGltf.scene.getObjectByName('Trunk');
+  const bark = new THREE.MeshStandardMaterial({ color: '#6b563d', roughness: 0.94, metalness: 0 });
+  if (trunkMesh?.material?.map) {
+    bark.map = trunkMesh.material.map;
+    bark.normalMap = trunkMesh.material.normalMap;
+    bark.color.set('#ffffff');
+  }
+  buildRoots(scene, bark);
+
+  const hand = robot.handPosition(new THREE.Vector3());
+  butterfly = await ButterflyController.load(scene, './assets/models/butterfly.glb', {
+    loader,
+    focus: new THREE.Vector3(FOCUS.x - 0.3, FOCUS.y + 0.35, FOCUS.z + 1.2),
+    home: hand.clone().add(new THREE.Vector3(0.4, 0.7, 0.9)),
+    bounds: new THREE.Box3(
+      new THREE.Vector3(-5.5, 0.7, 1.0), new THREE.Vector3(5.5, 5.6, 7.5)),
+    motion: { scale: 0.26, followSpeed: 2.1, noise: 0.07 },
+  });
+
+  stage.classList.add('is-ready');
+})();
+
+stage.classList.add('is-webgl');
+ready.catch(err => {
+  console.error('[hero] scene failed to load', err);
+  stage.classList.remove('is-webgl');
+});
+
+/* ----------------------------------------------------------------- interaction */
+const ndc = new THREE.Vector2();
+const startDrag = e => { rig.dragging = true; rig.x = e.clientX; rig.y = e.clientY; };
+const stopDrag = () => { rig.dragging = false; };
+
+function onMove(e) {
+  const r = stage.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  pointer.set(e.clientX / innerWidth - 0.5, e.clientY / innerHeight - 0.5);
+  butterfly?.handlePointer(ndc, camera);
+  if (!rig.dragging) return;
+  const dx = e.clientX - rig.x, dy = e.clientY - rig.y;
+  rig.theta = THREE.MathUtils.clamp(rig.theta - dx * 0.005, LIMIT.theta[0], LIMIT.theta[1]);
+  rig.phi = THREE.MathUtils.clamp(rig.phi - dy * 0.0035, LIMIT.phi[0], LIMIT.phi[1]);
+  rig.x = e.clientX;
+  rig.y = e.clientY;
+}
+
+stage.addEventListener('pointerdown', e => {
+  e.preventDefault(); startDrag(e); stage.setPointerCapture?.(e.pointerId);
+});
+stage.addEventListener('pointermove', onMove);
+stage.addEventListener('pointerup', e => { stopDrag(); stage.releasePointerCapture?.(e.pointerId); });
+stage.addEventListener('pointercancel', stopDrag);
+stage.addEventListener('wheel', e => {
+  e.preventDefault();
+  rig.radius = THREE.MathUtils.clamp(rig.radius + e.deltaY * 0.006, LIMIT.radius[0], LIMIT.radius[1]);
+}, { passive: false });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+});
+
+/* ------------------------------------------------------------- post-processing */
+const composer = new EffectComposer(renderer);
+composer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.7, 0.86));
+composer.addPass(new OutputPass());
+const grade = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
+  vertexShader: `varying vec2 vUv;
+    void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime;
+    varying vec2 vUv;
+    void main(){
+      vec3 c = texture2D( tDiffuse, vUv ).rgb;
+      vec2 d = vUv - 0.5;
+      c *= 1.0 - smoothstep( 0.30, 0.80, dot( d, d ) ) * 0.66;
+      float g = fract( sin( dot( vUv * ( 1.0 + uTime ), vec2( 12.9898, 78.233 ) ) ) * 43758.5453 );
+      c += ( g - 0.5 ) * 0.016;
+      c = mix( vec3( dot( c, vec3( 0.299, 0.587, 0.114 ) ) ), c, 1.07 );
+      gl_FragColor = vec4( c, 1.0 );
+    }`,
+});
+composer.addPass(grade);
+composer.addPass(new SMAAPass());
+
+/* --------------------------------------------------------------------- runtime */
 const clock = new THREE.Clock();
-const render = () => { const time = clock.getElapsedTime(); robot.position.y = .3 + Math.sin(time * 1.4) * .06; robot.rotation.y = Math.sin(time * .45) * .08; const reach = Math.cos(cameraControl.phi) * cameraControl.radius; const orbitY = 2.2 + Math.sin(cameraControl.phi) * cameraControl.radius; const orbitX = Math.sin(cameraControl.theta) * reach; const orbitZ = Math.cos(cameraControl.theta) * reach; camera.position.x += (orbitX + pointer.x * .25 - camera.position.x) * .08; camera.position.y += (orbitY - camera.position.y) * .08; camera.position.z += (orbitZ - camera.position.z) * .08; camera.lookAt(0, 2.2, 0); leaves.forEach(leaf => { leaf.position.y -= leaf.userData.speed * .016; leaf.position.x += Math.sin(time + leaf.userData.phase) * .008; leaf.rotation.x += .012; leaf.rotation.z += .009; if (leaf.position.y < .3) { leaf.position.y = 6.8; leaf.position.x = (Math.random() - .5) * 10; } }); renderer.render(scene, camera); };
-if (renderer) { render(); renderer.setAnimationLoop(render); }
+const camPos = new THREE.Vector3();
+const screenPos = new THREE.Vector3();
+const aimTarget = new THREE.Vector3();
+const forward = new THREE.Vector3();
+
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  orbitTarget(camPos);
+  camPos.x += pointer.x * 0.22;
+  camPos.y += -pointer.y * 0.12;
+  camera.position.lerp(camPos, 1 - Math.exp(-4.5 * dt));
+  camera.lookAt(FOCUS);
+
+  if (butterfly) butterfly.update(dt);
+  if (robot) {
+    aimTarget.copy(butterfly ? butterfly.root.position : FOCUS);
+    robot.pointAt(aimTarget, dt);
+    if (robot.screen) {
+      robot.screen.getWorldPosition(screenPos);
+      forward.set(0, 0, 1).applyQuaternion(robot.root.quaternion);
+      screenLight.light.position.copy(screenPos).addScaledVector(forward, 0.55);
+      screenLight.light.intensity = 3.0 + Math.sin(t * 2.1) * 0.22 + Math.sin(t * 7.3) * 0.06;
+      screenLight.bounce.position.copy(screenPos).setY(screenPos.y - 0.5);
+    }
+  }
+
+  water.material.uniforms.time.value += dt * 0.42;
+  motes.material.uniforms.uTime.value = t;
+  if (fallingLeaves) updateFallingLeaves(fallingLeaves, t, dt);
+  grade.uniforms.uTime.value = t;
+  composer.render();
+}
+renderer.setAnimationLoop(frame);
+
+if (new URLSearchParams(location.search).has('debug')) {
+  window.__hero = { scene, camera, renderer, composer, rig, get robot() { return robot; },
+                    get butterfly() { return butterfly; } };
+}
