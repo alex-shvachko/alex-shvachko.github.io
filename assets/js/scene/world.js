@@ -166,14 +166,17 @@ export function groundHeight(x, z) {
 }
 
 export function buildGround(scene) {
-  const size = 110, seg = 200;
+  // 200 segments was 80k triangles for a surface that is almost entirely behind
+  // grass, rocks or fog. The terrain's remaining detail is a 0.011-unit ripple,
+  // well under what 120 segments resolves and well under what anyone can see.
+  const size = 110, seg = 120;
   const geo = new THREE.PlaneGeometry(size, size, seg, seg);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   const colour = [];
   const soil = new THREE.Color('#3b3221');
   const moss = new THREE.Color('#4a5a26');
-  const silt = new THREE.Color('#232c1c');
+  const silt = new THREE.Color('#2f3a25');
   const { centre, radius } = LAYOUT.pond;
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
@@ -201,8 +204,10 @@ export function buildGround(scene) {
  *  draw call per stone. */
 export function buildRocks(scene) {
   const group = new THREE.Group();
-  const dry = new THREE.MeshStandardMaterial({ color: '#403d36', roughness: 1, metalness: 0 });
-  const wet = new THREE.MeshStandardMaterial({ color: '#3b3c35', roughness: 0.72, metalness: 0 });
+  const dry = new THREE.MeshStandardMaterial({
+    color: '#4a463d', roughness: 1, metalness: 0, vertexColors: true });
+  const wet = new THREE.MeshStandardMaterial({
+    color: '#41423a', roughness: 0.72, metalness: 0, vertexColors: true });
 
   // Icosahedron geometry is non-indexed, so its shared corners exist as several
   // separate vertices. Jittering by vertex index pulls those copies apart and
@@ -224,6 +229,20 @@ export function buildRocks(scene) {
       pos.setXYZ(v, x * k, y * k * 0.70, z * k);
     }
     geo.computeVertexNormals();
+
+    // Moss gathers on whatever faces the sky. Vertex colours cost nothing and
+    // stop the stones reading as flat grey lumps.
+    const nrm = geo.attributes.normal;
+    const col = new Float32Array(nrm.count * 3);
+    for (let v = 0; v < nrm.count; v++) {
+      const up = Math.max(0, nrm.getY(v));
+      const moss = Math.pow(up, 2.4)
+        * (0.45 + hash(Math.round(pos.getX(v) * 40), Math.round(pos.getZ(v) * 40), seed) * 0.55);
+      col[v * 3] = 1 - moss * 0.60;
+      col[v * 3 + 1] = 1 - moss * 0.14;
+      col[v * 3 + 2] = 1 - moss * 0.72;
+    }
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     return geo;
   };
 
@@ -285,7 +304,7 @@ export function buildPond(scene, sunDirection) {
     waterNormals: waterNormals(),
     sunDirection: sunDirection.clone().normalize(),
     sunColor: 0xfff0cf,
-    waterColor: 0x16302a,
+    waterColor: 0x1b3a31,
     distortionScale: 1.9,
     fog: true,
   });
@@ -577,7 +596,7 @@ function bladeGeometry(segments = 3, width = 0.046, bend = 0.16) {
  * (injected into MeshStandardMaterial so the grass still receives the canopy's
  * leaf shadows and the scene's image based lighting).
  */
-export function buildGrass(scene, { count = 14000, radius = 15 } = {}) {
+export function buildGrass(scene, { count = 5000, radius = 13 } = {}) {
   const geo = bladeGeometry();
   const mat = new THREE.MeshStandardMaterial({
     color: '#55682c', roughness: 0.92, metalness: 0, side: THREE.DoubleSide,
@@ -620,13 +639,25 @@ export function buildGrass(scene, { count = 14000, radius = 15 } = {}) {
   const { centre, radius: pondR } = LAYOUT.pond;
   const robot = LAYOUT.robot.pos;
 
+  // Two thirds of a full disc of grass sits behind the camera or off to the
+  // sides where it is never seen. Keeping only the blades inside the view wedge
+  // means far fewer of them for a denser-looking sward. The half-angle is
+  // generous: the camera's horizontal half-fov is about 31 degrees, and it
+  // drifts with the cursor.
+  const EYE_X = 2.05, EYE_Z = 10.6;         // camera home, in the ground plane
+  const LOOK_X = -0.151, LOOK_Z = -0.988;
+  const COS_WEDGE = Math.cos(0.75);
+
   let n = 0;
-  for (let guard = 0; n < count && guard < count * 6; guard++) {
+  for (let guard = 0; n < count && guard < count * 12; guard++) {
     // Denser toward the middle of frame, thinning out at the edges.
     const a = rand() * Math.PI * 2;
     const r = radius * Math.sqrt(rand()) * (0.35 + rand() * 0.65);
     const x = Math.cos(a) * r + 0.5;
     const z = Math.sin(a) * r + 3.2;
+    const dx = x - EYE_X, dz = z - EYE_Z;
+    const dist = Math.hypot(dx, dz);
+    if (dist > 0.6 && (dx * LOOK_X + dz * LOOK_Z) / dist < COS_WEDGE) continue;
     if (Math.hypot(x - centre.x, z - centre.z) < pondR * 1.02) continue;   // not in the pond
     if (Math.hypot(x - robot.x, z - robot.z) < 0.85) continue;             // not through him
     const g = groundHeight(x, z);

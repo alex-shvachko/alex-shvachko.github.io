@@ -38,6 +38,10 @@ renderer.toneMappingExposure = 1.0;
 // The glass menu refracts what is behind it, which costs an extra pass over the
 // opaque scene. Half resolution is free of visible cost through frosted glass.
 renderer.transmissionResolutionScale = 0.5;
+// info resets itself on every render() call, so by default it only ever reports
+// the last pass of the chain. Reset it once per frame instead, and the counters
+// describe the frame.
+renderer.info.autoReset = false;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 160);
@@ -60,7 +64,7 @@ camera.lookAt(FOCUS);
 buildEnvironment(scene, renderer);
 const { sun } = buildLights(scene);
 buildGround(scene);
-buildTreeline(scene);
+const treeline = buildTreeline(scene);
 buildRocks(scene);
 const grass = buildGrass(scene);
 const water = buildPond(scene, LAYOUT.sun);
@@ -71,7 +75,9 @@ const motes = buildMotes(scene);
 const branch = buildGlassBranch(scene, camera, document.querySelector('.branch-menu'),
   { home: HOME, focus: FOCUS });
 
-water.reflectionSkips.push(grass, motes, branch.frame);
+// The reflection re-renders the scene. At 256px in dark water none of these
+// read as anything but noise, and they are most of the geometry.
+water.reflectionSkips.push(grass, motes, treeline, branch.frame);
 
 /* --------------------------------------------------------------------- loading */
 const draco = new DRACOLoader().setDecoderPath('./assets/js/vendor/addons/libs/draco/');
@@ -93,11 +99,10 @@ const ready = (async () => {
   // Shafts are built from the real canopy, so they break through the leaf gaps.
   const trunkOccluder = treeGltf.scene.getObjectByName('Trunk');
   godRays = new GodRaysPass(camera, LAYOUT.sun.clone().normalize().multiplyScalar(74),
-    [...leaves, trunkOccluder], { resolution: 0.5 });
-  godRays.setSize(innerWidth, innerHeight);
-  composer.insertPass(godRays, 1);
+    [...leaves, trunkOccluder], { resolution: rayScale(), samples: 10 });
+  composer.insertPass(godRays, 1);      // which sizes it from the composer
   fallingLeaves = buildFallingLeaves(scene, leaves[0]?.material);
-  water.reflectionSkips.push(fallingLeaves);
+  water.reflectionSkips.push(fallingLeaves, robotModel.root);
 
   robot = robotModel;
   robot.root.position.copy(LAYOUT.robot.pos);
@@ -236,7 +241,7 @@ addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
-  godRays?.setSize(innerWidth, innerHeight);
+  godRays?.setResolution(rayScale());
   rect = stage.getBoundingClientRect();
   branch.resize();       // the bough is framed by aspect, not by a fixed offset
 });
@@ -245,8 +250,15 @@ addEventListener('resize', () => {
 const composer = new EffectComposer(renderer);
 composer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
 composer.addPass(new RenderPass(scene, camera));
-composer.addPass(new UnrealBloomPass(
-  new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.65, 0.92));
+
+// Bloom is a blur, so it gains nothing from running at full resolution. Halving
+// its internal chain quarters the pixel work of roughly ten passes and is not
+// distinguishable in the result.
+const bloom = new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.65, 0.92);
+const bloomSetSize = bloom.setSize.bind(bloom);
+bloom.setSize = (w, h) => bloomSetSize(Math.round(w * 0.5), Math.round(h * 0.5));
+composer.addPass(bloom);
 composer.addPass(new OutputPass());
 const grade = new ShaderPass({
   uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
@@ -265,34 +277,70 @@ const grade = new ShaderPass({
     }`,
 });
 composer.addPass(grade);
-composer.addPass(new SMAAPass());
+// Three more full-screen passes. Worth it at a low pixel ratio, redundant once
+// the frame is already being supersampled - see applyQuality below.
+const smaa = new SMAAPass();
+composer.addPass(smaa);
 
 /* --------------------------------------------------------------------- runtime */
 const clock = new THREE.Clock();
 
 // Adaptive resolution. Rather than guess a device tier, watch the actual frame
 // time and step the pixel ratio down (and back up) to hold a smooth rate.
-const quality = { ratio: Math.min(devicePixelRatio, 1.75), acc: 0, frames: 0 };
+const quality = { ratio: Math.min(devicePixelRatio, 1.75), acc: 0, frames: 0,
+                  fps: 60, calls: 0, tris: 0 };
 const RATIO_MIN = Math.min(devicePixelRatio, 0.75);
 const RATIO_MAX = Math.min(devicePixelRatio, 1.75);
+
+// The shafts are soft and wide, so they are the one thing that can be rendered
+// at a fraction of the frame and still look right. The composer hands every pass
+// device pixels, so dividing by the ratio pins the ray buffer to half the CSS
+// size however high the pixel ratio climbs. Without that, a 4K screen would be
+// blurring a 2000px buffer for an effect nobody can resolve.
+const rayScale = () => 0.5 / Math.max(1, quality.ratio);
+
+function applyQuality() {
+  renderer.setPixelRatio(quality.ratio);
+  composer.setPixelRatio(quality.ratio);
+  composer.setSize(innerWidth, innerHeight);
+  godRays?.setResolution(rayScale());
+  // Past about 1.4 the frame is already supersampled and SMAA is three passes
+  // of work to soften edges that are no longer aliased.
+  smaa.enabled = quality.ratio < 1.4;
+  // Refraction through frosted glass hides a low-resolution backdrop; give it
+  // up first when the frame budget is tight.
+  renderer.transmissionResolutionScale = quality.ratio > 1.2 ? 0.5 : 0.35;
+}
+
+const GRASS_MAX = grass.count;
 
 function adapt(dt) {
   quality.acc += dt;
   quality.frames++;
-  if (quality.acc < 1) return;
-  const fps = quality.frames / quality.acc;
+  if (quality.acc < 0.5) return;          // react within half a second
+  quality.fps = quality.frames / quality.acc;
   quality.acc = 0;
   quality.frames = 0;
-  const next = fps < 45 ? quality.ratio - 0.25
-    : fps > 58 ? quality.ratio + 0.25 : quality.ratio;
+
+  const slow = quality.fps < 50;
+  const fast = quality.fps > 58;
+  const next = slow ? quality.ratio - 0.25 : fast ? quality.ratio + 0.25 : quality.ratio;
   const clamped = THREE.MathUtils.clamp(next, RATIO_MIN, RATIO_MAX);
+
+  // Resolution is the first and best lever. Only once it is at the floor and
+  // the frame is still missing does the sward start thinning out, which an
+  // InstancedMesh will do for free by drawing fewer of its instances.
+  if (quality.ratio <= RATIO_MIN + 0.01 && slow) {
+    grass.count = Math.max(1500, Math.round(grass.count * 0.8));
+  } else if (fast && grass.count < GRASS_MAX) {
+    grass.count = Math.min(GRASS_MAX, Math.round(grass.count * 1.15) + 60);
+  }
+
   if (Math.abs(clamped - quality.ratio) < 0.01) return;
   quality.ratio = clamped;
-  renderer.setPixelRatio(clamped);
-  composer.setPixelRatio(clamped);
-  composer.setSize(innerWidth, innerHeight);
-  godRays?.setSize(innerWidth, innerHeight);
+  applyQuality();
 }
+applyQuality();   // match SMAA and the transmission buffer to the starting ratio
 const camPos = new THREE.Vector3();
 const screenPos = new THREE.Vector3();
 const aimTarget = new THREE.Vector3();
@@ -301,6 +349,7 @@ const lureTarget = new THREE.Vector3();
 const lureNdc = new THREE.Vector2();
 
 function frame() {
+  renderer.info.reset();
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
   adapt(dt);
@@ -343,11 +392,26 @@ function frame() {
   if (fallingLeaves) updateFallingLeaves(fallingLeaves, t, dt);
   grade.uniforms.uTime.value = t;
   composer.render();
+  quality.calls = renderer.info.render.calls;
+  quality.tris = renderer.info.render.triangles;
 }
 renderer.setAnimationLoop(frame);
 
 if (new URLSearchParams(location.search).has('debug')) {
-  window.__hero = { scene, camera, renderer, composer, edgeWant, edgePull, branch,
+  // A readout, so "is it 60?" is answered by measurement rather than by feel.
+  const hud = document.createElement('div');
+  hud.style.cssText = 'position:fixed;z-index:9;left:12px;top:12px;padding:7px 10px;'
+    + 'background:rgba(12,20,10,.72);color:#dcef9a;font:11px/1.5 monospace;'
+    + 'white-space:pre;border-radius:3px;pointer-events:none';
+  document.body.appendChild(hud);
+  setInterval(() => {
+    const r = renderer.info.render;
+    hud.textContent = `${quality.fps.toFixed(0)} fps   ratio ${quality.ratio.toFixed(2)}\n`
+      + `${r.calls} calls   ${(r.triangles / 1000).toFixed(0)}k tris\n`
+      + `rays ${godRays ? godRays.resolution.toFixed(2) : '-'}   smaa ${smaa.enabled ? 'on' : 'off'}`;
+  }, 250);
+
+  window.__hero = { scene, camera, renderer, composer, edgeWant, edgePull, branch, quality,
                     get godRays() { return godRays; },
                     get robot() { return robot; },
                     get butterfly() { return butterfly; } };
