@@ -1,232 +1,57 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Alex Shvachko Portfolio</title>
-  <link rel="icon" type="image/jpeg" href="assets/img/logo.jpg">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Alex Shvachko builds AI systems, data infrastructure, automation and creative technology.">
+  <title>Alex Shvachko — AI systems & creative technology</title>
   <link rel="stylesheet" href="assets/css/styles.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script defer src="assets/js/main.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-  <script defer src="assets/js/particles-config.js"></script>
-  <script data-goatcounter="https://alex-port-acc.goatcounter.com/count"
-          async src="//gc.zgo.at/count.js"></script>
 </head>
-<body class="home">
-  <div id="particles-js"></div>
-
-  <header>
-    <nav class="nav">
-      <div class="links" style="justify-content: center;">
-        <a class="pill active" href="./" data-goatcounter-click="nav:home">Home</a>
-        <a class="pill" href="projects/" data-goatcounter-click="nav:projects">Projects</a>
-        <a class="pill" href="services/" data-goatcounter-click="nav:services">Services</a>
-      </div>
+<body>
+  <a class="skip-link" href="#work">Skip to work</a>
+  <header class="site-header shell">
+    <a class="wordmark" href="./" aria-label="Alex Shvachko home"><span class="mark">AS</span><span>Alex Shvachko</span></a>
+    <nav aria-label="Primary navigation">
+      <a href="#work">Work</a><a href="#about">About</a><a href="#contact">Contact</a>
     </nav>
+    <span class="availability"><i></i> Open to thoughtful projects</span>
   </header>
 
   <main>
-    <!-- Invisible white-on-white logo that darkens locally near the cursor -->
-    <div id="logo-reveal" class="logo-reveal">
-      <svg id="stayreal-logo" viewBox="0 0 2000 600" preserveAspectRatio="xMidYMid meet" overflow="visible" aria-hidden="true">
-        <!-- Static logo -->
-        <g id="logo-dark" opacity="0">
-          <text x="50%" y="50%"
-                text-anchor="middle"
-                dominant-baseline="middle"
-                fill="#111"
-                font-family="Oswald, Inter, 'Segoe UI', sans-serif"
-                font-weight="800"
-                font-size="240"
-                letter-spacing="0.12em">
-            Alex Shvachko
-          </text>
-        </g>
-      </svg>
-      <h1 class="logo-title">Alex Shvachko</h1>
-    </div>
-
-    <p class="bio">I’m a Software and AI Automation Engineer, as well as an AI Artist, passionate about creating intelligent systems that enhance creativity with technology. Scroll down to explore my experience timeline and recent projects as I look for new opportunities in the tech world.</p>
-
-        <section class="experience-section" id="experience" aria-label="Professional experience timeline">
-      <header class="experience-header">
-        <h2 class="experience-heading">Experience</h2>
-        <p class="experience-lead">Hands-on impact across data platforms and AI education.</p>
-      </header>
-      
-      <div class="experience-timeline" role="list">
-        <div class="experience-timeline-line" aria-hidden="true"></div>
-        <article class="experience-item experience-item--right" role="listitem">
-          <span class="experience-period">2024 &ndash; Present</span>
-          <h3 class="experience-title">Software Engineer (Data/ML Focus)</h3>
-          <p class="experience-company">Millimedical Solutions (Startup)</p>
-          <div class="experience-achievements">
-            <h4 class="experience-achievements-title">Key Achievements</h4>
-            <ul class="experience-achievement-list">
-              <li>
-                <span class="experience-bullet" aria-hidden="true"></span>
-                <span>Designed and optimized a large-scale data pipeline (C#, SQL, Python) for longitudinal medical analytics, reducing query time by 60%.</span>
-              </li>
-              <li>
-                <span class="experience-bullet" aria-hidden="true"></span>
-                <span>Enabled 20+ researchers to process 1B+ rows efficiently for ongoing clinical studies.</span>
-              </li>
-            </ul>
-          </div>
-        </article>
-        <article class="experience-item experience-item--left" role="listitem">
-          <span class="experience-period">2023 &ndash; 2024</span>
-          <h3 class="experience-title">Data Science Instructor</h3>
-          <p class="experience-company">Cyber Education Center</p>
-          <div class="experience-achievements">
-            <h4 class="experience-achievements-title">Key Achievements</h4>
-            <ul class="experience-achievement-list">
-              <li>
-                <span class="experience-bullet" aria-hidden="true"></span>
-                <span>Tutored 40+ students in Python and core AI concepts, reducing program dropout by 20% while leading collaborative projects.</span>
-              </li>
-              <li>
-                <span class="experience-bullet" aria-hidden="true"></span>
-                <span>Developed an AI-driven pipeline that automated homework reporting and surfaced personalized feedback.</span>
-              </li>
-            </ul>
-          </div>
-        </article>
+    <section class="hero shell">
+      <div class="hero-copy">
+        <p class="eyebrow">AI technologist / creative engineer</p>
+        <h1>I build useful systems with a little <em>strangeness.</em></h1>
+        <p class="lede">AI infrastructure, data workflows and expressive web experiments for teams that want the technology to feel human.</p>
+        <div class="hero-actions"><a class="button button-dark" href="#work">Explore selected work <span>↘</span></a><a class="text-link" href="mailto:alex.shvachko.wrk@gmail.com">Start a conversation <span>↗</span></a></div>
+      </div>
+      <div class="hero-art" aria-label="Low-poly robot in a woodland scene">
+        <div class="art-meta"><span>01 / field note</span><span>robot-postman-oak</span></div>
+        <img src="assets/img/robot-postman-oak.png" alt="Low-poly robot standing in a green woodland clearing">
+        <p class="art-caption">A small field robot, carrying signals through the undergrowth.</p>
       </div>
     </section>
 
-    <section class="skills-section" id="skills" aria-label="Skills">
-      <header class="skills-header">
-        <h2 class="skills-heading">My Skills</h2>
-        <div class="skills-sep"></div>
-      </header>
-      <div class="skills-legend" aria-hidden="true">
-        <div class="legend-item"><span class="skills-dot proficient"></span> Proficient</div>
-        <div class="legend-item"><span class="skills-dot intermediate"></span> Intermediate</div>
-        <div class="legend-item"><span class="skills-dot exploring"></span> Exploring</div>
-        <div class="legend-item"><span class="skills-dot familiar"></span> Familiar</div>
-      </div>
-      <div class="skills-grid">
-        <div class="skill-card">
-          <div class="card-head">
-            <h3 class="card-title">AI &amp; Machine Learning</h3>
-          </div>
-          <div class="skill-list">
-            <div class="skill-chip lvl-intermediate">XGBoost, TensorFlow, PyTorch, scikit-learn</div>
-            <div class="skill-chip lvl-exploring">pandas, numpy, optuna</div>
-            <div class="skill-chip lvl-intermediate">n8n, Make, Zapier</div>
-            <div class="skill-chip lvl-intermediate">NLP & LLMs: embeddings,sentiment analysis, RAG</div>
-            <div class="skill-chip lvl-exploring">Prompt Engeneering, Data Engeneering</div>
-            <div class="skill-chip lvl-intermediate">AI agents, MCP</div>
-            <div class="skill-chip lvl-familiar">webhooks, automations, Data Flow</div>
-          </div>
-        </div>
-        <div class="skill-card">
-          <div class="card-head">
-            <h3 class="card-title">Cloud Architecture &amp; ETL/BI</h3>
-          </div>
-          <div class="skill-list">
-            <div class="skill-chip lvl-proficient">RESTful APIs, microservices</div>
-            <div class="skill-chip lvl-proficient">Spark, Hadoop, AWS</div>
-            <div class="skill-chip lvl-intermediate">Tableau, PowerBI, Talend</div>
-            <div class="skill-chip lvl-intermediate">CI/CD Pipelines</div>
-            <div class="skill-chip lvl-intermediate"> NoSQL: Mongo, MinIO, Redis, Cassandra</div>
-            <div class="skill-chip lvl-proficient">Docker, Kubernetes</div>
-            <div class="skill-chip lvl-proficient">DevOps/CI: Git, GitHub Actions</div>
-          </div>
-        </div>
-        <div class="skill-card">
-          <div class="card-head">
-            <h3 class="card-title">Programming</h3>
-          </div>
-          <div class="skill-list">
-            <div class="skill-chip lvl-proficient">Python(5+ yrs)</div>
-            <div class="skill-chip lvl-familiar">Java</div>
-            <div class="skill-chip lvl-intermediate">C#/.NET .NET Core, ASP.NET, REST(1+ yrs dev experience)</div>
-            <div class="skill-chip lvl-familiar">C/C++ (backend stack)</div>
-            <div class="skill-chip lvl-intermediate">SQL(1+ yrs dev experience)</div>
-            <div class="skill-chip lvl-familiar">HTML, CSS, JavaScript(vibe)</div>
-            <div class="skill-chip lvl-proficient">Linux,Bash, Slurm</div>
-            <div class="skill-chip lvl-exploring">Cybersecurity</div>
-          </div>
-        </div>
-        <div class="skill-card">
-          <div class="card-head">
-            <h3 class="card-title">Data Science</h3>
-          </div>
-          <div class="skill-list">
-            <div class="skill-chip lvl-exploring">Elasticsearch</div>
-            <div class="skill-chip lvl-intermediate">Big Data Pipelines</div>
-            <div class="skill-chip lvl-intermediate">Analytics Engineering</div>
-            <div class="skill-chip lvl-proficient">EDA, Dashboards</div>
-            <div class="skill-chip lvl-proficient">IR, Vector search</div>
-            <div class="skill-chip lvl-proficient">Pattern Mining</div>
-            <div class="skill-chip lvl-proficient">Longitudinal Data Analysis </div>
-          </div>
-        </div>
-        <div class="skill-card">
-          <div class="card-head">
-            <h3 class="card-title">AI Art</h3>
-          </div>
-          <div class="skill-list">
-            <div class="skill-chip lvl-proficient">Stable Diffusion models</div>
-            <div class="skill-chip lvl-proficient">Flux, Wan, Nano Banana, Kontext, Illustrous</div>
-            <div class="skill-chip lvl-intermediate">Lora Training</div>
-            <div class="skill-chip lvl-proficient">ComfyUI, Forge</div>
-            <div class="skill-chip lvl-intermediate">VAE, Clip, Samplers, Noise Injection</div>
-            <div class="skill-chip lvl-proficient">ControlNet, Hypernetworks, Embeddings</div>
-          </div>
-        </div>
+    <section class="manifesto shell" id="about">
+      <p class="eyebrow">The short version</p>
+      <div><h2>From messy data to clear movement.</h2><p>I work across the seam between rigorous engineering and visual thinking. That means reliable pipelines, useful automations and interfaces that leave enough room for curiosity.</p></div>
+      <div class="stats"><div><strong>60%</strong><span>query-time reduction on clinical analytics</span></div><div><strong>1B+</strong><span>rows made available to research workflows</span></div><div><strong>3</strong><span>layers: systems, story, interface</span></div></div>
+    </section>
+
+    <section class="work shell" id="work">
+      <div class="section-heading"><div><p class="eyebrow">Selected work</p><h2>Systems with a point of view.</h2></div><p>Data and automation projects, presented with enough context to show how they work.</p></div>
+      <div class="project-grid">
+        <a class="project project-large" href="mailto:alex.shvachko.wrk@gmail.com?subject=Wafer%20scratch%20detection"><div class="project-image image-wafer"><img src="assets/img/wafer_map_target.png" alt="Wafer map scratch detection output"></div><div class="project-info"><span>01 / machine learning</span><h3>Wafer scratch detection</h3><p>Spatial feature engineering and explainability for semiconductor map patterns.</p><b>Read the case study ↗</b></div></a>
+        <a class="project" href="mailto:alex.shvachko.wrk@gmail.com?subject=RAG%20automation"><div class="project-image image-rag"><img src="assets/img/rag_Screen.png" alt="RAG automation workflow interface"></div><div class="project-info"><span>02 / AI workflows</span><h3>Retrieval, routed</h3><p>RAG and n8n experiments that turn scattered knowledge into usable operations.</p><b>Open the thread ↗</b></div></a>
+        <a class="project" href="mailto:alex.shvachko.wrk@gmail.com?subject=CV%20Tailors"><div class="project-image image-cv"><img src="assets/img/cv_tailors_proj.png" alt="CV Tailors workflow project"></div><div class="project-info"><span>03 / automation</span><h3>CV Tailors</h3><p>A workflow that helps people move from a role description to a sharper application.</p><b>See the workflow ↗</b></div></a>
       </div>
     </section>
 
-    <section class="contact-section" id="contact-info" aria-label="Resume and contact">
-      <div class="contact-intro">
-        <h2 class="contact-heading">Resume &amp; Contact</h2>
-        <p class="contact-subheading">Download my CV or reach out directly.</p>
-      </div>
-      <div class="contact-layout">
-          <div class="cv-preview">
-          <object data="assets/media/Alex%20Shvachko%20-%20CV.pdf#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf" width="100%" height="100%" style="border:0; outline:0;">
-            <p>Your browser can't preview PDFs. View it here:
-              <a href="assets/media/Alex%20Shvachko%20-%20CV.pdf" target="_blank" rel="noopener" data-goatcounter-click="cv:open:fallback">Open the CV</a>
-            </p>
-          </object>
-          </div>
-        <div class="contact-details">
-          <div class="cv-actions">
-            <a class="pill" href="assets/media/Alex%20Shvachko%20-%20CV.pdf" target="_blank" rel="noopener" data-goatcounter-click="cv:open">Open Full CV</a>
-            <a class="pill" href="assets/media/Alex%20Shvachko%20-%20CV.pdf" download data-goatcounter-click="cv:download">Download PDF</a>
-          </div>
-          <h3 class="contact-title">Get in Touch</h3>
-          <ul class="contact-list">
-            <li>Email: <a href="mailto:alex.shvachko.wrk@gmail.com" data-goatcounter-click="contact:email">alex.shvachko.wrk@gmail.com</a></li>
-            <li>Phone: <a href="tel:+9720587380259" data-goatcounter-click="contact:phone">+972 058-738-0259</a></li>
-            <li>Instagram: <a href="https://www.instagram.com/alex_sh111?igsh=NHQwbHN4ZTJ1aHpl&utm_source=qr" target="_blank" rel="noopener" data-goatcounter-click="contact:instagram">alex_sh111</a></li>
-            <li>LinkedIn: <a href="https://www.linkedin.com/in/alex-shvachko-71573823a/" target="_blank" rel="noopener" data-goatcounter-click="contact:linkedin">Alex Shvachko</a></li>
-            <li>High Resolution Image Portfolio: <span>available upon request</span></li>
-          </ul>
-        </div>
-      </div>
-    </section>
+    <section class="capabilities shell"><p class="eyebrow">What I bring</p><div class="capability-list"><div><span>01</span><h3>AI systems</h3><p>LLMs, RAG, embeddings, agents and evaluation-minded workflows.</p></div><div><span>02</span><h3>Data foundations</h3><p>Python, SQL, Spark, APIs and infrastructure that hold up under use.</p></div><div><span>03</span><h3>Creative interfaces</h3><p>JavaScript, React, three.js and visual experiments with a pulse.</p></div></div></section>
+
+    <section class="contact shell" id="contact"><p class="eyebrow">04 / next signal</p><h2>Have a knot worth untying?</h2><a class="contact-link" href="mailto:alex.shvachko.wrk@gmail.com">alex.shvachko.wrk@gmail.com <span>↗</span></a></section>
   </main>
-
-  <footer>
-    c 2025 Alex Shvachko.
-  </footer>
-  <style>
-    /* Make all text non-selectable on the home page only */
-    body { 
-      -webkit-user-select: none; 
-      -ms-user-select: none; 
-      user-select: none; 
-      margin: 0;
-      padding: 0;
-    }
-    
-  </style>
+  <footer class="site-footer shell"><span>© 2026 Alex Shvachko</span><span>AI systems · data · creative technology</span><a href="https://www.linkedin.com/in/alex-shvachko-71573823a/">LinkedIn ↗</a></footer>
+  <script src="assets/js/main.js"></script>
 </body>
 </html>
