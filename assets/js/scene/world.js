@@ -7,7 +7,8 @@ export const LAYOUT = {
   // Sunk into the root flare and turned toward the camera: the oak has grown up
   // around him where he sat down.
   robot: { pos: new THREE.Vector3(1.28, 0.30, 3.95), rotY: -0.34, scale: 1 },
-  pond: { centre: new THREE.Vector3(-2.55, -0.62, 4.35), radius: 2.85 },
+  // Drawn in under the root flare, so the water meets the roots beneath him.
+  pond: { centre: new THREE.Vector3(-0.75, -0.42, 4.95), radius: 2.9 },
   sun: new THREE.Vector3(-4.2, 4.6, -17),
   sunTarget: new THREE.Vector3(0.9, 1.3, 3.6),
 };
@@ -238,6 +239,19 @@ export function buildRocks(scene) {
       x, y: groundHeight(x, z).y + scale * 0.28 - 0.14, z, scale,
       rx: rand() * 3, ry: rand() * 3, rz: rand() * 3,
       sx: 0.8 + rand() * 0.5, sz: 0.8 + rand() * 0.5,
+    });
+  }
+
+  // Boulders close to the lens on the left, to shut that corner of the frame
+  // the way the bough shuts the right. They ride in the dry instance list, so
+  // they cost nothing but their triangles.
+  for (const [x, z, scale] of [[-2.35, 7.45, 1.55], [-1.10, 8.30, 1.25],
+                               [-3.20, 6.60, 1.20], [0.15, 8.85, 0.95],
+                               [-2.10, 9.05, 1.40]]) {
+    place[0].push({
+      x, y: groundHeight(x, z).y + scale * 0.28 - 0.34, z, scale,
+      rx: rand() * 3, ry: rand() * 3, rz: rand() * 3,
+      sx: 0.85 + rand() * 0.5, sz: 0.85 + rand() * 0.5,
     });
   }
 

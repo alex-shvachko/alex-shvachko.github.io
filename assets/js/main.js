@@ -10,6 +10,7 @@ import { SMAAPass } from './vendor/addons/postprocessing/SMAAPass.js';
 import { Robot } from './scene/robot.js';
 import { ButterflyController } from './scene/butterfly.js';
 import { GodRaysPass } from './scene/godrays.js';
+import { buildGlassBranch } from './scene/glassbranch.js';
 import {
   LAYOUT, buildEnvironment, placeTree, buildGround, buildRocks,
   buildPond, buildRoots, buildLights, buildScreenLight,
@@ -34,6 +35,9 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
+// The glass menu refracts what is behind it, which costs an extra pass over the
+// opaque scene. Half resolution is free of visible cost through frosted glass.
+renderer.transmissionResolutionScale = 0.5;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 160);
@@ -62,7 +66,12 @@ const grass = buildGrass(scene);
 const water = buildPond(scene, LAYOUT.sun);
 const screenLight = buildScreenLight(scene);
 const motes = buildMotes(scene);
-water.reflectionSkips.push(grass, motes);
+
+// The navigation, as a glass bough of the oak hanging into the right of frame.
+const branch = buildGlassBranch(scene, camera, document.querySelector('.branch-menu'),
+  { home: HOME, focus: FOCUS });
+
+water.reflectionSkips.push(grass, motes, branch.frame);
 
 /* --------------------------------------------------------------------- loading */
 const draco = new DRACOLoader().setDecoderPath('./assets/js/vendor/addons/libs/draco/');
@@ -121,10 +130,18 @@ const ready = (async () => {
     // Kept tight around the robot so it never wanders out of frame.
     bounds: new THREE.Box3(
       new THREE.Vector3(-2.4, 0.9, 2.6), new THREE.Vector3(3.8, 4.2, 6.4)),
-    motion: { scale: 0.26, followSpeed: 2.1, noise: 0.06, landingHeight: 0.45 },
-    zones: [{ id: 'finger', mesh: robot.perch, radius: 0.34,
-              normal: new THREE.Vector3(0, 1, 0) }],
-    onStateChange: state => { robot.frozen = state !== 'flying'; },
+    motion: { scale: 0.12, followSpeed: 1.7, noise: 0.06, landingHeight: 0.32 },
+    zones: [
+      { id: 'finger', mesh: robot.perch, radius: 0.34,
+        normal: new THREE.Vector3(0, 1, 0) },
+      ...branch.zones,
+    ],
+    // Only the fingertip landing holds the arm still, so the hand stops moving
+    // out from under it. When the butterfly goes to the menu he keeps reaching
+    // after it, and his head keeps following.
+    onStateChange: (state, zone) => {
+      robot.frozen = state !== 'flying' && zone === 'finger';
+    },
   });
 
   // The canopy and the sun are both static and leaves are the only casters, so
@@ -145,19 +162,49 @@ ready.catch(err => {
 const ndc = new THREE.Vector2();
 const picker = new THREE.Raycaster();
 let luring = false;
+// Refreshed on every move and on resize. The frame loop reads only its width
+// and height to place the menu labels, and those are what scrolling leaves
+// alone, so it never needs a scroll listener of its own.
+let rect = stage.getBoundingClientRect();
+
+/** Which perch, if any, the cursor is resting on. */
+function perchUnderCursor() {
+  if (robot && picker.intersectObject(robot.body, false).length) return 'finger';
+  return branch.zones.find(z => picker.intersectObject(z.mesh, false).length > 0)?.id ?? null;
+}
 
 function onMove(e) {
-  const r = stage.getBoundingClientRect();
-  const fx = (e.clientX - r.left) / r.width;
-  const fy = (e.clientY - r.top) / r.height;
+  rect = stage.getBoundingClientRect();
+  const fx = (e.clientX - rect.left) / rect.width;
+  const fy = (e.clientY - rect.top) / rect.height;
   ndc.set(fx * 2 - 1, -(fy * 2) + 1);
+  picker.setFromCamera(ndc, camera);
 
   // Pointing anywhere at the robot calls the butterfly to his hand; the lure in
   // the frame loop then walks it onto the fingertip.
-  if (robot) {
-    picker.setFromCamera(ndc, camera);
-    luring = picker.intersectObject(robot.body, false).length > 0;
+  luring = !!robot && picker.intersectObject(robot.body, false).length > 0;
+
+  // Once it has settled, leaving sends it back up - and so does moving to a
+  // different perch, so it hops along the menu rather than sitting there while
+  // the cursor walks away. The controller handles breaking off an approach.
+  if (butterfly?.state === 'landed') {
+    const under = perchUnderCursor();
+    if (under !== butterfly.landing?.zone.id) {
+      butterfly.resetButterfly();
+      // A reset deliberately disarms capture so it cannot re-land where it just
+      // left. Moving to a different perch is the one case that should re-arm at
+      // once, otherwise the hop strands it in mid-air.
+      if (under) butterfly.zoneArmed = true;
+    }
   }
+
+  // Highlight the menu. A bead under the cursor wins; otherwise the label's own
+  // pointer events own the highlight, so a cursor resting on the text keeps it.
+  const beads = picker.intersectObjects(branch.pods, false);
+  if (beads.length) branch.setHover(beads[0].object.userData.nodeId);
+  else if (!e.target.closest?.('.branch-menu a')) branch.setHover(null);
+  stage.classList.toggle('is-pointing', !!branch.hovered);
+
   if (!luring) butterfly?.handlePointer(ndc, camera);
 
   // Only the outer band of the frame moves the camera at all.
@@ -169,7 +216,17 @@ function onMove(e) {
 }
 
 stage.addEventListener('pointermove', onMove);
-stage.addEventListener('pointerleave', () => edgeWant.set(0, 0));
+stage.addEventListener('pointerleave', () => {
+  edgeWant.set(0, 0);
+  branch.setHover(null);
+  stage.classList.remove('is-pointing');
+  if (butterfly?.state === 'landed') butterfly.resetButterfly();
+});
+// Clicking the bead itself follows the link the same way its label does.
+stage.addEventListener('click', e => {
+  if (e.target.closest?.('.branch-menu a')) return;
+  branch.nodes.find(n => n.id === branch.hovered)?.label?.click();
+});
 // The hero owns the wheel: it must not scroll the page out from under the scene.
 stage.addEventListener('wheel', e => e.preventDefault(), { passive: false });
 stage.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
@@ -180,6 +237,8 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
   godRays?.setSize(innerWidth, innerHeight);
+  rect = stage.getBoundingClientRect();
+  branch.resize();       // the bough is framed by aspect, not by a fixed offset
 });
 
 /* ------------------------------------------------------------- post-processing */
@@ -277,6 +336,7 @@ function frame() {
     }
   }
 
+  branch.update(t, dt, rect);
   water.material.uniforms.time.value += dt * 0.42;
   motes.material.uniforms.uTime.value = t;
   grass.userData.uniforms.uTime.value = t;
@@ -287,7 +347,7 @@ function frame() {
 renderer.setAnimationLoop(frame);
 
 if (new URLSearchParams(location.search).has('debug')) {
-  window.__hero = { scene, camera, renderer, composer, edgeWant, edgePull,
+  window.__hero = { scene, camera, renderer, composer, edgeWant, edgePull, branch,
                     get godRays() { return godRays; },
                     get robot() { return robot; },
                     get butterfly() { return butterfly; } };

@@ -124,15 +124,23 @@ export class ButterflyController {
   }
 
   handlePointer(ndc, camera) {
-    // Lock immediately on selection, including the approach and descent.
-    if (this.state !== 'flying') return;
+    // The final descent is committed - interrupting it would mean never
+    // settling - but the approach is not. Crossing one perch on the way to
+    // another used to capture the butterfly there for good, which made the
+    // robot impossible to pass on the way to the menu.
+    if (this.state === 'landing' || this.state === 'landed') return;
     camera.updateMatrixWorld();
     this.raycaster.setFromCamera(ndc, camera);
     const hit = this.hitZone();
     if (!hit) this.zoneArmed = true;
     if (hit && this.zoneArmed) {
-      this.selectLanding(hit);
+      if (this.state === 'flying' || hit.zone !== this.landing?.zone) this.selectLanding(hit);
       return;
+    }
+    // Nothing under the cursor any more: break off and fly again.
+    if (this.state === 'approaching') {
+      this.landing = null;
+      this.setState('flying');
     }
     const normal = this.v[1].subVectors(camera.position, this.focus);
     normal.y *= 0.25;                       // keep the plane close to upright
