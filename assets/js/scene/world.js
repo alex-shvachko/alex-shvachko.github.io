@@ -1,12 +1,13 @@
 import * as THREE from '../vendor/three.module.js';
 import { Water } from '../vendor/addons/objects/Water.js';
+import { mergeGeometries } from '../vendor/addons/utils/BufferGeometryUtils.js';
 
 export const LAYOUT = {
   treeScale: 0.38,
   // Sunk into the root flare and turned toward the camera: the oak has grown up
   // around him where he sat down.
   robot: { pos: new THREE.Vector3(1.28, 0.30, 3.95), rotY: -0.34, scale: 1 },
-  pond: { centre: new THREE.Vector3(-3.9, -0.72, 3.4), radius: 4.0 },
+  pond: { centre: new THREE.Vector3(-2.55, -0.62, 4.35), radius: 2.85 },
   sun: new THREE.Vector3(-4.2, 4.6, -17),
   sunTarget: new THREE.Vector3(0.9, 1.3, 3.6),
 };
@@ -147,6 +148,22 @@ function translucentLeaves(material) {
 }
 
 /* ---------------------------------------------------------------------- ground */
+/** The single source of truth for terrain height, so the ground mesh, the rocks
+ *  and every blade of grass all agree on where the floor is. */
+export function groundHeight(x, z) {
+  const { centre, radius } = LAYOUT.pond;
+  const d = Math.hypot(x - centre.x, z - centre.z);
+  const basin = THREE.MathUtils.clamp(1 - d / (radius * 1.45), 0, 1);
+  const bowl = -Math.pow(basin, 1.35) * 1.5;
+  const bump = (Math.sin(x * 0.31) * Math.cos(z * 0.27) * 0.26
+    + Math.sin(x * 0.83 + z * 0.6) * 0.11
+    + Math.sin(x * 1.9 + z * 1.4) * 0.055
+    + Math.sin(x * 4.7 + z * 3.1) * 0.022
+    + Math.sin(x * 9.3 - z * 7.7) * 0.011) * (1 - basin * 0.8);
+  const mound = Math.exp(-((x * x) + (z * z)) / 55) * 1.35 * (1 - basin);
+  return { y: bowl + bump + mound, basin, bump, d };
+}
+
 export function buildGround(scene) {
   const size = 110, seg = 200;
   const geo = new THREE.PlaneGeometry(size, size, seg, seg);
@@ -160,18 +177,8 @@ export function buildGround(scene) {
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i);
-    const d = Math.hypot(x - centre.x, z - centre.z);
-    // A real basin. The root mound is masked out of it, otherwise the two
-    // cancel and the pond surface ends up buried under its own bank.
-    const basin = THREE.MathUtils.clamp(1 - d / (radius * 1.45), 0, 1);
-    const bowl = -Math.pow(basin, 1.35) * 1.5;
-    const bump = (Math.sin(x * 0.31) * Math.cos(z * 0.27) * 0.26
-      + Math.sin(x * 0.83 + z * 0.6) * 0.11
-      + Math.sin(x * 1.9 + z * 1.4) * 0.055
-      + Math.sin(x * 4.7 + z * 3.1) * 0.022
-      + Math.sin(x * 9.3 - z * 7.7) * 0.011) * (1 - basin * 0.8);
-    const mound = Math.exp(-((x * x) + (z * z)) / 55) * 1.35 * (1 - basin);
-    pos.setY(i, bowl + bump + mound);
+    const { y, bump, d } = groundHeight(x, z);
+    pos.setY(i, y);
     const wet = THREE.MathUtils.smoothstep(d, radius * 0.72, radius * 1.45);
     const patch = Math.sin(x * 1.7 + z * 1.1) * Math.cos(x * 0.9 - z * 2.3);
     c.copy(silt).lerp(soil, wet)
@@ -189,38 +196,68 @@ export function buildGround(scene) {
 }
 
 /* ----------------------------------------------------------------------- rocks */
+/** Two instanced meshes - one dry, one wet at the waterline - instead of a
+ *  draw call per stone. */
 export function buildRocks(scene) {
   const group = new THREE.Group();
-  const dry = new THREE.MeshStandardMaterial({
-    color: '#403d36', roughness: 1.0, metalness: 0, flatShading: false,
-  });
-  const wet = new THREE.MeshStandardMaterial({
-    color: '#3b3c35', roughness: 0.72, metalness: 0, flatShading: false,
-  });
-  const { centre, radius } = LAYOUT.pond;
-  for (let i = 0; i < 24; i++) {
+  const dry = new THREE.MeshStandardMaterial({ color: '#403d36', roughness: 1, metalness: 0 });
+  const wet = new THREE.MeshStandardMaterial({ color: '#3b3c35', roughness: 0.72, metalness: 0 });
+
+  // Icosahedron geometry is non-indexed, so its shared corners exist as several
+  // separate vertices. Jittering by vertex index pulls those copies apart and
+  // the stone shatters into shards - hash the position instead, so every copy
+  // of a corner moves together and the surface stays closed.
+  const shape = seed => {
     const geo = new THREE.IcosahedronGeometry(1, 2);
     const pos = geo.attributes.position;
+    const hash = (x, y, z) => {
+      const n = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719 + seed) * 43758.5453;
+      return n - Math.floor(n);
+    };
     for (let v = 0; v < pos.count; v++) {
-      const s = 0.86 + rand() * 0.2;
-      pos.setXYZ(v, pos.getX(v) * s, pos.getY(v) * s * 0.66, pos.getZ(v) * s);
+      const x = pos.getX(v), y = pos.getY(v), z = pos.getZ(v);
+      const rx = Math.round(x * 1000) / 1000;
+      const ry = Math.round(y * 1000) / 1000;
+      const rz = Math.round(z * 1000) / 1000;
+      const k = 0.80 + hash(rx, ry, rz) * 0.30;
+      pos.setXYZ(v, x * k, y * k * 0.70, z * k);
     }
     geo.computeVertexNormals();
-    // Clustered along the left bank, hugging the waterline.
-    const a = Math.PI * (0.38 + rand() * 1.24);
-    const r = radius * (0.92 + rand() * 0.62);
-    const scale = 0.22 + rand() * 0.72;
-    const near = r < radius * 1.06;
-    const rock = new THREE.Mesh(geo, near ? wet : dry);
-    const bowl = -Math.pow(THREE.MathUtils.clamp(1 - r / (radius * 1.45), 0, 1), 1.35) * 1.5;
-    rock.position.set(centre.x + Math.cos(a) * r, bowl + scale * 0.26 - 0.2,
-      centre.z + Math.sin(a) * r);
-    rock.scale.setScalar(scale);
-    rock.rotation.set(rand() * 3, rand() * 3, rand() * 3);
-    rock.castShadow = false;
-    rock.receiveShadow = true;
-    group.add(rock);
+    return geo;
+  };
+
+  const { centre, radius } = LAYOUT.pond;
+  const place = [[], []];
+  for (let i = 0; i < 30; i++) {
+    const a = Math.PI * (0.32 + rand() * 1.36);
+    const r = radius * (0.9 + rand() * 0.7);
+    const scale = 0.2 + rand() * 0.62;
+    const x = centre.x + Math.cos(a) * r;
+    const z = centre.z + Math.sin(a) * r;
+    place[r < radius * 1.06 ? 1 : 0].push({
+      x, y: groundHeight(x, z).y + scale * 0.28 - 0.14, z, scale,
+      rx: rand() * 3, ry: rand() * 3, rz: rand() * 3,
+      sx: 0.8 + rand() * 0.5, sz: 0.8 + rand() * 0.5,
+    });
   }
+
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  const p = new THREE.Vector3(), sc = new THREE.Vector3();
+  [dry, wet].forEach((mat, idx) => {
+    const list = place[idx];
+    if (!list.length) return;
+    const mesh = new THREE.InstancedMesh(shape(idx * 7.3), mat, list.length);
+    list.forEach((o, i) => {
+      p.set(o.x, o.y, o.z);
+      q.setFromEuler(e.set(o.rx, o.ry, o.rz));
+      sc.set(o.scale * o.sx, o.scale, o.scale * o.sz);
+      mesh.setMatrixAt(i, m.compose(p, q, sc));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.castShadow = false;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  });
   scene.add(group);
   return group;
 }
@@ -229,8 +266,8 @@ export function buildRocks(scene) {
 export function buildPond(scene, sunDirection) {
   const geo = new THREE.CircleGeometry(LAYOUT.pond.radius, 72);
   const water = new Water(geo, {
-    textureWidth: 512,
-    textureHeight: 512,
+    textureWidth: 256,
+    textureHeight: 256,
     waterNormals: waterNormals(),
     sunDirection: sunDirection.clone().normalize(),
     sunColor: 0xfff0cf,
@@ -245,8 +282,31 @@ export function buildPond(scene, sunDirection) {
   water.material.uniforms.size.value = 2.4;
   // Water.js floors its reflective term at a flat vec3(0.1), which reads as a
   // milky disc in a shaded glade. Drop it so the pond can actually go dark.
-  water.material.fragmentShader =
-    water.material.fragmentShader.replace('vec3( 0.1 )', 'vec3( 0.015 )');
+  water.material.fragmentShader = water.material.fragmentShader
+    .replace('vec3( 0.1 )', 'vec3( 0.015 )')
+    // Bias every noise octave along a common direction so the surface reads as
+    // moving water rather than chop stirring in place, and stretch the sampling
+    // across the flow so the ripples elongate into streaks the way a current does.
+    .replace('vec4 getNoise( vec2 uv ) {', `
+      uniform vec2 uFlow;
+      uniform float uFlowStrength;
+      vec4 getNoise( vec2 uv ) {
+        uv += uFlow * time * uFlowStrength;
+        uv -= uFlow * dot( uv, uFlow ) * 0.22;`);
+  water.material.uniforms.uFlow = { value: new THREE.Vector2(0.82, 0.57).normalize() };
+  water.material.uniforms.uFlowStrength = { value: 5.5 };
+
+  // The reflection pass renders the scene a second time. Grass, motes and
+  // drifting leaves cost most of the geometry and read as noise at 256px, so
+  // they sit this one out.
+  water.reflectionSkips = [];
+  const baseOnBeforeRender = water.onBeforeRender;
+  water.onBeforeRender = function (...args) {
+    const hidden = water.reflectionSkips.filter(o => o && o.visible);
+    hidden.forEach(o => { o.visible = false; });
+    baseOnBeforeRender.apply(this, args);
+    hidden.forEach(o => { o.visible = true; });
+  };
   water.material.needsUpdate = true;
   scene.add(water);
   return water;
@@ -255,7 +315,6 @@ export function buildPond(scene, sunDirection) {
 /* ----------------------------------------------------------------------- roots */
 /** Roots grown over the seated robot - the reason he never got up again. */
 export function buildRoots(scene, material) {
-  const group = new THREE.Group();
   const p = LAYOUT.robot.pos;
   const arcs = [
     [[-1.6, -0.3, -1.2], [-0.55, 0.30, 0.10], [0.5, 0.26, 0.78], [1.7, -0.25, 1.2]],
@@ -265,18 +324,19 @@ export function buildRoots(scene, material) {
     [[0.6, -0.3, -1.7], [0.95, 0.46, -0.62], [1.12, 0.5, 0.42], [1.0, -0.15, 1.3]],
     [[-0.35, -0.35, 1.6], [0.2, 0.12, 1.85], [0.85, 0.1, 1.8], [1.45, -0.35, 1.5]],
   ];
-  for (const pts of arcs) {
+  // One merged geometry: six tubes were six draw calls for static scenery.
+  const parts = arcs.map(pts => {
     const curve = new THREE.CatmullRomCurve3(
       pts.map(([x, y, z]) => new THREE.Vector3(p.x + x, p.y + y, p.z + z)));
-    const radius = 0.1 + rand() * 0.08;
-    const root = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 64, radius, 8, false), material);
-    root.castShadow = false;
-    root.receiveShadow = true;
-    group.add(root);
-  }
-  scene.add(group);
-  return group;
+    return new THREE.TubeGeometry(curve, 40, 0.1 + rand() * 0.08, 7, false);
+  });
+  const merged = mergeGeometries(parts);
+  parts.forEach(g => g.dispose());
+  const roots = new THREE.Mesh(merged, material);
+  roots.castShadow = false;
+  roots.receiveShadow = true;
+  scene.add(roots);
+  return roots;
 }
 
 /* ---------------------------------------------------------------------- lights */
@@ -331,7 +391,7 @@ export function buildScreenLight(scene) {
 /* ------------------------------------------------------------------ air / life */
 /** Dust caught in the shafts coming through the canopy. */
 export function buildMotes(scene) {
-  const n = 420;
+  const n = 300;
   const pos = new Float32Array(n * 3);
   const seed = new Float32Array(n);
   for (let i = 0; i < n; i++) {
@@ -417,29 +477,38 @@ export function updateFallingLeaves(mesh, t, dt) {
 }
 
 /** A ring of distant trees, so the glade sits inside a wood instead of ending
- *  on a bare horizon. Deliberately simple: fog and shade do the work. */
+ *  on a bare horizon. Instanced: two draw calls for the whole treeline. */
 export function buildTreeline(scene) {
   const group = new THREE.Group();
+  const count = 64;
   const trunkMat = new THREE.MeshStandardMaterial({ color: '#2f2a1d', roughness: 1 });
   const crownMat = new THREE.MeshStandardMaterial({
     color: '#2b3a1c', roughness: 1, flatShading: true,
   });
-  const trunkGeo = new THREE.CylinderGeometry(0.26, 0.42, 6, 5);
-  const crownGeo = new THREE.IcosahedronGeometry(1, 1);
-  for (let i = 0; i < 64; i++) {
-    const a = (i / 64) * Math.PI * 2 + rand() * 0.09;
+  const trunks = new THREE.InstancedMesh(
+    new THREE.CylinderGeometry(0.26, 0.42, 6, 5), trunkMat, count);
+  const crowns = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(1, 1), crownMat, count);
+
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion();
+  const e = new THREE.Euler(), p = new THREE.Vector3(), sc = new THREE.Vector3();
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2 + rand() * 0.09;
     const r = 23 + rand() * 24;
     const h = 0.75 + rand() * 1.0;
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.set(x, 3 * h - 0.6, z);
-    trunk.scale.set(h, h, h);
-    group.add(trunk);
-    const crown = new THREE.Mesh(crownGeo, crownMat);
-    crown.position.set(x, 6.4 * h, z);
-    crown.scale.set((2.1 + rand()) * h, (2.9 + rand()) * h, (2.1 + rand()) * h);
-    crown.rotation.set(rand() * 3, rand() * 3, rand() * 3);
-    group.add(crown);
+    q.identity();
+    trunks.setMatrixAt(i, m.compose(p.set(x, 3 * h - 0.6, z), q, sc.set(h, h, h)));
+    q.setFromEuler(e.set(rand() * 3, rand() * 3, rand() * 3));
+    crowns.setMatrixAt(i, m.compose(p.set(x, 6.4 * h, z), q,
+      sc.set((2.1 + rand()) * h, (2.9 + rand()) * h, (2.1 + rand()) * h)));
+  }
+  trunks.instanceMatrix.needsUpdate = true;
+  crowns.instanceMatrix.needsUpdate = true;
+  for (const mesh of [trunks, crowns]) {
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;       // distant filler; shading is enough
+    group.add(mesh);
   }
   scene.add(group);
   return group;
@@ -462,4 +531,109 @@ export function buildHollow(scene, barkMaterial) {
   hollow.castShadow = false;
   scene.add(hollow);
   return { hollow };
+}
+
+/* ----------------------------------------------------------------------- grass */
+/** One tapered blade, curved slightly forward so it catches light along its length. */
+function bladeGeometry(segments = 3, width = 0.046, bend = 0.16) {
+  const pos = [], nor = [], idx = [];
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const halfW = 0.5 * width * Math.pow(1 - t, 0.65);
+    const z = bend * t * t;
+    // Normals lean upward so blades read against the sky rather than going flat.
+    const n = new THREE.Vector3(0, 0.45, 1).normalize();
+    pos.push(-halfW, t, z, halfW, t, z);
+    nor.push(n.x, n.y, n.z, n.x, n.y, n.z);
+    if (i < segments) {
+      const b = i * 2;
+      idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  geo.setIndex(idx);
+  return geo;
+}
+
+/**
+ * Instanced grass: one draw call for the whole sward. The blades are real
+ * geometry rather than alpha cards, and the sway is done in the vertex shader
+ * (injected into MeshStandardMaterial so the grass still receives the canopy's
+ * leaf shadows and the scene's image based lighting).
+ */
+export function buildGrass(scene, { count = 14000, radius = 15 } = {}) {
+  const geo = bladeGeometry();
+  const mat = new THREE.MeshStandardMaterial({
+    color: '#55682c', roughness: 0.92, metalness: 0, side: THREE.DoubleSide,
+  });
+
+  const uniforms = { uTime: { value: 0 }, uWind: { value: 0.42 } };
+  mat.onBeforeCompile = shader => {
+    shader.uniforms.uTime = uniforms.uTime;
+    shader.uniforms.uWind = uniforms.uWind;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+        uniform float uTime; uniform float uWind;
+        attribute float aPhase; attribute float aTint;
+        varying float vTint; varying float vUpMix;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vTint = aTint;
+        vUpMix = position.y;
+        float gust = sin( uTime * 1.25 + aPhase ) * 0.6
+                   + sin( uTime * 2.30 + aPhase * 1.7 ) * 0.28;
+        float lever = position.y * position.y;          // hinges at the root
+        transformed.x += gust * lever * uWind;
+        transformed.z += gust * lever * uWind * 0.42;
+        transformed.y -= abs( gust ) * lever * uWind * 0.16;   // bend, not stretch`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+        varying float vTint; varying float vUpMix;`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        // Dark and cool at the root where light does not reach, warmer at the tip.
+        diffuseColor.rgb *= mix( 0.30, 1.28, vUpMix ) * mix( 0.78, 1.30, vTint );
+        diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb
+          * vec3( 1.18, 1.06, 0.66 ), vUpMix * vTint * 0.55 );`);
+  };
+  mat.customProgramCacheKey = () => 'grassBlade';
+
+  const mesh = new THREE.InstancedMesh(geo, mat, count);
+  const phase = new Float32Array(count);
+  const tint = new Float32Array(count);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion();
+  const e = new THREE.Euler(), p = new THREE.Vector3(), sc = new THREE.Vector3();
+  const { centre, radius: pondR } = LAYOUT.pond;
+  const robot = LAYOUT.robot.pos;
+
+  let n = 0;
+  for (let guard = 0; n < count && guard < count * 6; guard++) {
+    // Denser toward the middle of frame, thinning out at the edges.
+    const a = rand() * Math.PI * 2;
+    const r = radius * Math.sqrt(rand()) * (0.35 + rand() * 0.65);
+    const x = Math.cos(a) * r + 0.5;
+    const z = Math.sin(a) * r + 3.2;
+    if (Math.hypot(x - centre.x, z - centre.z) < pondR * 1.02) continue;   // not in the pond
+    if (Math.hypot(x - robot.x, z - robot.z) < 0.85) continue;             // not through him
+    const g = groundHeight(x, z);
+    if (g.basin > 0.55) continue;
+    const h = 0.15 + rand() * 0.26;
+    p.set(x, g.y - 0.02, z);
+    q.setFromEuler(e.set((rand() - 0.5) * 0.22, rand() * Math.PI * 2, (rand() - 0.5) * 0.22));
+    sc.set(0.8 + rand() * 0.6, h, 1);
+    mesh.setMatrixAt(n, m.compose(p, q, sc));
+    phase[n] = rand() * 6.283;
+    tint[n] = rand();
+    n++;
+  }
+  mesh.count = n;
+  mesh.instanceMatrix.needsUpdate = true;
+  geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phase, 1));
+  geo.setAttribute('aTint', new THREE.InstancedBufferAttribute(tint, 1));
+  mesh.castShadow = false;              // leaves are the only casters
+  mesh.receiveShadow = true;
+  mesh.frustumCulled = false;
+  mesh.userData.uniforms = uniforms;
+  scene.add(mesh);
+  return mesh;
 }

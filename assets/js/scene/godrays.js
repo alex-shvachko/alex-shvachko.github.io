@@ -14,7 +14,7 @@ import { Pass, FullScreenQuad } from '../vendor/addons/postprocessing/Pass.js';
  */
 export class GodRaysPass extends Pass {
   constructor(camera, sunPosition, occluders, {
-    density = 0.88, weight = 0.5, decay = 0.955, exposure = 0.62, samples = 48,
+    density = 0.98, weight = 0.5, decay = 0.968, exposure = 1.05, samples = 96,
     resolution = 0.5, colour = new THREE.Color('#ffdba3'),
   } = {}) {
     super();
@@ -27,7 +27,7 @@ export class GodRaysPass extends Pass {
     this.occScene.background = new THREE.Color(0x000000);
 
     const sun = new THREE.Mesh(
-      new THREE.SphereGeometry(7, 24, 16),
+      new THREE.SphereGeometry(10, 24, 16),
       new THREE.MeshBasicMaterial({ color: colour, fog: false }));
     sun.position.copy(this.sunPosition);
     this.occScene.add(sun);

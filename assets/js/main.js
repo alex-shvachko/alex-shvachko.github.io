@@ -14,6 +14,7 @@ import {
   LAYOUT, buildEnvironment, placeTree, buildGround, buildRocks,
   buildPond, buildRoots, buildLights, buildScreenLight,
   buildMotes, buildFallingLeaves, updateFallingLeaves, buildTreeline, buildHollow,
+  buildGrass,
 } from './scene/world.js';
 
 const canvas = document.querySelector('#scene');
@@ -53,13 +54,15 @@ camera.lookAt(FOCUS);
 
 /* ----------------------------------------------------------------- composition */
 buildEnvironment(scene, renderer);
-buildLights(scene);
+const { sun } = buildLights(scene);
 buildGround(scene);
 buildTreeline(scene);
 buildRocks(scene);
+const grass = buildGrass(scene);
 const water = buildPond(scene, LAYOUT.sun);
 const screenLight = buildScreenLight(scene);
 const motes = buildMotes(scene);
+water.reflectionSkips.push(grass, motes);
 
 /* --------------------------------------------------------------------- loading */
 const draco = new DRACOLoader().setDecoderPath('./assets/js/vendor/addons/libs/draco/');
@@ -81,10 +84,11 @@ const ready = (async () => {
   // Shafts are built from the real canopy, so they break through the leaf gaps.
   const trunkOccluder = treeGltf.scene.getObjectByName('Trunk');
   godRays = new GodRaysPass(camera, LAYOUT.sun.clone().normalize().multiplyScalar(74),
-    [...leaves, trunkOccluder]);
+    [...leaves, trunkOccluder], { resolution: 0.5 });
   godRays.setSize(innerWidth, innerHeight);
   composer.insertPass(godRays, 1);
   fallingLeaves = buildFallingLeaves(scene, leaves[0]?.material);
+  water.reflectionSkips.push(fallingLeaves);
 
   robot = robotModel;
   robot.root.position.copy(LAYOUT.robot.pos);
@@ -112,12 +116,21 @@ const ready = (async () => {
   const hand = robot.handPosition(new THREE.Vector3());
   butterfly = await ButterflyController.load(scene, './assets/models/butterfly.glb', {
     loader,
-    focus: new THREE.Vector3(FOCUS.x - 0.3, FOCUS.y + 0.35, FOCUS.z + 1.2),
-    home: hand.clone().add(new THREE.Vector3(0.4, 0.7, 0.9)),
+    focus: new THREE.Vector3(FOCUS.x, FOCUS.y + 0.30, FOCUS.z + 0.7),
+    home: hand.clone().add(new THREE.Vector3(0.3, 0.45, 0.55)),
+    // Kept tight around the robot so it never wanders out of frame.
     bounds: new THREE.Box3(
-      new THREE.Vector3(-5.5, 0.7, 1.0), new THREE.Vector3(5.5, 5.6, 7.5)),
-    motion: { scale: 0.26, followSpeed: 2.1, noise: 0.07 },
+      new THREE.Vector3(-2.4, 0.9, 2.6), new THREE.Vector3(3.8, 4.2, 6.4)),
+    motion: { scale: 0.26, followSpeed: 2.1, noise: 0.06, landingHeight: 0.45 },
+    zones: [{ id: 'finger', mesh: robot.perch, radius: 0.34,
+              normal: new THREE.Vector3(0, 1, 0) }],
+    onStateChange: state => { robot.frozen = state !== 'flying'; },
   });
+
+  // The canopy and the sun are both static and leaves are the only casters, so
+  // the shadow map never needs to be re-rendered after the first frame.
+  sun.shadow.needsUpdate = true;
+  sun.shadow.autoUpdate = false;
 
   stage.classList.add('is-ready');
 })();
@@ -130,13 +143,22 @@ ready.catch(err => {
 
 /* ----------------------------------------------------------------- interaction */
 const ndc = new THREE.Vector2();
+const picker = new THREE.Raycaster();
+let luring = false;
 
 function onMove(e) {
   const r = stage.getBoundingClientRect();
   const fx = (e.clientX - r.left) / r.width;
   const fy = (e.clientY - r.top) / r.height;
   ndc.set(fx * 2 - 1, -(fy * 2) + 1);
-  butterfly?.handlePointer(ndc, camera);
+
+  // Pointing anywhere at the robot calls the butterfly to his hand; the lure in
+  // the frame loop then walks it onto the fingertip.
+  if (robot) {
+    picker.setFromCamera(ndc, camera);
+    luring = picker.intersectObject(robot.body, false).length > 0;
+  }
+  if (!luring) butterfly?.handlePointer(ndc, camera);
 
   // Only the outer band of the frame moves the camera at all.
   const band = v => {
@@ -188,14 +210,41 @@ composer.addPass(new SMAAPass());
 
 /* --------------------------------------------------------------------- runtime */
 const clock = new THREE.Clock();
+
+// Adaptive resolution. Rather than guess a device tier, watch the actual frame
+// time and step the pixel ratio down (and back up) to hold a smooth rate.
+const quality = { ratio: Math.min(devicePixelRatio, 1.75), acc: 0, frames: 0 };
+const RATIO_MIN = Math.min(devicePixelRatio, 0.75);
+const RATIO_MAX = Math.min(devicePixelRatio, 1.75);
+
+function adapt(dt) {
+  quality.acc += dt;
+  quality.frames++;
+  if (quality.acc < 1) return;
+  const fps = quality.frames / quality.acc;
+  quality.acc = 0;
+  quality.frames = 0;
+  const next = fps < 45 ? quality.ratio - 0.25
+    : fps > 58 ? quality.ratio + 0.25 : quality.ratio;
+  const clamped = THREE.MathUtils.clamp(next, RATIO_MIN, RATIO_MAX);
+  if (Math.abs(clamped - quality.ratio) < 0.01) return;
+  quality.ratio = clamped;
+  renderer.setPixelRatio(clamped);
+  composer.setPixelRatio(clamped);
+  composer.setSize(innerWidth, innerHeight);
+  godRays?.setSize(innerWidth, innerHeight);
+}
 const camPos = new THREE.Vector3();
 const screenPos = new THREE.Vector3();
 const aimTarget = new THREE.Vector3();
 const forward = new THREE.Vector3();
+const lureTarget = new THREE.Vector3();
+const lureNdc = new THREE.Vector2();
 
 function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
+  adapt(dt);
 
   edgePull.lerp(edgeWant, 1 - Math.exp(-3.2 * dt));
   camPos.set(HOME.x + edgePull.x * DRIFT.x,
@@ -204,10 +253,21 @@ function frame() {
   camera.position.lerp(camPos, 1 - Math.exp(-5.0 * dt));
   camera.lookAt(FOCUS.x + edgePull.x * 0.18, FOCUS.y - edgePull.y * 0.12, FOCUS.z);
 
-  if (butterfly) butterfly.update(dt);
+  if (butterfly) {
+    // While the cursor rests on him, steer the butterfly with a ray aimed at the
+    // fingertip instead of at the cursor. That both pulls it in and lets the
+    // controller's own landing zone fire, so it settles on his finger.
+    if (luring && robot && butterfly.state === 'flying') {
+      robot.handPosition(lureTarget).project(camera);
+      lureNdc.set(lureTarget.x, lureTarget.y);
+      butterfly.handlePointer(lureNdc, camera);
+    }
+    butterfly.update(dt);
+  }
   if (robot) {
     aimTarget.copy(butterfly ? butterfly.root.position : FOCUS);
     robot.pointAt(aimTarget, dt);
+    robot.watch(aimTarget, dt);
     if (robot.screen) {
       robot.screen.getWorldPosition(screenPos);
       forward.set(0, 0, 1).applyQuaternion(robot.root.quaternion);
@@ -219,6 +279,7 @@ function frame() {
 
   water.material.uniforms.time.value += dt * 0.42;
   motes.material.uniforms.uTime.value = t;
+  grass.userData.uniforms.uTime.value = t;
   if (fallingLeaves) updateFallingLeaves(fallingLeaves, t, dt);
   grade.uniforms.uTime.value = t;
   composer.render();

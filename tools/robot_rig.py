@@ -324,6 +324,32 @@ if PROOF:
         bpy.ops.render.render(write_still=True)
         print('PROOF', scn.render.filepath)
 
+# ------------------------------------------------------------------ save
+# Keep an editable Blender project of the rigged, posed robot. This is saved
+# BEFORE the meshes are joined, so the rig stays workable: separate parts,
+# named bones, and the weighting intact. The original file is never touched.
+PROJECT = os.path.join(os.path.dirname(bpy.data.filepath) or os.getcwd(),
+                       'robot_postman_rigged.blend')
+bpy.ops.wm.save_as_mainfile(filepath=PROJECT, copy=True)
+print('SAVED_PROJECT', PROJECT)
+
+# ------------------------------------------------------------------ merge
+# 489 separate meshes means 489 draw calls in the browser. Joining them into a
+# single skinned mesh collapses that to one call per material (14). Vertex
+# groups union by name, so the binding above survives the join intact.
+bpy.ops.object.mode_set(mode='OBJECT')
+bpy.ops.object.select_all(action='DESELECT')
+for o in meshes:
+    o.select_set(True)
+bpy.context.view_layer.objects.active = meshes[0]
+bpy.ops.object.join()
+merged = bpy.context.view_layer.objects.active
+merged.name = 'RobotPostman'
+print('MERGED into', merged.name,
+      'slots', len(merged.data.materials),
+      'verts', len(merged.data.vertices),
+      'groups', len(merged.vertex_groups))
+
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 bpy.ops.export_scene.gltf(
     filepath=OUT, export_format='GLB', export_yup=True,
