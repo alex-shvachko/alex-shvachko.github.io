@@ -2,6 +2,7 @@ import * as THREE from './vendor/three.module.js';
 
 const canvas = document.querySelector('#scene');
 const interactionTarget = canvas.parentElement;
+const fallbackImage = document.querySelector('.scene-fallback');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#718339');
 scene.fog = new THREE.Fog('#718339', 9, 28);
@@ -34,16 +35,18 @@ const leaves = []; const leafColors = ['#bc8735', '#c75f32', '#8a5e2c'];
 for (let i = 0; i < 26; i++) { const leaf = new THREE.Mesh(new THREE.PlaneGeometry(.2, .32), material(leafColors[i % 3])); leaf.position.set((Math.random() - .5) * 10, 1 + Math.random() * 6, -4 + Math.random() * 8); leaf.userData = { phase: Math.random() * 6.28, speed: .25 + Math.random() * .4 }; scene.add(leaf); leaves.push(leaf); }
 const pointer = { x: 0, y: 0 }, cameraControl = { theta: 0, phi: .08, radius: 10.5, dragging: false, x: 0, y: 0 }, fallbackView = { x: 0, y: 0, zoom: 1 };
 const updateFallbackView = () => {
-  interactionTarget.style.setProperty('--fallback-x', `${fallbackView.x}px`);
-  interactionTarget.style.setProperty('--fallback-y', `${fallbackView.y}px`);
-  interactionTarget.style.setProperty('--fallback-scale', fallbackView.zoom);
+  fallbackImage.style.animation = 'none';
+  fallbackImage.style.transform = `translate3d(${fallbackView.x}px, ${fallbackView.y}px, 0) scale(${fallbackView.zoom})`;
 };
-interactionTarget.addEventListener('pointermove', event => { event.preventDefault(); pointer.x = event.clientX / innerWidth - .5; pointer.y = event.clientY / innerHeight - .5; if (cameraControl.dragging) { const dx = event.clientX - cameraControl.x, dy = event.clientY - cameraControl.y; cameraControl.theta -= dx * .006; cameraControl.phi = THREE.MathUtils.clamp(cameraControl.phi + dy * .004, -.65, .8); fallbackView.x = THREE.MathUtils.clamp(fallbackView.x + dx * .34, -120, 120); fallbackView.y = THREE.MathUtils.clamp(fallbackView.y + dy * .34, -100, 100); updateFallbackView(); cameraControl.x = event.clientX; cameraControl.y = event.clientY; } });
-interactionTarget.addEventListener('pointerdown', event => { event.preventDefault(); cameraControl.dragging = true; cameraControl.x = event.clientX; cameraControl.y = event.clientY; interactionTarget.setPointerCapture?.(event.pointerId); });
-interactionTarget.addEventListener('pointerup', event => { event.preventDefault(); cameraControl.dragging = false; interactionTarget.releasePointerCapture?.(event.pointerId); });
-interactionTarget.addEventListener('pointercancel', () => { cameraControl.dragging = false; });
+const startDrag = event => { cameraControl.dragging = true; cameraControl.x = event.clientX; cameraControl.y = event.clientY; };
+const moveCamera = event => { pointer.x = event.clientX / innerWidth - .5; pointer.y = event.clientY / innerHeight - .5; if (!cameraControl.dragging) return; const dx = event.clientX - cameraControl.x, dy = event.clientY - cameraControl.y; cameraControl.theta -= dx * .006; cameraControl.phi = THREE.MathUtils.clamp(cameraControl.phi - dy * .004, -.08, .9); fallbackView.x = THREE.MathUtils.clamp(fallbackView.x + dx * .34, -120, 120); fallbackView.y = THREE.MathUtils.clamp(fallbackView.y + dy * .34, -100, 100); updateFallbackView(); cameraControl.x = event.clientX; cameraControl.y = event.clientY; };
+const stopDrag = () => { cameraControl.dragging = false; };
+interactionTarget.addEventListener('pointerdown', event => { event.preventDefault(); startDrag(event); interactionTarget.setPointerCapture?.(event.pointerId); });
+interactionTarget.addEventListener('pointermove', event => { event.preventDefault(); moveCamera(event); });
+interactionTarget.addEventListener('pointerup', event => { stopDrag(); interactionTarget.releasePointerCapture?.(event.pointerId); });
+interactionTarget.addEventListener('pointercancel', stopDrag);
 interactionTarget.addEventListener('wheel', event => { event.preventDefault(); cameraControl.radius = THREE.MathUtils.clamp(cameraControl.radius + event.deltaY * .012, 6.2, 16); fallbackView.zoom = THREE.MathUtils.clamp(fallbackView.zoom - event.deltaY * .001, .9, 1.65); updateFallbackView(); }, { passive: false });
 addEventListener('resize', () => { if (!renderer) return; camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 const clock = new THREE.Clock();
-const render = () => { const time = clock.getElapsedTime(); robot.position.y = .3 + Math.sin(time * 1.4) * .06; robot.rotation.y = Math.sin(time * .45) * .08; const orbitY = 3.1 + Math.sin(cameraControl.phi) * cameraControl.radius; const orbitX = Math.sin(cameraControl.theta) * cameraControl.radius; const orbitZ = Math.cos(cameraControl.theta) * cameraControl.radius; camera.position.x += (orbitX + pointer.x * .25 - camera.position.x) * .08; camera.position.y += (orbitY - camera.position.y) * .08; camera.position.z += (orbitZ - camera.position.z) * .08; camera.lookAt(0, 2.2, 0); leaves.forEach(leaf => { leaf.position.y -= leaf.userData.speed * .016; leaf.position.x += Math.sin(time + leaf.userData.phase) * .008; leaf.rotation.x += .012; leaf.rotation.z += .009; if (leaf.position.y < .3) { leaf.position.y = 6.8; leaf.position.x = (Math.random() - .5) * 10; } }); renderer.render(scene, camera); };
+const render = () => { const time = clock.getElapsedTime(); robot.position.y = .3 + Math.sin(time * 1.4) * .06; robot.rotation.y = Math.sin(time * .45) * .08; const reach = Math.cos(cameraControl.phi) * cameraControl.radius; const orbitY = 2.2 + Math.sin(cameraControl.phi) * cameraControl.radius; const orbitX = Math.sin(cameraControl.theta) * reach; const orbitZ = Math.cos(cameraControl.theta) * reach; camera.position.x += (orbitX + pointer.x * .25 - camera.position.x) * .08; camera.position.y += (orbitY - camera.position.y) * .08; camera.position.z += (orbitZ - camera.position.z) * .08; camera.lookAt(0, 2.2, 0); leaves.forEach(leaf => { leaf.position.y -= leaf.userData.speed * .016; leaf.position.x += Math.sin(time + leaf.userData.phase) * .008; leaf.rotation.x += .012; leaf.rotation.z += .009; if (leaf.position.y < .3) { leaf.position.y = 6.8; leaf.position.x = (Math.random() - .5) * 10; } }); renderer.render(scene, camera); };
 if (renderer) { render(); renderer.setAnimationLoop(render); }
