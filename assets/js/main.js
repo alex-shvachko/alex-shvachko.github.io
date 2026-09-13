@@ -10,7 +10,7 @@ import { SMAAPass } from './vendor/addons/postprocessing/SMAAPass.js';
 import { Robot } from './scene/robot.js';
 import { ButterflyController } from './scene/butterfly.js';
 import { GodRaysPass } from './scene/godrays.js';
-import { buildGlassBranch } from './scene/glassbranch.js';
+import { buildGlassMenu } from './scene/glassbranch.js';
 import {
   LAYOUT, buildEnvironment, placeTree, buildGround, buildRocks,
   buildPond, buildRoots, buildLights, buildScreenLight,
@@ -72,12 +72,12 @@ const screenLight = buildScreenLight(scene);
 const motes = buildMotes(scene);
 
 // The navigation, as a glass bough of the oak hanging into the right of frame.
-const branch = buildGlassBranch(scene, camera, document.querySelector('.branch-menu'),
+const menu = buildGlassMenu(scene, camera, document.querySelector('.branch-menu'),
   { home: HOME, focus: FOCUS });
 
 // The reflection re-renders the scene. At 256px in dark water none of these
 // read as anything but noise, and they are most of the geometry.
-water.reflectionSkips.push(grass, motes, treeline, branch.frame);
+water.reflectionSkips.push(grass, motes, treeline, menu.frame);
 
 /* --------------------------------------------------------------------- loading */
 const draco = new DRACOLoader().setDecoderPath('./assets/js/vendor/addons/libs/draco/');
@@ -139,7 +139,7 @@ const ready = (async () => {
     zones: [
       { id: 'finger', mesh: robot.perch, radius: 0.34,
         normal: new THREE.Vector3(0, 1, 0) },
-      ...branch.zones,
+      ...menu.zones,
     ],
     // Only the fingertip landing holds the arm still, so the hand stops moving
     // out from under it. When the butterfly goes to the menu he keeps reaching
@@ -175,7 +175,7 @@ let rect = stage.getBoundingClientRect();
 /** Which perch, if any, the cursor is resting on. */
 function perchUnderCursor() {
   if (robot && picker.intersectObject(robot.body, false).length) return 'finger';
-  return branch.zones.find(z => picker.intersectObject(z.mesh, false).length > 0)?.id ?? null;
+  return menu.zones.find(z => picker.intersectObject(z.mesh, false).length > 0)?.id ?? null;
 }
 
 function onMove(e) {
@@ -205,10 +205,10 @@ function onMove(e) {
 
   // Highlight the menu. A bead under the cursor wins; otherwise the label's own
   // pointer events own the highlight, so a cursor resting on the text keeps it.
-  const beads = picker.intersectObjects(branch.pods, false);
-  if (beads.length) branch.setHover(beads[0].object.userData.nodeId);
-  else if (!e.target.closest?.('.branch-menu a')) branch.setHover(null);
-  stage.classList.toggle('is-pointing', !!branch.hovered);
+  const beads = picker.intersectObjects(menu.buttons, false);
+  if (beads.length) menu.setHover(beads[0].object.userData.nodeId);
+  else if (!e.target.closest?.('.branch-menu a')) menu.setHover(null);
+  stage.classList.toggle('is-pointing', !!menu.hovered);
 
   if (!luring) butterfly?.handlePointer(ndc, camera);
 
@@ -223,14 +223,14 @@ function onMove(e) {
 stage.addEventListener('pointermove', onMove);
 stage.addEventListener('pointerleave', () => {
   edgeWant.set(0, 0);
-  branch.setHover(null);
+  menu.setHover(null);
   stage.classList.remove('is-pointing');
   if (butterfly?.state === 'landed') butterfly.resetButterfly();
 });
 // Clicking the bead itself follows the link the same way its label does.
 stage.addEventListener('click', e => {
   if (e.target.closest?.('.branch-menu a')) return;
-  branch.nodes.find(n => n.id === branch.hovered)?.label?.click();
+  menu.nodes.find(n => n.id === menu.hovered)?.label?.click();
 });
 // The hero owns the wheel: it must not scroll the page out from under the scene.
 stage.addEventListener('wheel', e => e.preventDefault(), { passive: false });
@@ -243,7 +243,7 @@ addEventListener('resize', () => {
   composer.setSize(innerWidth, innerHeight);
   godRays?.setResolution(rayScale());
   rect = stage.getBoundingClientRect();
-  branch.resize();       // the bough is framed by aspect, not by a fixed offset
+  menu.resize();       // the bough is framed by aspect, not by a fixed offset
 });
 
 /* ------------------------------------------------------------- post-processing */
@@ -251,13 +251,13 @@ const composer = new EffectComposer(renderer);
 composer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
 composer.addPass(new RenderPass(scene, camera));
 
-// Bloom is a blur, so it gains nothing from running at full resolution. Halving
-// its internal chain quarters the pixel work of roughly ten passes and is not
-// distinguishable in the result.
+// Bloom runs at full resolution. Halving its chain looked like free money on
+// paper - ten passes at a quarter of the pixels - but measured out at about
+// 2.5% of the frame, and the coarse bottom mip haloed the pinpoint highlight on
+// each glass bevel into a blocky white square sitting over the menu. Not a
+// trade worth making.
 const bloom = new UnrealBloomPass(
   new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.65, 0.92);
-const bloomSetSize = bloom.setSize.bind(bloom);
-bloom.setSize = (w, h) => bloomSetSize(Math.round(w * 0.5), Math.round(h * 0.5));
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 const grade = new ShaderPass({
@@ -374,7 +374,10 @@ function frame() {
   }
   if (robot) {
     aimTarget.copy(butterfly ? butterfly.root.position : FOCUS);
-    robot.pointAt(aimTarget, dt);
+    // Idle first: it moves the torso and neck, and the arm should solve against
+    // where the shoulder has actually ended up this frame.
+    robot.idle(t);
+    robot.pointAt(aimTarget, dt, t);
     robot.watch(aimTarget, dt);
     if (robot.screen) {
       robot.screen.getWorldPosition(screenPos);
@@ -385,7 +388,7 @@ function frame() {
     }
   }
 
-  branch.update(t, dt, rect);
+  menu.update(t, dt, rect);
   water.material.uniforms.time.value += dt * 0.42;
   motes.material.uniforms.uTime.value = t;
   grass.userData.uniforms.uTime.value = t;
@@ -411,7 +414,7 @@ if (new URLSearchParams(location.search).has('debug')) {
       + `rays ${godRays ? godRays.resolution.toFixed(2) : '-'}   smaa ${smaa.enabled ? 'on' : 'off'}`;
   }, 250);
 
-  window.__hero = { scene, camera, renderer, composer, edgeWant, edgePull, branch, quality,
+  window.__hero = { scene, camera, renderer, composer, edgeWant, edgePull, menu, quality,
                     get godRays() { return godRays; },
                     get robot() { return robot; },
                     get butterfly() { return butterfly; } };

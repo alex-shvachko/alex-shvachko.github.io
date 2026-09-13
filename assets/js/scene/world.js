@@ -446,9 +446,13 @@ export function buildMotes(scene) {
         p.y += sin( uTime * 0.15 + aSeed * 1.7 ) * 0.35;
         p.z += cos( uTime * 0.19 + aSeed * 2.3 ) * 0.45;
         vec4 mv = modelViewMatrix * vec4( p, 1.0 );
+        // Fade out both far away and right against the lens. A mote a couple of
+        // metres from the camera was drawing a 20px sprite over the menu, which
+        // nothing that close and that out of focus should do.
         vFade = ( 0.45 + 0.55 * sin( uTime * 0.7 + aSeed * 3.1 ) ) *
-                smoothstep( 26.0, 6.0, -mv.z );
-        gl_PointSize = ( 2.6 + 2.2 * sin( aSeed ) ) * ( 9.0 / -mv.z );
+                smoothstep( 26.0, 6.0, -mv.z ) *
+                smoothstep( 1.8, 4.6, -mv.z );
+        gl_PointSize = min( ( 2.6 + 2.2 * sin( aSeed ) ) * ( 9.0 / -mv.z ), 10.0 );
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `uniform vec3 uColour; varying float vFade;

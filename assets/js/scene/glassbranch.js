@@ -2,13 +2,13 @@ import * as THREE from '../vendor/three.module.js';
 import { mergeGeometries } from '../vendor/addons/utils/BufferGeometryUtils.js';
 
 /**
- * The navigation: a bough of the oak hanging into the right of frame, rendered
- * as liquid glass with a bead at each section.
+ * The right-hand furniture of the hero: a stack of liquid-glass buttons, and,
+ * separate from them, a horizontal leafy bough that exists only as somewhere for
+ * the butterfly to land.
  *
- * It lives in world space rather than being parented to the camera. That costs a
- * little framing work on resize, but it is what lets the bough refract the real
- * scene behind it, take the real sun, drift with the camera's parallax - and,
- * above all, be somewhere the butterfly can actually fly to and land on.
+ * Both live in world space rather than parented to the camera. That is what lets
+ * the glass refract the real woodland behind it, lets the bough take the real
+ * sun, and puts the bough somewhere the butterfly can actually fly to.
  *
  * The frame group sits at the camera's home pose and looks at the focus point,
  * so everything inside it is authored in comfortable screen-ish coordinates:
@@ -23,23 +23,28 @@ export const MENU = [
   { id: 'contact', href: '#contact' },
 ];
 
-const PIVOT_Y = 1.9;          // where the bough leaves the canopy, and swings from
-const NODE_Y = [0.92, 0.40, -0.12, -0.64, -1.16];
-const ROW_H = 0.52;
-const LIMB_R0 = 0.095;        // thick where it leaves the tree
-const LIMB_R1 = 0.024;        // tapering to the tip
+const BTN_W = 1.42;                   // sized to hold the type, not the other way round
+const BTN_H = 0.26;
+const BTN_R = 0.09;                   // corner radius: rounded, not a pill
+const ROW_Y = [0.60, 0.22, -0.16, -0.54, -0.92];
 
-// Menu space: the beads sit on x = 0, so reframing on resize is a single shift.
-// The lateral wander matters: a limb that falls straight reads as a pipe.
-const LIMB_PTS = [
-  [0.72, 1.95, -0.38], [0.55, 1.35, -0.16], [0.34, 0.76, 0.04],
-  [0.45, 0.16, 0.10], [0.31, -0.44, 0.02], [0.43, -1.06, -0.10],
-  [0.28, -1.78, -0.32],
+const BOUGH_Y = 1.12;                 // clear of the buttons, up where the canopy is
+const BOUGH_X = 1.35;                 // pivot off the right edge, where it sways from
+const BOUGH_R0 = 0.085;
+const BOUGH_R1 = 0.022;
+const LEAF_COUNT = 132;
+
+// Authored from the bough's pivot, running left across frame and sagging a
+// little under its own weight.
+const BOUGH_PTS = [
+  [0, 0, 0], [-0.62, -0.07, 0.06], [-1.24, -0.15, 0.04],
+  [-1.86, -0.19, -0.04], [-2.48, -0.17, -0.12], [-2.95, -0.08, -0.22],
 ];
-const LIMB_TOP = LIMB_PTS[0][1];
-const LIMB_SPAN = LIMB_TOP - LIMB_PTS[LIMB_PTS.length - 1][1];
 
-const v = (x, y, z) => new THREE.Vector3(x, y - PIVOT_Y, z);
+const rand = (() => {                 // deterministic: it must not reshuffle
+  let s = 991137;
+  return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+})();
 
 /**
  * A tube whose radius tapers along the curve, which three's TubeGeometry cannot
@@ -83,127 +88,193 @@ function taperedTube(curve, tubular, radial, r0, r1) {
   return g;
 }
 
-/** A hanging bead of glass: a teardrop revolved about its axis. */
-function beadGeometry() {
-  const profile = [[0, 0.115], [0.030, 0.100], [0.055, 0.072], [0.070, 0.035],
-                   [0.072, 0], [0.062, -0.038], [0.038, -0.068], [0, -0.082]];
-  return new THREE.LatheGeometry(profile.map(([x, y]) => new THREE.Vector2(x, y)), 26);
+/** A rounded rectangle. Corners, not a circle and not a pill. */
+function roundedRect(w, h, r) {
+  const s = new THREE.Shape();
+  const x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y);
+  s.lineTo(x + w - r, y);
+  s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r);
+  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h);
+  s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r);
+  s.quadraticCurveTo(x, y, x + r, y);
+  return s;
 }
 
-export function buildGlassBranch(scene, camera, nav, {
-  home, focus, distance = 4.6, targetX = 0.60,
+/** A simple pointed leaf, as geometry rather than an alpha-cut card. */
+function leafGeometry() {
+  const s = new THREE.Shape();
+  s.moveTo(0, 0);
+  s.bezierCurveTo(0.055, 0.035, 0.085, 0.125, 0, 0.215);
+  s.bezierCurveTo(-0.085, 0.125, -0.055, 0.035, 0, 0);
+  return new THREE.ShapeGeometry(s, 7);
+}
+
+export function buildGlassMenu(scene, camera, nav, {
+  home, focus, distance = 4.6, targetX = 0.62,
 } = {}) {
   /* ------------------------------------------------------------------- framing */
   const frame = new THREE.Group();
-  frame.name = 'BranchFrame';
+  frame.name = 'MenuFrame';
   frame.position.copy(home);
   // Matrix4.lookAt, not Object3D.lookAt: the latter aims +Z at the target for a
   // plain object and only cameras and lights get the -Z convention. Using it
-  // here would build the entire menu behind the viewer.
+  // here would build the whole thing behind the viewer.
   frame.quaternion.setFromRotationMatrix(
     new THREE.Matrix4().lookAt(home, focus, new THREE.Vector3(0, 1, 0)));
 
-  const sway = new THREE.Group();       // the whole bough swings from the pivot
-  sway.position.set(0, PIVOT_Y, -distance);
-  frame.add(sway);
-  scene.add(frame);
-  // Frame first, so the perch points below are derived from the final matrices.
-  resize();
-  frame.updateMatrixWorld(true);
+  const panel = new THREE.Group();        // the buttons: UI, so it holds still
+  panel.position.set(0, 0, -distance);
+  frame.add(panel);
 
-  /* ------------------------------------------------------------------ material */
-  // Transmission, not opacity: the bough bends the woodland behind it, which is
-  // the whole difference between glass and a tinted overlay. Held just under 1
-  // so some surface shading survives and the form stays readable against a busy
-  // scene.
+  const bough = new THREE.Group();        // the perch: swings in the wind
+  bough.position.set(BOUGH_X, BOUGH_Y, -distance);
+  frame.add(bough);
+
+  scene.add(frame);
+  resize();                               // frame first, so the perches below
+  frame.updateMatrixWorld(true);          // come out of the final matrices
+
+  /* ------------------------------------------------------------- glass buttons */
+  // Transmission rather than opacity: the buttons bend the woodland behind them,
+  // which is the whole difference between glass and a tinted overlay. The
+  // roughness is what frosts the backdrop, and the frosting is what keeps the
+  // label legible over a busy scene.
   const glass = new THREE.MeshPhysicalMaterial({
-    color: 0xe4f1e6, transmission: 0.90, thickness: 0.42, roughness: 0.09,
-    ior: 1.44, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.06,
-    iridescence: 0.40, iridescenceIOR: 1.28, iridescenceThicknessRange: [100, 460],
-    attenuationColor: new THREE.Color('#5f9c74'), attenuationDistance: 1.1,
+    color: 0xeaf4ef, transmission: 0.97, thickness: 0.22, roughness: 0.17,
+    // A near-mirror clearcoat concentrates the sun into a pinpoint that crosses
+    // the bloom threshold and, at bloom's half resolution, smears into a blocky
+    // white square over the UI. Spreading the lobe keeps the sheen and loses the
+    // artefact.
+    ior: 1.42, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.28,
+    iridescence: 0.34, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 460],
+    attenuationColor: new THREE.Color('#6f9d86'), attenuationDistance: 1.9,
     envMapIntensity: 1.5,
   });
-  // Thickness is what lets the tint accumulate; with it near zero the glass
-  // washes out to white plastic against a bright sky.
-  glass.thickness = 0.85;
-  const beadGlass = glass.clone();
-  beadGlass.thickness = 0.26;
-  beadGlass.roughness = 0.04;
-  beadGlass.attenuationDistance = 0.7;
 
-  /* ---------------------------------------------------------------- the branch */
-  const limbCurve = new THREE.CatmullRomCurve3(LIMB_PTS.map(p => v(...p)));
-  const parts = [taperedTube(limbCurve, 64, 10, LIMB_R0, LIMB_R1)];
-
-  const along = y => THREE.MathUtils.clamp((LIMB_TOP - y) / LIMB_SPAN, 0, 1);
-  const limbAt = y => limbCurve.getPoint(along(y));
-  const limbRadiusAt = y => THREE.MathUtils.lerp(LIMB_R0, LIMB_R1, along(y));
+  const slab = new THREE.ExtrudeGeometry(roundedRect(BTN_W, BTN_H, BTN_R), {
+    depth: 0.07, bevelEnabled: true, bevelSize: 0.022,
+    bevelThickness: 0.022, bevelSegments: 3, curveSegments: 7,
+  });
+  slab.translate(0, 0, -0.035);
 
   const nodes = [];
-  const pods = [];
-  const zones = [];
-  const bead = beadGeometry();
-  const coreGeo = new THREE.SphereGeometry(0.022, 10, 8);
-
+  const buttons = [];
   MENU.forEach((item, i) => {
-    const y = NODE_Y[i];
-    const twig = new THREE.CatmullRomCurve3([
-      limbAt(y + 0.18),
-      v(0.24, y + 0.13, 0.04),
-      v(0.08, y + 0.05, 0.09),
-      v(0, y + 0.115, 0.10),
-    ]);
-    parts.push(taperedTube(twig, 22, 7, 0.022, 0.011));
-
-    const pod = new THREE.Mesh(bead, beadGlass);
-    pod.position.copy(v(0, y, 0.10));
-    pod.userData.nodeId = item.id;
-    pod.castShadow = false;
-    pod.receiveShadow = false;
-    sway.add(pod);
-    pods.push(pod);
-
-    // A spark caught inside the glass. It is opaque, so it lands in the
-    // transmission buffer and shows through the bead, refracted.
-    const core = new THREE.Mesh(coreGeo, new THREE.MeshBasicMaterial());
-    core.material.color.setRGB(0.42, 0.55, 0.26);
-    core.position.copy(pod.position).setY(pod.position.y + 0.005);
-    sway.add(core);
-
-    // The butterfly's landing zone. The catcher is an invisible panel over the
-    // whole row, label included, so simply moving the cursor onto the menu is
-    // enough; `point` then puts the butterfly down on the bough itself rather
-    // than wherever the panel happened to be struck.
-    const catcher = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.25, ROW_H),
-      new THREE.MeshBasicMaterial({ visible: false }));
-    catcher.name = `MenuRow_${item.id}`;
-    catcher.position.copy(v(-0.62, y, 0.30));
-    sway.add(catcher);
-    catcher.updateWorldMatrix(true, false);
-
-    const perch = limbAt(y - 0.05);
-    perch.y += limbRadiusAt(y - 0.05);
-    zones.push({
-      id: `menu-${item.id}`,
-      mesh: catcher,
-      point: catcher.worldToLocal(sway.localToWorld(perch)),
-      normal: new THREE.Vector3(0, 1, 0),
+    const mesh = new THREE.Mesh(slab, glass);
+    mesh.position.set(0, ROW_Y[i], 0);
+    mesh.userData.nodeId = item.id;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    panel.add(mesh);
+    buttons.push(mesh);
+    nodes.push({
+      ...item, mesh, label: nav.querySelector(`[data-node="${item.id}"]`),
+      glow: 0, want: 0,
     });
-
-    const label = nav.querySelector(`[data-node="${item.id}"]`);
-    nodes.push({ ...item, pod, core, label, glow: 0, want: 0 });
   });
 
-  const woodGeo = mergeGeometries(parts);
-  parts.forEach(g => g.dispose());
-  const wood = new THREE.Mesh(woodGeo, glass);
-  wood.name = 'GlassBough';
-  wood.castShadow = false;
-  wood.receiveShadow = false;
-  sway.add(wood);
+  /* ------------------------------------------------------- the bough, and leaves */
+  const curve = new THREE.CatmullRomCurve3(
+    BOUGH_PTS.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+  const parts = [taperedTube(curve, 56, 9, BOUGH_R0, BOUGH_R1)];
 
-  /* ---------------------------------------------------------------- behaviour */
+  // A couple of forks, so it reads as a bough rather than a dowel.
+  for (const [t, dx, dy, dz] of [[0.34, -0.42, 0.30, 0.10], [0.62, -0.38, -0.26, -0.08]]) {
+    const a = curve.getPoint(t);
+    parts.push(taperedTube(new THREE.CatmullRomCurve3([
+      a.clone(),
+      a.clone().add(new THREE.Vector3(dx * 0.45, dy * 0.55, dz * 0.5)),
+      a.clone().add(new THREE.Vector3(dx, dy, dz)),
+    ]), 18, 7, 0.030, 0.014));
+  }
+  // MeshPhysicalMaterial purely for `specularIntensity`. A dark, rough cylinder
+  // silhouetted against a bright sky picks up a near-total Fresnel rim across
+  // most of its projected width, which washed the bough out to pale grey
+  // whatever its albedo. MeshStandardMaterial gives no way to turn that down.
+  const wood = new THREE.Mesh(mergeGeometries(parts), new THREE.MeshPhysicalMaterial({
+    color: '#4a3520', roughness: 1, metalness: 0,
+    specularIntensity: 0.12, envMapIntensity: 0.35,
+  }));
+  parts.forEach(g => g.dispose());
+  wood.name = 'PerchBough';
+  wood.castShadow = false;      // the canopy's shadow map is baked once and frozen
+  wood.receiveShadow = true;
+  bough.add(wood);
+
+  const leafMat = new THREE.MeshPhysicalMaterial({
+    color: '#5f7d33', roughness: 0.9, metalness: 0, side: THREE.DoubleSide,
+    specularIntensity: 0.25, envMapIntensity: 0.6,
+  });
+  const leafGeo = leafGeometry();
+  const leaves = new THREE.InstancedMesh(leafGeo, leafMat, LEAF_COUNT);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), spin = new THREE.Quaternion();
+  const p = new THREE.Vector3(), sc = new THREE.Vector3(), dir = new THREE.Vector3();
+  const UP = new THREE.Vector3(0, 1, 0);
+  const tint = new THREE.Color();
+  for (let i = 0; i < LEAF_COUNT; i++) {
+    const t = 0.05 + (i / LEAF_COUNT) * 0.93;
+    const a = rand() * Math.PI * 2;
+    const r = THREE.MathUtils.lerp(BOUGH_R0, BOUGH_R1, t);
+    curve.getPoint(t, p);
+    p.x += (rand() - 0.5) * 0.1;
+    p.y += Math.sin(a) * r * 0.85;
+    p.z += Math.cos(a) * r * 0.85 + (rand() - 0.5) * 0.08;
+    // Leaves fan outward and hang: mostly down, splayed around the stem.
+    dir.set(Math.cos(a) * 0.55 + (rand() - 0.5) * 0.3,
+            -0.62 - rand() * 0.35,
+            Math.sin(a) * 0.55).normalize();
+    q.setFromUnitVectors(UP, dir);
+    q.multiply(spin.setFromAxisAngle(UP, rand() * Math.PI * 2));
+    const s = 1.05 + rand() * 0.75;
+    sc.set(s, s, s);
+    leaves.setMatrixAt(i, m.compose(p, q, sc));
+    // setRGB takes linear values, so these are multipliers on the base green
+    // rather than sRGB swatches: some leaves warmer and older, some fresher.
+    const warm = rand();
+    leaves.setColorAt(i, tint.setRGB(0.74 + warm * 0.50, 0.92 + warm * 0.18,
+                                     0.58 + warm * 0.30));
+  }
+  leaves.instanceMatrix.needsUpdate = true;
+  leaves.instanceColor.needsUpdate = true;
+  leaves.castShadow = false;
+  leaves.receiveShadow = true;
+  leaves.frustumCulled = false;
+  bough.add(leaves);
+
+  /* -------------------------------------------------------------- landing zones */
+  // The bough itself, so hovering it lands the butterfly wherever you point.
+  const zones = [{ id: 'bough', mesh: wood, normal: new THREE.Vector3(0, 1, 0) }];
+
+  // And one invisible catcher per button row, so simply moving the cursor onto
+  // the menu sends the butterfly to the bough. `point` is what puts it down on
+  // the branch instead of wherever the catcher was struck; the catchers are
+  // children of the bough so the butterfly rides the sway once it has settled.
+  ROW_Y.forEach((y, i) => {
+    const catcher = new THREE.Mesh(
+      new THREE.PlaneGeometry(BTN_W + 0.34, 0.42),
+      new THREE.MeshBasicMaterial({ visible: false }));
+    catcher.name = `MenuRow_${MENU[i].id}`;
+    catcher.position.set(-BOUGH_X, y - BOUGH_Y, 0.34);
+    bough.add(catcher);
+    catcher.updateWorldMatrix(true, false);
+
+    // Spread the five perches along the bough, so it matters which one you hover.
+    const t = 0.22 + (i / (ROW_Y.length - 1)) * 0.62;
+    const perch = curve.getPoint(t);
+    perch.y += THREE.MathUtils.lerp(BOUGH_R0, BOUGH_R1, t);
+    zones.push({
+      id: `menu-${MENU[i].id}`,
+      mesh: catcher,
+      point: catcher.worldToLocal(bough.localToWorld(perch)),
+      normal: new THREE.Vector3(0, 1, 0),
+    });
+  });
+
+  /* ------------------------------------------------------------------ behaviour */
   let hovered = null;
   const setHover = id => {
     hovered = id;
@@ -222,38 +293,35 @@ export function buildGlassBranch(scene, camera, nav, {
 
   const still = matchMedia('(prefers-reduced-motion: reduce)');
   const proj = new THREE.Vector3();
-  const hot = new THREE.Color(2.4, 2.9, 1.5);   // over 1: this is what blooms
-  const cool = new THREE.Color(0.42, 0.55, 0.26);
 
   function resize() {
     const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * distance;
-    sway.position.x = targetX * halfH * camera.aspect;
+    const shift = targetX * halfH * camera.aspect;
+    panel.position.x = shift;
+    bough.position.x = shift + BOUGH_X;
   }
 
   function update(t, dt, rect) {
     if (!still.matches) {
-      sway.rotation.z = Math.sin(t * 0.42) * 0.013 + Math.sin(t * 0.91) * 0.005;
-      sway.rotation.x = Math.sin(t * 0.33 + 1.7) * 0.009;
+      bough.rotation.z = Math.sin(t * 0.47) * 0.019 + Math.sin(t * 0.93) * 0.007;
+      bough.rotation.x = Math.sin(t * 0.36 + 1.7) * 0.013;
     }
     const ease = 1 - Math.exp(-9 * dt);
     for (const n of nodes) {
       n.glow += (n.want - n.glow) * ease;
-      n.pod.scale.setScalar(1 + n.glow * 0.22);
-      n.core.scale.setScalar(1 + n.glow * 0.7);
-      n.core.material.color.copy(cool).lerp(hot, n.glow);
+      // A press-forward, not a balloon: the slab lifts toward the viewer.
+      n.mesh.scale.setScalar(1 + n.glow * 0.045);
+      n.mesh.position.z = n.glow * 0.085;
       if (!n.label) continue;
-      // The label is laid out from its own right edge, so it grows leftwards
-      // away from the bead and never crosses it.
-      n.pod.getWorldPosition(proj).project(camera);
-      const x = (proj.x * 0.5 + 0.5) * rect.width - 20 - n.glow * 8;
+      n.mesh.getWorldPosition(proj).project(camera);
+      const x = (proj.x * 0.5 + 0.5) * rect.width;
       const y = (-proj.y * 0.5 + 0.5) * rect.height;
-      n.label.style.transform =
-        `translate3d(${x}px, ${y}px, 0) translate(-100%, -50%)`;
+      n.label.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
     }
   }
 
   return {
-    frame, sway, nodes, pods, zones, resize, update, setHover,
+    frame, panel, bough, nodes, buttons, zones, resize, update, setHover,
     get hovered() { return hovered; },
   };
 }

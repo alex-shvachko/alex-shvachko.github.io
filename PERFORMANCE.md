@@ -80,8 +80,11 @@ wedge, so there are **fewer blades but more of them in frame** than before.
 
 ### Fewer full-resolution passes
 
-- **Bloom** runs its blur chain at half resolution. It is a blur; the result is
-  not distinguishable, and it quarters the pixel work of about ten passes.
+- **Bloom** was tried at half resolution and put back to full. On paper it is
+  free money: ten passes at a quarter of the pixels. Measured, it was worth
+  about 2.5% of the frame, and the coarse bottom mip haloed the pinpoint
+  highlight on each glass button bevel into a blocky white square sitting over
+  the menu. Not a trade worth making.
 - **SMAA** switches off once the pixel ratio is above 1.4, where the frame is
   already supersampled and the pass is softening edges that are no longer
   aliased.
@@ -123,11 +126,18 @@ pixel work heavily, so it is a fair proxy for the fill-bound passes):
 | | Median frame |
 |---|---|
 | Before | 704 ms |
-| After | 500 ms |
+| After | 524 ms |
 
-**29% faster**, with per-frame submission down from 134 draw calls / 1.07M
-triangles to 113 calls / 532k triangles.
+**26% faster**, with per-frame submission down from 134 draw calls / 1.07M
+triangles to 106 calls / 535k triangles.
 
-The saving is larger on a real GPU at a high pixel ratio, because the two
-biggest cuts - the ray blur and the bloom chain - scale with pixel count, and
-because SMAA switches off entirely above ratio 1.4.
+The saving is larger on a real GPU at a high pixel ratio, because the biggest
+cut - the ray blur - scales with pixel count, and because SMAA switches off
+entirely above ratio 1.4.
+
+## One more measured non-result
+
+Dust motes are drawn as point sprites sized by distance. One drifting a couple
+of metres from the lens was drawing a 20px sprite straight over the menu. They
+now fade out closer than about 4.6 units and their sprite is capped at 10px:
+nothing that close and that far out of focus should be legible at all.

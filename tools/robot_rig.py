@@ -38,6 +38,23 @@ BONES = [
     ('Knee_R',     'Hip_R',      (-0.09, 0, 0.717),   (-0.09, 0, 0.159)),
     ('Ankle_R',    'Knee_R',     (-0.09, 0, 0.159),   (-0.09, -0.12, 0.03)),
 ]
+
+# Right-hand digits. Only this hand is ever animated: the left arm is pinned at
+# his side inside the trunk, so it keeps riding Wrist_L as one rigid piece and
+# costs no extra joints. Heads and tails come from each piece's own measured
+# extent, so a bone actually lies along the geometry it drives.
+BONES += [
+    ('Finger_0_Prox_R', 'Wrist_R',         (-0.8640, -0.0219, 1.6440), (-0.9080, -0.0219, 1.6440)),
+    ('Finger_0_Dist_R', 'Finger_0_Prox_R', (-0.9080, -0.0219, 1.6440), (-0.9304, -0.0219, 1.6440)),
+    ('Finger_1_Prox_R', 'Wrist_R',         (-0.8640, -0.0069, 1.6440), (-0.9080, -0.0069, 1.6440)),
+    ('Finger_1_Dist_R', 'Finger_1_Prox_R', (-0.9080, -0.0069, 1.6440), (-0.9482, -0.0069, 1.6440)),
+    ('Finger_2_Prox_R', 'Wrist_R',         (-0.8640,  0.0081, 1.6440), (-0.9080,  0.0081, 1.6440)),
+    ('Finger_2_Dist_R', 'Finger_2_Prox_R', (-0.9080,  0.0081, 1.6440), (-0.9437,  0.0081, 1.6440)),
+    ('Finger_3_Prox_R', 'Wrist_R',         (-0.8640,  0.0231, 1.6440), (-0.9080,  0.0231, 1.6440)),
+    ('Finger_3_Dist_R', 'Finger_3_Prox_R', (-0.9080,  0.0231, 1.6440), (-0.9219,  0.0231, 1.6440)),
+    ('Thumb_Prox_R',    'Wrist_R',         (-0.8091, -0.0109, 1.6412), (-0.8430, -0.0330, 1.6035)),
+    ('Thumb_Dist_R',    'Thumb_Prox_R',    (-0.8430, -0.0330, 1.6035), (-0.8759, -0.0436, 1.5802)),
+]
 arm_data = bpy.data.armatures.new('RobotRig')
 rig = bpy.data.objects.new('RobotRig', arm_data)
 bpy.context.scene.collection.objects.link(rig)
@@ -69,6 +86,22 @@ BUCKET_BONE = {
     'thigh_L': 'Hip_L', 'shin_L': 'Knee_L', 'foot_L': 'Ankle_L',
     'thigh_R': 'Hip_R', 'shin_R': 'Knee_R', 'foot_R': 'Ankle_R',
 }
+for _i in range(4):
+    BUCKET_BONE['f%d_prox_R' % _i] = 'Finger_%d_Prox_R' % _i
+    BUCKET_BONE['f%d_dist_R' % _i] = 'Finger_%d_Dist_R' % _i
+BUCKET_BONE['thumb_prox_R'] = 'Thumb_Prox_R'
+BUCKET_BONE['thumb_dist_R'] = 'Thumb_Dist_R'
+
+
+def finger_bucket(n):
+    m = re.match(r'Finger_(\d)_(Proximal|Distal)_R$', n)
+    if m:
+        return 'f%s_%s_R' % (m.group(1), 'prox' if m.group(2) == 'Proximal' else 'dist')
+    if n in ('Thumb_Proximal_R', 'Thumb_Joint_R'):
+        return 'thumb_prox_R'          # the knuckle stays with the base segment
+    if n == 'Thumb_Distal_R':
+        return 'thumb_dist_R'
+    return None
 
 
 def centre(o):
@@ -80,6 +113,9 @@ def bucket(o):
     c = REST_CENTRE[o.name]
     x, z = c.x, c.z
     n = o.name
+    fb = finger_bucket(n)
+    if fb:
+        return fb
     if 'Mailbag' in n or 'Bag' in n:
         return 'torso'
     if 'RP_Head_and_Cap' in {col.name for col in o.users_collection} or z >= 1.90:
