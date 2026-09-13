@@ -5,10 +5,10 @@ export const LAYOUT = {
   treeScale: 0.38,
   // Sunk into the root flare and turned toward the camera: the oak has grown up
   // around him where he sat down.
-  robot: { pos: new THREE.Vector3(1.75, 0.12, 4.75), rotY: -0.5, scale: 1 },
+  robot: { pos: new THREE.Vector3(1.28, 0.30, 3.95), rotY: -0.34, scale: 1 },
   pond: { centre: new THREE.Vector3(-3.9, -0.72, 3.4), radius: 4.0 },
-  sun: new THREE.Vector3(-11, 9.5, -6),
-  sunTarget: new THREE.Vector3(1.2, 1.4, 4.2),
+  sun: new THREE.Vector3(-4.2, 4.6, -17),
+  sunTarget: new THREE.Vector3(0.9, 1.3, 3.6),
 };
 
 const rand = (() => {                     // deterministic: the scene must not
@@ -17,26 +17,25 @@ const rand = (() => {                     // deterministic: the scene must not
 })();
 
 /* ----------------------------------------------------------------- sky and IBL */
-/** Deep canopy sky: cool overhead, a warm haze where the sun sits, dark below. */
+/** A bright summer sky: deep blue overhead, warm haze toward the sun. */
 function skyTexture() {
   const w = 512, h = 256, data = new Uint8Array(w * h * 4);
-  const zenith = new THREE.Color('#16303f');
-  const upper = new THREE.Color('#2c5a58');
-  const haze = new THREE.Color('#44502f');
-  const floor = new THREE.Color('#243429');
-  const warm = new THREE.Color('#c79a56');
+  const zenith = new THREE.Color('#3f7fc4');
+  const upper = new THREE.Color('#8fc0e4');
+  const haze = new THREE.Color('#dce6cf');
+  const floor = new THREE.Color('#6f8257');
+  const warm = new THREE.Color('#fff0c9');
   const c = new THREE.Color(), t2 = new THREE.Color();
   for (let y = 0; y < h; y++) {
     const t = y / (h - 1);
-    if (t < 0.34) c.copy(zenith).lerp(upper, THREE.MathUtils.smoothstep(t, 0, 0.34));
-    else if (t < 0.54) c.copy(upper).lerp(haze, THREE.MathUtils.smoothstep(t, 0.34, 0.54));
-    else c.copy(haze).lerp(floor, THREE.MathUtils.smoothstep(t, 0.54, 0.72));
+    if (t < 0.36) c.copy(zenith).lerp(upper, THREE.MathUtils.smoothstep(t, 0, 0.36));
+    else if (t < 0.56) c.copy(upper).lerp(haze, THREE.MathUtils.smoothstep(t, 0.36, 0.56));
+    else c.copy(haze).lerp(floor, THREE.MathUtils.smoothstep(t, 0.56, 0.80));
     for (let x = 0; x < w; x++) {
-      // A soft warm bloom around the sun's azimuth grounds the key light.
       const az = (x / w) * Math.PI * 2;
-      const glow = Math.pow(Math.max(0, Math.cos(az - 3.55)), 6) *
-        Math.max(0, 1 - Math.abs(t - 0.42) * 5.5);
-      t2.copy(c).lerp(warm, glow * 0.75);
+      const glow = Math.pow(Math.max(0, Math.cos(az - 4.35)), 5) *
+        Math.max(0, 1 - Math.abs(t - 0.26) * 3.2);
+      t2.copy(c).lerp(warm, glow * 0.85);
       const i = (y * w + x) * 4;
       data[i] = t2.r * 255; data[i + 1] = t2.g * 255; data[i + 2] = t2.b * 255; data[i + 3] = 255;
     }
@@ -53,10 +52,10 @@ export function buildEnvironment(scene, renderer) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
   scene.environment = pmrem.fromEquirectangular(sky).texture;
-  scene.environmentIntensity = 0.85;
+  scene.environmentIntensity = 1.15;
   scene.background = sky;
   scene.backgroundIntensity = 1.0;
-  scene.fog = new THREE.FogExp2('#2b3a2c', 0.021);
+  scene.fog = new THREE.FogExp2('#8aa07e', 0.0115);
   pmrem.dispose();
 }
 
@@ -82,6 +81,10 @@ function waterNormals() {
   }
   const tex = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = 8;
   tex.needsUpdate = true;
   return tex;
 }
@@ -96,7 +99,8 @@ export function placeTree(gltf, scene) {
   const leaves = [];
   tree.traverse(o => {
     if (!o.isMesh) return;
-    o.castShadow = true;
+    // Only the canopy casts: the brief is leaf shadows and nothing else.
+    o.castShadow = false;
     o.receiveShadow = true;
     const m = o.material;
     if (m.map) m.map.anisotropy = 8;
@@ -107,13 +111,14 @@ export function placeTree(gltf, scene) {
       m.alphaTest = 0.42;
       m.side = THREE.DoubleSide;
       m.shadowSide = THREE.DoubleSide;
-      m.color.setRGB(0.52, 0.62, 0.42);   // pull the vivid nursery green down
+      o.castShadow = true;
+      m.color.setRGB(0.62, 0.74, 0.46);   // pull the vivid nursery green down
       m.roughness = 0.78;
       m.metalness = 0;
       translucentLeaves(m);
       leaves.push(o);
     } else {
-      m.color.setRGB(0.30, 0.26, 0.21);
+      m.color.setRGB(0.44, 0.38, 0.30);
       m.roughness = 0.97;
       m.metalness = 0;
       if (m.normalScale) m.normalScale.set(1.35, 1.35);
@@ -148,9 +153,9 @@ export function buildGround(scene) {
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   const colour = [];
-  const soil = new THREE.Color('#241f14');
-  const moss = new THREE.Color('#2d3a1a');
-  const silt = new THREE.Color('#161c13');
+  const soil = new THREE.Color('#3b3221');
+  const moss = new THREE.Color('#4a5a26');
+  const silt = new THREE.Color('#232c1c');
   const { centre, radius } = LAYOUT.pond;
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
@@ -162,11 +167,15 @@ export function buildGround(scene) {
     const bowl = -Math.pow(basin, 1.35) * 1.5;
     const bump = (Math.sin(x * 0.31) * Math.cos(z * 0.27) * 0.26
       + Math.sin(x * 0.83 + z * 0.6) * 0.11
-      + Math.sin(x * 1.9 + z * 1.4) * 0.04) * (1 - basin * 0.8);
+      + Math.sin(x * 1.9 + z * 1.4) * 0.055
+      + Math.sin(x * 4.7 + z * 3.1) * 0.022
+      + Math.sin(x * 9.3 - z * 7.7) * 0.011) * (1 - basin * 0.8);
     const mound = Math.exp(-((x * x) + (z * z)) / 55) * 1.35 * (1 - basin);
     pos.setY(i, bowl + bump + mound);
     const wet = THREE.MathUtils.smoothstep(d, radius * 0.72, radius * 1.45);
-    c.copy(silt).lerp(soil, wet).lerp(moss, THREE.MathUtils.clamp(0.25 + bump * 1.5, 0, 1) * wet);
+    const patch = Math.sin(x * 1.7 + z * 1.1) * Math.cos(x * 0.9 - z * 2.3);
+    c.copy(silt).lerp(soil, wet)
+      .lerp(moss, THREE.MathUtils.clamp(0.3 + bump * 1.4 + patch * 0.35, 0, 1) * wet);
     colour.push(c.r, c.g, c.b);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colour, 3));
@@ -183,13 +192,13 @@ export function buildGround(scene) {
 export function buildRocks(scene) {
   const group = new THREE.Group();
   const dry = new THREE.MeshStandardMaterial({
-    color: '#565349', roughness: 0.95, metalness: 0, flatShading: true,
+    color: '#403d36', roughness: 1.0, metalness: 0, flatShading: false,
   });
   const wet = new THREE.MeshStandardMaterial({
-    color: '#44443c', roughness: 0.55, metalness: 0, flatShading: true,
+    color: '#3b3c35', roughness: 0.72, metalness: 0, flatShading: false,
   });
   const { centre, radius } = LAYOUT.pond;
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 24; i++) {
     const geo = new THREE.IcosahedronGeometry(1, 2);
     const pos = geo.attributes.position;
     for (let v = 0; v < pos.count; v++) {
@@ -200,7 +209,7 @@ export function buildRocks(scene) {
     // Clustered along the left bank, hugging the waterline.
     const a = Math.PI * (0.38 + rand() * 1.24);
     const r = radius * (0.92 + rand() * 0.62);
-    const scale = 0.26 + rand() * 1.15;
+    const scale = 0.22 + rand() * 0.72;
     const near = r < radius * 1.06;
     const rock = new THREE.Mesh(geo, near ? wet : dry);
     const bowl = -Math.pow(THREE.MathUtils.clamp(1 - r / (radius * 1.45), 0, 1), 1.35) * 1.5;
@@ -208,7 +217,8 @@ export function buildRocks(scene) {
       centre.z + Math.sin(a) * r);
     rock.scale.setScalar(scale);
     rock.rotation.set(rand() * 3, rand() * 3, rand() * 3);
-    rock.castShadow = rock.receiveShadow = true;
+    rock.castShadow = false;
+    rock.receiveShadow = true;
     group.add(rock);
   }
   scene.add(group);
@@ -223,16 +233,16 @@ export function buildPond(scene, sunDirection) {
     textureHeight: 512,
     waterNormals: waterNormals(),
     sunDirection: sunDirection.clone().normalize(),
-    sunColor: 0xffcf92,
-    waterColor: 0x0b1714,
-    distortionScale: 3.4,
+    sunColor: 0xfff0cf,
+    waterColor: 0x16302a,
+    distortionScale: 1.9,
     fog: true,
   });
   // Water's shader expects the surface in the mesh's XY plane, so the mesh - not
   // the geometry - carries the lie-flat rotation. Rotating both tips it on edge.
   water.rotation.x = -Math.PI / 2;
   water.position.copy(LAYOUT.pond.centre);
-  water.material.uniforms.size.value = 6.0;
+  water.material.uniforms.size.value = 2.4;
   // Water.js floors its reflective term at a flat vec3(0.1), which reads as a
   // milky disc in a shaded glade. Drop it so the pond can actually go dark.
   water.material.fragmentShader =
@@ -261,7 +271,8 @@ export function buildRoots(scene, material) {
     const radius = 0.1 + rand() * 0.08;
     const root = new THREE.Mesh(
       new THREE.TubeGeometry(curve, 64, radius, 8, false), material);
-    root.castShadow = root.receiveShadow = true;
+    root.castShadow = false;
+    root.receiveShadow = true;
     group.add(root);
   }
   scene.add(group);
@@ -271,7 +282,7 @@ export function buildRoots(scene, material) {
 /* ---------------------------------------------------------------------- lights */
 export function buildLights(scene) {
   // Key: low and raking, so the canopy throws long dapples across the robot.
-  const sun = new THREE.DirectionalLight('#ffdcab', 3.3);
+  const sun = new THREE.DirectionalLight('#fff1d4', 4.2);
   sun.position.copy(LAYOUT.sun);
   sun.castShadow = true;
   sun.shadow.mapSize.set(4096, 4096);
@@ -279,7 +290,7 @@ export function buildLights(scene) {
   sun.shadow.camera.far = 48;
   // Tight frustum around the hero area: wide enough for the canopy overhead,
   // narrow enough that a shadow texel stays small enough to read leaf edges.
-  const s = 11;
+  const s = 14;
   sun.shadow.camera.left = -s;
   sun.shadow.camera.right = s;
   sun.shadow.camera.top = s;
@@ -291,17 +302,17 @@ export function buildLights(scene) {
   scene.add(sun, sun.target);
 
   // Sky bounce: just enough to keep the shade readable, not enough to flatten it.
-  const sky = new THREE.HemisphereLight('#79a3c4', '#2b3318', 0.95);
+  const sky = new THREE.HemisphereLight('#a9cff2', '#5a6634', 1.9);
   scene.add(sky);
 
   // Cool rim from behind the trunk, separating the robot from the bark.
-  const rim = new THREE.DirectionalLight('#8ccbff', 1.1);
+  const rim = new THREE.DirectionalLight('#cfe6ff', 0.9);
   rim.position.set(8, 4.2, -7);
   rim.target.position.copy(LAYOUT.sunTarget);
   scene.add(rim, rim.target);
 
   // Warm bounce off the forest floor, filling the undersides.
-  const bounce = new THREE.DirectionalLight('#b08a4e', 0.45);
+  const bounce = new THREE.DirectionalLight('#c6a86a', 1.0);
   bounce.position.set(-2, -4, 6);
   scene.add(bounce);
 
@@ -310,9 +321,9 @@ export function buildLights(scene) {
 
 /** The glow from the robot's face screen, spilling onto bark and roots. */
 export function buildScreenLight(scene) {
-  const light = new THREE.PointLight('#63dcf0', 6.5, 8.5, 2);
+  const light = new THREE.PointLight('#6fe6ff', 7.5, 6.5, 2);
   scene.add(light);
-  const bounce = new THREE.PointLight('#2ea9c8', 2.0, 3.6, 2);
+  const bounce = new THREE.PointLight('#35c2e2', 3.2, 3.6, 2);
   scene.add(bounce);
   return { light, bounce };
 }
@@ -409,9 +420,9 @@ export function updateFallingLeaves(mesh, t, dt) {
  *  on a bare horizon. Deliberately simple: fog and shade do the work. */
 export function buildTreeline(scene) {
   const group = new THREE.Group();
-  const trunkMat = new THREE.MeshStandardMaterial({ color: '#14110c', roughness: 1 });
+  const trunkMat = new THREE.MeshStandardMaterial({ color: '#2f2a1d', roughness: 1 });
   const crownMat = new THREE.MeshStandardMaterial({
-    color: '#121a0d', roughness: 1, flatShading: true,
+    color: '#2b3a1c', roughness: 1, flatShading: true,
   });
   const trunkGeo = new THREE.CylinderGeometry(0.26, 0.42, 6, 5);
   const crownGeo = new THREE.IcosahedronGeometry(1, 1);
@@ -432,4 +443,23 @@ export function buildTreeline(scene) {
   }
   scene.add(group);
   return group;
+}
+
+/** A hollow worn into the trunk, so the robot is seated inside the tree rather
+ *  than propped in front of it. Back faces only: the camera looks into it. */
+export function buildHollow(scene, barkMaterial) {
+  const shell = barkMaterial.clone();
+  shell.side = THREE.BackSide;
+  shell.color.multiplyScalar(0.28);          // the inside of a hollow is dark
+  shell.roughness = 1;
+  const geo = new THREE.SphereGeometry(1, 32, 24);
+  geo.scale(1.02, 1.46, 1.5);
+  const hollow = new THREE.Mesh(geo, shell);
+  const p = LAYOUT.robot.pos;
+  hollow.position.set(p.x - 0.06, p.y + 1.04, p.z - 1.02);
+  hollow.rotation.y = LAYOUT.robot.rotY;
+  hollow.receiveShadow = true;
+  hollow.castShadow = false;
+  scene.add(hollow);
+  return { hollow };
 }

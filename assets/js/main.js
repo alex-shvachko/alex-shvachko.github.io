@@ -9,10 +9,11 @@ import { OutputPass } from './vendor/addons/postprocessing/OutputPass.js';
 import { SMAAPass } from './vendor/addons/postprocessing/SMAAPass.js';
 import { Robot } from './scene/robot.js';
 import { ButterflyController } from './scene/butterfly.js';
+import { GodRaysPass } from './scene/godrays.js';
 import {
   LAYOUT, buildEnvironment, placeTree, buildGround, buildRocks,
   buildPond, buildRoots, buildLights, buildScreenLight,
-  buildMotes, buildFallingLeaves, updateFallingLeaves, buildTreeline,
+  buildMotes, buildFallingLeaves, updateFallingLeaves, buildTreeline, buildHollow,
 } from './scene/world.js';
 
 const canvas = document.querySelector('#scene');
@@ -36,19 +37,18 @@ renderer.toneMappingExposure = 1.0;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 160);
 
-/* ------------------------------------------------------------------ camera rig */
-const FOCUS = new THREE.Vector3(0.25, 1.60, 4.2);
-const rig = { theta: 0.34, phi: 0.09, radius: 8.6, dragging: false, x: 0, y: 0 };
-const LIMIT = { phi: [-0.12, 0.62], radius: [5.2, 13.5], theta: [-0.72, 1.0] };
+/* ----------------------------------------------------------------- camera rig */
+// Locked framing on the robot and the butterfly. The camera never orbits or
+// zooms; it only drifts a little once the cursor approaches the edge of frame.
+const FOCUS = new THREE.Vector3(1.05, 1.62, 4.05);
+const HOME = new THREE.Vector3(2.05, 2.35, 10.6);
+const DRIFT = { x: 0.85, y: 0.42 };      // metres of travel at the very border
+const DEADZONE = 0.45;                   // cursor stays central until this far out
 
-function orbitTarget(out) {
-  const reach = Math.cos(rig.phi) * rig.radius;
-  return out.set(
-    FOCUS.x + Math.sin(rig.theta) * reach,
-    FOCUS.y + Math.sin(rig.phi) * rig.radius,
-    FOCUS.z + Math.cos(rig.theta) * reach);
-}
-camera.position.copy(orbitTarget(new THREE.Vector3()));
+const edgePull = new THREE.Vector2(0, 0);   // eased -1..1 per axis
+const edgeWant = new THREE.Vector2(0, 0);
+
+camera.position.copy(HOME);
 camera.lookAt(FOCUS);
 
 /* ----------------------------------------------------------------- composition */
@@ -69,6 +69,7 @@ const pointer = new THREE.Vector2(0, 0);
 let robot = null;
 let butterfly = null;
 let fallingLeaves = null;
+let godRays = null;
 
 const ready = (async () => {
   const [treeGltf, robotModel] = await Promise.all([
@@ -77,12 +78,24 @@ const ready = (async () => {
   ]);
 
   const { leaves } = placeTree(treeGltf, scene);
+  // Shafts are built from the real canopy, so they break through the leaf gaps.
+  const trunkOccluder = treeGltf.scene.getObjectByName('Trunk');
+  godRays = new GodRaysPass(camera, LAYOUT.sun.clone().normalize().multiplyScalar(74),
+    [...leaves, trunkOccluder]);
+  godRays.setSize(innerWidth, innerHeight);
+  composer.insertPass(godRays, 1);
   fallingLeaves = buildFallingLeaves(scene, leaves[0]?.material);
 
   robot = robotModel;
   robot.root.position.copy(LAYOUT.robot.pos);
   robot.root.rotation.y = LAYOUT.robot.rotY;
   robot.root.scale.setScalar(LAYOUT.robot.scale);
+  if (robot.screen?.material) {
+    const m = robot.screen.material;
+    m.emissive?.set('#8ff4ff');
+    m.emissiveIntensity = 1.15;            // reads as a lit display, then blooms
+    m.toneMapped = true;
+  }
   scene.add(robot.root);
 
   // Roots reuse the real bark texture so the growth over him reads as the tree's.
@@ -93,6 +106,7 @@ const ready = (async () => {
     bark.normalMap = trunkMesh.material.normalMap;
     bark.color.set('#ffffff');
   }
+  buildHollow(scene, bark);
   buildRoots(scene, bark);
 
   const hand = robot.handPosition(new THREE.Vector3());
@@ -116,38 +130,34 @@ ready.catch(err => {
 
 /* ----------------------------------------------------------------- interaction */
 const ndc = new THREE.Vector2();
-const startDrag = e => { rig.dragging = true; rig.x = e.clientX; rig.y = e.clientY; };
-const stopDrag = () => { rig.dragging = false; };
 
 function onMove(e) {
   const r = stage.getBoundingClientRect();
-  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-  pointer.set(e.clientX / innerWidth - 0.5, e.clientY / innerHeight - 0.5);
+  const fx = (e.clientX - r.left) / r.width;
+  const fy = (e.clientY - r.top) / r.height;
+  ndc.set(fx * 2 - 1, -(fy * 2) + 1);
   butterfly?.handlePointer(ndc, camera);
-  if (!rig.dragging) return;
-  const dx = e.clientX - rig.x, dy = e.clientY - rig.y;
-  rig.theta = THREE.MathUtils.clamp(rig.theta - dx * 0.005, LIMIT.theta[0], LIMIT.theta[1]);
-  rig.phi = THREE.MathUtils.clamp(rig.phi - dy * 0.0035, LIMIT.phi[0], LIMIT.phi[1]);
-  rig.x = e.clientX;
-  rig.y = e.clientY;
+
+  // Only the outer band of the frame moves the camera at all.
+  const band = v => {
+    const a = Math.abs(v);
+    return a <= DEADZONE ? 0 : Math.sign(v) * Math.min(1, (a - DEADZONE) / (1 - DEADZONE));
+  };
+  edgeWant.set(band(ndc.x), band(ndc.y));
 }
 
-stage.addEventListener('pointerdown', e => {
-  e.preventDefault(); startDrag(e); stage.setPointerCapture?.(e.pointerId);
-});
 stage.addEventListener('pointermove', onMove);
-stage.addEventListener('pointerup', e => { stopDrag(); stage.releasePointerCapture?.(e.pointerId); });
-stage.addEventListener('pointercancel', stopDrag);
-stage.addEventListener('wheel', e => {
-  e.preventDefault();
-  rig.radius = THREE.MathUtils.clamp(rig.radius + e.deltaY * 0.006, LIMIT.radius[0], LIMIT.radius[1]);
-}, { passive: false });
+stage.addEventListener('pointerleave', () => edgeWant.set(0, 0));
+// The hero owns the wheel: it must not scroll the page out from under the scene.
+stage.addEventListener('wheel', e => e.preventDefault(), { passive: false });
+stage.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
+  godRays?.setSize(innerWidth, innerHeight);
 });
 
 /* ------------------------------------------------------------- post-processing */
@@ -155,7 +165,7 @@ const composer = new EffectComposer(renderer);
 composer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
 composer.addPass(new RenderPass(scene, camera));
 composer.addPass(new UnrealBloomPass(
-  new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.7, 0.86));
+  new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.65, 0.92));
 composer.addPass(new OutputPass());
 const grade = new ShaderPass({
   uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
@@ -187,11 +197,12 @@ function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
 
-  orbitTarget(camPos);
-  camPos.x += pointer.x * 0.22;
-  camPos.y += -pointer.y * 0.12;
-  camera.position.lerp(camPos, 1 - Math.exp(-4.5 * dt));
-  camera.lookAt(FOCUS);
+  edgePull.lerp(edgeWant, 1 - Math.exp(-3.2 * dt));
+  camPos.set(HOME.x + edgePull.x * DRIFT.x,
+             HOME.y - edgePull.y * DRIFT.y,
+             HOME.z - Math.abs(edgePull.x) * 0.25);
+  camera.position.lerp(camPos, 1 - Math.exp(-5.0 * dt));
+  camera.lookAt(FOCUS.x + edgePull.x * 0.18, FOCUS.y - edgePull.y * 0.12, FOCUS.z);
 
   if (butterfly) butterfly.update(dt);
   if (robot) {
@@ -200,8 +211,8 @@ function frame() {
     if (robot.screen) {
       robot.screen.getWorldPosition(screenPos);
       forward.set(0, 0, 1).applyQuaternion(robot.root.quaternion);
-      screenLight.light.position.copy(screenPos).addScaledVector(forward, 0.55);
-      screenLight.light.intensity = 3.0 + Math.sin(t * 2.1) * 0.22 + Math.sin(t * 7.3) * 0.06;
+      screenLight.light.position.copy(screenPos).addScaledVector(forward, 0.42);
+      screenLight.light.intensity = 7.5 + Math.sin(t * 2.1) * 0.7 + Math.sin(t * 7.3) * 0.25;
       screenLight.bounce.position.copy(screenPos).setY(screenPos.y - 0.5);
     }
   }
@@ -215,6 +226,8 @@ function frame() {
 renderer.setAnimationLoop(frame);
 
 if (new URLSearchParams(location.search).has('debug')) {
-  window.__hero = { scene, camera, renderer, composer, rig, get robot() { return robot; },
+  window.__hero = { scene, camera, renderer, composer, edgeWant, edgePull,
+                    get godRays() { return godRays; },
+                    get robot() { return robot; },
                     get butterfly() { return butterfly; } };
 }
