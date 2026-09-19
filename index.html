@@ -23,16 +23,56 @@
   </header>
 
   <main>
-    <section class="hero-scene" aria-label="A postman robot seated inside an old oak; move the cursor to lead the butterfly">
-      <img class="scene-fallback" src="assets/img/robot-postman-oak.png" alt="" aria-hidden="true">
-      <canvas id="scene"></canvas>
-      <p class="scene-hint"><span>Move your cursor</span><span>The butterfly follows it</span></p>
-      <nav class="branch-menu" aria-label="Sections">
-        <a href="#skills" data-node="skills">Skills &amp; experience</a>
-        <a href="#work" data-node="portfolio">Creative portfolio</a>
-        <a href="#education" data-node="education">Education</a>
-        <a href="#about" data-node="about">About me</a>
-        <a href="#contact" data-node="contact">Contacts</a>
+    <div class="hero-track">
+      <section class="hero-scene" aria-label="A postman robot seated inside an old oak; move the cursor to lead the butterfly">
+        <img class="scene-fallback" src="assets/img/robot-postman-oak.png" alt="" aria-hidden="true">
+        <canvas id="scene"></canvas>
+        <p class="scene-hint"><span>Move your cursor</span><span>The butterfly follows it</span></p>
+        <nav class="branch-menu" aria-label="Sections">
+          <a href="#skills" data-node="skills">Skills &amp; experience</a>
+          <a href="#work" data-node="portfolio">Creative portfolio</a>
+          <a href="#education" data-node="education">Education</a>
+          <a href="#about" data-node="about">About me</a>
+          <a href="#contact" data-node="contact">Contacts</a>
+        </nav>
+      </section>
+    </div>
+
+    <section class="techview" id="techview" aria-label="Experience and skill constellation">
+      <div class="techview-inner">
+        <p class="eyebrow">05 / through the eye</p>
+        <h2>Where the field robot <em>looks in.</em></h2>
+        <div class="tech-grid">
+          <div class="tech-timeline" role="list" aria-label="Experience timeline">
+            <div class="tl-line" aria-hidden="true"><i></i></div>
+            <article class="tl-node" role="listitem">
+              <header><span class="tl-org">CrazyLabs</span><span class="tl-years">2025 — now</span></header>
+              <h3>Junior AI Technologist</h3>
+              <p>Builds and supports AI pipelines, automation and infrastructure inside a mobile-games studio.</p>
+            </article>
+            <article class="tl-node" role="listitem">
+              <header><span class="tl-org">Millimedical Solutions</span><span class="tl-years">Data / ML</span></header>
+              <h3>Software Engineer</h3>
+              <p>Designed a C#, SQL and Python pipeline for longitudinal medical analytics — 60% faster queries, 1B+ rows for 20+ researchers.</p>
+            </article>
+            <article class="tl-node" role="listitem">
+              <header><span class="tl-org">Cyber Education Center</span><span class="tl-years">Teaching</span></header>
+              <h3>Data Science Instructor</h3>
+              <p>Taught Python and core AI to 40+ students; built an AI pipeline for automated, personalised homework feedback.</p>
+            </article>
+          </div>
+          <div class="tech-cloud" aria-label="Skills, press a tag for detail">
+            <p class="cloud-caption eyebrow">A cloud of tags — press one</p>
+            <div class="cloud-field" id="cloud-field"></div>
+          </div>
+        </div>
+        <div class="skill-detail" id="skill-detail" hidden aria-live="polite"></div>
+      </div>
+      <nav class="cloud-rail" id="cloud-rail" aria-label="Skill categories">
+        <button type="button" data-rail="AI·ML" aria-label="Scroll to AI and ML skills"><i></i><span>AI·ML</span></button>
+        <button type="button" data-rail="Data·Infra" aria-label="Scroll to data and infrastructure skills"><i></i><span>Data·Infra</span></button>
+        <button type="button" data-rail="Web·Creative" aria-label="Scroll to web and creative skills"><i></i><span>Web</span></button>
+        <button type="button" data-rail="Creative AI" aria-label="Scroll to creative AI skills"><i></i><span>Gen·AI</span></button>
       </nav>
     </section>
 
@@ -53,15 +93,11 @@
 
     <section class="capabilities shell" id="skills"><p class="eyebrow">What I bring</p><div class="capability-list"><div><span>01</span><h3>AI systems</h3><p>LLMs, RAG, embeddings, agents and evaluation-minded workflows.</p></div><div><span>02</span><h3>Data foundations</h3><p>Python, SQL, Spark, APIs and infrastructure that hold up under use.</p></div><div><span>03</span><h3>Creative interfaces</h3><p>JavaScript, React, three.js and visual experiments with a pulse.</p></div></div></section>
 
-    <!-- FILL ME IN: nothing in this section is real yet. The branch menu links
-         here, so replace both entries with your actual education before this
-         goes live. -->
     <section class="education shell" id="education">
       <p class="eyebrow">Education</p>
       <h2>Where the groundwork was laid.</h2>
       <div class="edu-list">
-        <article><strong>Your institution</strong><span>Your programme or degree, and the one line that says what it gave you.</span><i>Years</i></article>
-        <article><strong>Your institution</strong><span>Your programme or degree, and the one line that says what it gave you.</span><i>Years</i></article>
+        <article><strong>Diploma in Data Engineering</strong><span>Where the groundwork was laid — data modelling, warehousing, ETL and the statistics underneath everything that followed.</span><i>Data engineering</i></article>
       </div>
     </section>
 
@@ -69,5 +105,6 @@
   </main>
   <footer class="site-footer shell"><span>© 2026 Alex Shvachko</span><span>AI systems · data · creative technology</span><a href="https://www.linkedin.com/in/alex-shvachko-71573823a/">LinkedIn ↗</a></footer>
   <script type="module" src="assets/js/main.js?v=glade-refinement-1"></script>
+  <script type="module" src="assets/js/techview.js?v=techview-1"></script>
 </body>
 </html>

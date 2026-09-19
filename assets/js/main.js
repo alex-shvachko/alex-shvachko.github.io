@@ -46,6 +46,7 @@ const FOCUS = new THREE.Vector3(1.15, 2.50, 3.6);
 const HOME = new THREE.Vector3(3.1, 3.55, 12.2);
 const DRIFT = { x: 0.22, y: 0.12 };
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let scrollS = 0;                          // 0..1 progress through the track
 function frameCamera() {
   const aspect = stage.clientWidth / stage.clientHeight;
   camera.aspect = aspect;
@@ -59,12 +60,39 @@ function frameCamera() {
     HOME.set(3.15, 5.45, 3.6 + Math.max(8.3, 10.8 / aspect));
     camera.fov = 38;
   }
-  camera.position.copy(HOME);
-  camera.lookAt(FOCUS);
+  // Resizing mid-dive must NOT snap back to the hero framing; the frame loop
+  // keeps lerping toward the scroll-driven pose. Only re-anchor at rest.
+  if (scrollS <= 0.001) {
+    camera.position.copy(HOME);
+    camera.lookAt(FOCUS);
+  }
   camera.updateProjectionMatrix();
 }
 frameCamera();
 const DEADZONE = 0.45;                   // cursor stays central until this far out
+
+/* ------------------------------------------------------------- scroll dive */
+// The hero is pinned inside .hero-track (280svh); scrolling through the track
+// pushes the camera through the robot's glowing screen toward the tech view.
+const heroTrack = document.querySelector('.hero-track');
+const EYE_POS = new THREE.Vector3(1.03, 2.62, 4.6);   // tight on the head
+const EYE_TARGET = new THREE.Vector3(1.02, 2.66, 3.94); // the glowing screen
+const THROUGH_POS = new THREE.Vector3(1.03, 2.62, 3.15); // past the screen
+function updateScrollProgress() {
+  if (reducedMotion.matches || !heroTrack) { scrollS = 0; return; }
+  const r = heroTrack.getBoundingClientRect();
+  const range = heroTrack.offsetHeight - stage.clientHeight;
+  scrollS = range > 0 ? THREE.MathUtils.clamp(-r.top / range, 0, 1) : 0;
+  // As the camera passes through the eye (scrollS > 0.45), dim the hero canvas
+  // so the tech view fades in over the lingering eye-glow instead of hard-swapping.
+  stage.classList.toggle('is-through', scrollS > 0.45);
+}
+addEventListener('scroll', updateScrollProgress, { passive: true });
+updateScrollProgress();
+const easeInOut = t => t * t * (3 - 2 * t);
+const easeIn = t => t * t * t;
+const camWant = new THREE.Vector3();
+const aimWant = new THREE.Vector3();
 
 const edgePull = new THREE.Vector2(0, 0);   // eased -1..1 per axis
 const edgeWant = new THREE.Vector2(0, 0);
@@ -237,6 +265,7 @@ stage.addEventListener('click', e => {
 });
 addEventListener('resize', () => {
   frameCamera();
+  updateScrollProgress();
   edgePull.set(0, 0);
   edgeWant.set(0, 0);
   renderer.setSize(stage.clientWidth, stage.clientHeight);
@@ -306,11 +335,25 @@ function frame() {
   adapt(dt);
 
   edgePull.lerp(edgeWant, 1 - Math.exp(-3.2 * dt));
-  camPos.set(HOME.x + edgePull.x * DRIFT.x,
-             HOME.y - edgePull.y * DRIFT.y,
-             HOME.z - Math.abs(edgePull.x) * 0.25);
-  camera.position.lerp(camPos, 1 - Math.exp(-5.0 * dt));
-  camera.lookAt(FOCUS.x + edgePull.x * 0.18, FOCUS.y - edgePull.y * 0.12, FOCUS.z);
+  if (scrollS > 0.001) {
+    // Scroll dive: 0→0.5 closes onto the eye, 0.5→1 passes through the screen.
+    if (scrollS < 0.5) {
+      const u = easeInOut(scrollS * 2);
+      camWant.lerpVectors(HOME, EYE_POS, u);
+      aimWant.lerpVectors(FOCUS, EYE_TARGET, u);
+    } else {
+      const u = easeIn(scrollS * 2 - 1);
+      camWant.lerpVectors(EYE_POS, THROUGH_POS, u);
+      aimWant.copy(EYE_TARGET);
+    }
+  } else {
+    camWant.set(HOME.x + edgePull.x * DRIFT.x,
+                HOME.y - edgePull.y * DRIFT.y,
+                HOME.z - Math.abs(edgePull.x) * 0.25);
+    aimWant.set(FOCUS.x + edgePull.x * 0.18, FOCUS.y - edgePull.y * 0.12, FOCUS.z);
+  }
+  camera.position.lerp(camWant, 1 - Math.exp(-5.0 * dt));
+  camera.lookAt(aimWant);
 
   if (butterfly) {
     // While the cursor rests on him, steer the butterfly with a ray aimed at the
