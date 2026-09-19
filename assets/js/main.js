@@ -1,40 +1,33 @@
 import * as THREE from './vendor/three.module.js';
 import { GLTFLoader } from './vendor/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from './vendor/addons/loaders/DRACOLoader.js';
-import { EffectComposer } from './vendor/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from './vendor/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from './vendor/addons/postprocessing/ShaderPass.js';
-import { UnrealBloomPass } from './vendor/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from './vendor/addons/postprocessing/OutputPass.js';
-import { SMAAPass } from './vendor/addons/postprocessing/SMAAPass.js';
-import { Robot } from './scene/robot.js';
+import { Robot } from './scene/robot.js?v=glade-1';
 import { ButterflyController } from './scene/butterfly.js';
-import { GodRaysPass } from './scene/godrays.js';
-import { buildGlassMenu } from './scene/glassbranch.js';
+import { buildGlassMenu } from './scene/glassbranch.js?v=glade-1';
 import {
-  LAYOUT, buildEnvironment, placeTree, buildGround, buildRocks,
-  buildPond, buildRoots, buildLights, buildScreenLight,
-  buildMotes, buildFallingLeaves, updateFallingLeaves, buildTreeline, buildHollow,
-  buildGrass,
-} from './scene/world.js';
+  LAYOUT, buildEnvironment, placeTree, buildGround,
+  buildPond, buildLights, buildScreenLight,
+  buildMotes, buildFallingLeaves, updateFallingLeaves, buildTreeline,
+  buildGrass, buildBotanicals,
+} from './scene/world.js?v=glade-1';
 
 const canvas = document.querySelector('#scene');
 const stage = canvas.parentElement;
 
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 } catch {
   canvas.remove();
 }
 if (!renderer) throw new Error('WebGL unavailable; the still fallback stands in.');
 
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 1.05;
 // The glass menu refracts what is behind it, which costs an extra pass over the
 // opaque scene. Half resolution is free of visible cost through frosted glass.
 renderer.transmissionResolutionScale = 0.5;
@@ -49,9 +42,28 @@ const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 16
 /* ----------------------------------------------------------------- camera rig */
 // Locked framing on the robot and the butterfly. The camera never orbits or
 // zooms; it only drifts a little once the cursor approaches the edge of frame.
-const FOCUS = new THREE.Vector3(1.05, 1.62, 4.05);
-const HOME = new THREE.Vector3(2.05, 2.35, 10.6);
-const DRIFT = { x: 0.85, y: 0.42 };      // metres of travel at the very border
+const FOCUS = new THREE.Vector3(1.15, 2.50, 3.6);
+const HOME = new THREE.Vector3(3.1, 3.55, 12.2);
+const DRIFT = { x: 0.22, y: 0.12 };
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+function frameCamera() {
+  const aspect = stage.clientWidth / stage.clientHeight;
+  camera.aspect = aspect;
+  // Keep the robot and the left pond in frame; reserve the lower area on phones.
+  if (aspect < 0.95) {
+    FOCUS.set(0.90, 1.45, 3.65);
+    HOME.set(2.0, 3.8, 3.65 + Math.max(11.4, 5.8 / aspect));
+    camera.fov = 38;
+  } else {
+    FOCUS.set(1.55, 1.85, 3.6);
+    HOME.set(3.15, 5.45, 3.6 + Math.max(8.3, 10.8 / aspect));
+    camera.fov = 38;
+  }
+  camera.position.copy(HOME);
+  camera.lookAt(FOCUS);
+  camera.updateProjectionMatrix();
+}
+frameCamera();
 const DEADZONE = 0.45;                   // cursor stays central until this far out
 
 const edgePull = new THREE.Vector2(0, 0);   // eased -1..1 per axis
@@ -65,9 +77,9 @@ buildEnvironment(scene, renderer);
 const { sun } = buildLights(scene);
 buildGround(scene);
 const treeline = buildTreeline(scene);
-buildRocks(scene);
 const grass = buildGrass(scene);
 const water = buildPond(scene, LAYOUT.sun);
+buildBotanicals(scene);
 const screenLight = buildScreenLight(scene);
 const motes = buildMotes(scene);
 
@@ -87,20 +99,21 @@ const pointer = new THREE.Vector2(0, 0);
 let robot = null;
 let butterfly = null;
 let fallingLeaves = null;
-let godRays = null;
 
 const ready = (async () => {
-  const [treeGltf, robotModel] = await Promise.all([
-    loader.loadAsync('./assets/models/oak-tree.glb'),
-    Robot.load(loader, './assets/models/robot-postman.glb'),
+  const [treeGltf, robotModel, shoreGltf] = await Promise.all([
+    loader.loadAsync('./assets/models/glade-oak.glb'),
+    Robot.load(loader, './assets/models/robot-postman-refined.glb'),
+    loader.loadAsync('./assets/models/glade-shore.glb'),
   ]);
 
   const { leaves } = placeTree(treeGltf, scene);
-  // Shafts are built from the real canopy, so they break through the leaf gaps.
-  const trunkOccluder = treeGltf.scene.getObjectByName('Trunk');
-  godRays = new GodRaysPass(camera, LAYOUT.sun.clone().normalize().multiplyScalar(74),
-    [...leaves, trunkOccluder], { resolution: rayScale(), samples: 10 });
-  composer.insertPass(godRays, 1);      // which sizes it from the composer
+  shoreGltf.scene.traverse(o => { if (o.isMesh) {
+    o.receiveShadow = true;
+    o.material.side = THREE.DoubleSide;
+  } });
+  scene.add(shoreGltf.scene);
+  water.reflectionSkips.push(...leaves);
   fallingLeaves = buildFallingLeaves(scene, leaves[0]?.material);
   water.reflectionSkips.push(fallingLeaves, robotModel.root);
 
@@ -111,21 +124,10 @@ const ready = (async () => {
   if (robot.screen?.material) {
     const m = robot.screen.material;
     m.emissive?.set('#8ff4ff');
-    m.emissiveIntensity = 1.15;            // reads as a lit display, then blooms
+    m.emissiveIntensity = 0.55;
     m.toneMapped = true;
   }
   scene.add(robot.root);
-
-  // Roots reuse the real bark texture so the growth over him reads as the tree's.
-  const trunkMesh = treeGltf.scene.getObjectByName('Trunk');
-  const bark = new THREE.MeshStandardMaterial({ color: '#6b563d', roughness: 0.94, metalness: 0 });
-  if (trunkMesh?.material?.map) {
-    bark.map = trunkMesh.material.map;
-    bark.normalMap = trunkMesh.material.normalMap;
-    bark.color.set('#ffffff');
-  }
-  buildHollow(scene, bark);
-  buildRoots(scene, bark);
 
   const hand = robot.handPosition(new THREE.Vector3());
   butterfly = await ButterflyController.load(scene, './assets/models/butterfly.glb', {
@@ -158,6 +160,7 @@ const ready = (async () => {
 })();
 
 stage.classList.add('is-webgl');
+menu.resize();
 ready.catch(err => {
   console.error('[hero] scene failed to load', err);
   stage.classList.remove('is-webgl');
@@ -217,7 +220,7 @@ function onMove(e) {
     const a = Math.abs(v);
     return a <= DEADZONE ? 0 : Math.sign(v) * Math.min(1, (a - DEADZONE) / (1 - DEADZONE));
   };
-  edgeWant.set(band(ndc.x), band(ndc.y));
+  if (!reducedMotion.matches && camera.aspect >= 0.95) edgeWant.set(band(ndc.x), band(ndc.y));
 }
 
 stage.addEventListener('pointermove', onMove);
@@ -232,81 +235,27 @@ stage.addEventListener('click', e => {
   if (e.target.closest?.('.branch-menu a')) return;
   menu.nodes.find(n => n.id === menu.hovered)?.label?.click();
 });
-// The hero owns the wheel: it must not scroll the page out from under the scene.
-stage.addEventListener('wheel', e => e.preventDefault(), { passive: false });
-stage.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-
 addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-  composer.setSize(innerWidth, innerHeight);
-  godRays?.setResolution(rayScale());
+  frameCamera();
+  edgePull.set(0, 0);
+  edgeWant.set(0, 0);
+  renderer.setSize(stage.clientWidth, stage.clientHeight);
   rect = stage.getBoundingClientRect();
   menu.resize();       // the bough is framed by aspect, not by a fixed offset
 });
-
-/* ------------------------------------------------------------- post-processing */
-const composer = new EffectComposer(renderer);
-composer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-composer.addPass(new RenderPass(scene, camera));
-
-// Bloom runs at full resolution. Halving its chain looked like free money on
-// paper - ten passes at a quarter of the pixels - but measured out at about
-// 2.5% of the frame, and the coarse bottom mip haloed the pinpoint highlight on
-// each glass bevel into a blocky white square sitting over the menu. Not a
-// trade worth making.
-const bloom = new UnrealBloomPass(
-  new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.65, 0.92);
-composer.addPass(bloom);
-composer.addPass(new OutputPass());
-const grade = new ShaderPass({
-  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
-  vertexShader: `varying vec2 vUv;
-    void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }`,
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime;
-    varying vec2 vUv;
-    void main(){
-      vec3 c = texture2D( tDiffuse, vUv ).rgb;
-      vec2 d = vUv - 0.5;
-      c *= 1.0 - smoothstep( 0.30, 0.80, dot( d, d ) ) * 0.66;
-      float g = fract( sin( dot( vUv * ( 1.0 + uTime ), vec2( 12.9898, 78.233 ) ) ) * 43758.5453 );
-      c += ( g - 0.5 ) * 0.016;
-      c = mix( vec3( dot( c, vec3( 0.299, 0.587, 0.114 ) ) ), c, 1.07 );
-      gl_FragColor = vec4( c, 1.0 );
-    }`,
-});
-composer.addPass(grade);
-// Three more full-screen passes. Worth it at a low pixel ratio, redundant once
-// the frame is already being supersampled - see applyQuality below.
-const smaa = new SMAAPass();
-composer.addPass(smaa);
 
 /* --------------------------------------------------------------------- runtime */
 const clock = new THREE.Clock();
 
 // Adaptive resolution. Rather than guess a device tier, watch the actual frame
 // time and step the pixel ratio down (and back up) to hold a smooth rate.
-const quality = { ratio: Math.min(devicePixelRatio, 1.75), acc: 0, frames: 0,
+const quality = { ratio: Math.min(devicePixelRatio, 1.5), acc: 0, frames: 0,
                   fps: 60, calls: 0, tris: 0 };
-const RATIO_MIN = Math.min(devicePixelRatio, 0.75);
-const RATIO_MAX = Math.min(devicePixelRatio, 1.75);
-
-// The shafts are soft and wide, so they are the one thing that can be rendered
-// at a fraction of the frame and still look right. The composer hands every pass
-// device pixels, so dividing by the ratio pins the ray buffer to half the CSS
-// size however high the pixel ratio climbs. Without that, a 4K screen would be
-// blurring a 2000px buffer for an effect nobody can resolve.
-const rayScale = () => 0.5 / Math.max(1, quality.ratio);
+const RATIO_MIN = Math.min(devicePixelRatio, 1);
+const RATIO_MAX = Math.min(devicePixelRatio, 1.5);
 
 function applyQuality() {
   renderer.setPixelRatio(quality.ratio);
-  composer.setPixelRatio(quality.ratio);
-  composer.setSize(innerWidth, innerHeight);
-  godRays?.setResolution(rayScale());
-  // Past about 1.4 the frame is already supersampled and SMAA is three passes
-  // of work to soften edges that are no longer aliased.
-  smaa.enabled = quality.ratio < 1.4;
   // Refraction through frosted glass hides a low-resolution backdrop; give it
   // up first when the frame budget is tight.
   renderer.transmissionResolutionScale = quality.ratio > 1.2 ? 0.5 : 0.35;
@@ -331,7 +280,7 @@ function adapt(dt) {
   // the frame is still missing does the sward start thinning out, which an
   // InstancedMesh will do for free by drawing fewer of its instances.
   if (quality.ratio <= RATIO_MIN + 0.01 && slow) {
-    grass.count = Math.max(1500, Math.round(grass.count * 0.8));
+    grass.count = Math.max(5000, Math.round(grass.count * 0.8));
   } else if (fast && grass.count < GRASS_MAX) {
     grass.count = Math.min(GRASS_MAX, Math.round(grass.count * 1.15) + 60);
   }
@@ -340,18 +289,20 @@ function adapt(dt) {
   quality.ratio = clamped;
   applyQuality();
 }
-applyQuality();   // match SMAA and the transmission buffer to the starting ratio
+applyQuality();
 const camPos = new THREE.Vector3();
 const screenPos = new THREE.Vector3();
 const aimTarget = new THREE.Vector3();
 const forward = new THREE.Vector3();
 const lureTarget = new THREE.Vector3();
 const lureNdc = new THREE.Vector2();
+let frameNumber = 0;
 
 function frame() {
+  water.userData.refreshReflection = frameNumber++ % 4 === 0;
   renderer.info.reset();
   const dt = Math.min(clock.getDelta(), 0.05);
-  const t = clock.elapsedTime;
+  const t = reducedMotion.matches ? 0 : clock.elapsedTime;
   adapt(dt);
 
   edgePull.lerp(edgeWant, 1 - Math.exp(-3.2 * dt));
@@ -370,7 +321,7 @@ function frame() {
       lureNdc.set(lureTarget.x, lureTarget.y);
       butterfly.handlePointer(lureNdc, camera);
     }
-    butterfly.update(dt);
+    if (!reducedMotion.matches || luring) butterfly.update(dt);
   }
   if (robot) {
     aimTarget.copy(butterfly ? butterfly.root.position : FOCUS);
@@ -380,25 +331,34 @@ function frame() {
     robot.pointAt(aimTarget, dt, t);
     robot.watch(aimTarget, dt);
     if (robot.screen) {
-      robot.screen.getWorldPosition(screenPos);
+      robot.head.getWorldPosition(screenPos);
       forward.set(0, 0, 1).applyQuaternion(robot.root.quaternion);
       screenLight.light.position.copy(screenPos).addScaledVector(forward, 0.42);
-      screenLight.light.intensity = 7.5 + Math.sin(t * 2.1) * 0.7 + Math.sin(t * 7.3) * 0.25;
+      screenLight.light.intensity = 0.7 + Math.sin(t * 2.1) * 0.06;
       screenLight.bounce.position.copy(screenPos).setY(screenPos.y - 0.5);
     }
   }
 
   menu.update(t, dt, rect);
-  water.material.uniforms.time.value += dt * 0.42;
+  if (!reducedMotion.matches) water.material.uniforms.time.value += dt * 0.22;
   motes.material.uniforms.uTime.value = t;
   grass.userData.uniforms.uTime.value = t;
-  if (fallingLeaves) updateFallingLeaves(fallingLeaves, t, dt);
-  grade.uniforms.uTime.value = t;
-  composer.render();
+  if (fallingLeaves && !reducedMotion.matches) updateFallingLeaves(fallingLeaves, t, dt);
+  renderer.render(scene, camera);
   quality.calls = renderer.info.render.calls;
   quality.tris = renderer.info.render.triangles;
 }
 renderer.setAnimationLoop(frame);
+let inView = true;
+function syncPlayback() {
+  clock.getDelta();
+  renderer.setAnimationLoop(inView && !document.hidden ? frame : null);
+}
+new IntersectionObserver(([entry]) => {
+  inView = entry.isIntersecting;
+  syncPlayback();
+}, { threshold: 0 }).observe(stage);
+document.addEventListener('visibilitychange', syncPlayback);
 
 if (new URLSearchParams(location.search).has('debug')) {
   // A readout, so "is it 60?" is answered by measurement rather than by feel.
@@ -411,11 +371,22 @@ if (new URLSearchParams(location.search).has('debug')) {
     const r = renderer.info.render;
     hud.textContent = `${quality.fps.toFixed(0)} fps   ratio ${quality.ratio.toFixed(2)}\n`
       + `${r.calls} calls   ${(r.triangles / 1000).toFixed(0)}k tris\n`
-      + `rays ${godRays ? godRays.resolution.toFixed(2) : '-'}   smaa ${smaa.enabled ? 'on' : 'off'}`;
+      + `native antialiasing`;
   }, 250);
+  const isolate = document.createElement('button');
+  isolate.textContent = 'Inspect robot';
+  isolate.style.cssText = 'position:fixed;z-index:10;left:12px;top:84px';
+  isolate.addEventListener('click', () => {
+    const isolated = isolate.textContent === 'Inspect robot';
+    for (const child of scene.children) {
+      if (child.isLight || child === robot?.root) continue;
+      child.visible = !isolated;
+    }
+    isolate.textContent = isolated ? 'Show glade' : 'Inspect robot';
+  });
+  document.body.appendChild(isolate);
 
-  window.__hero = { scene, camera, renderer, composer, edgeWant, edgePull, menu, quality,
-                    get godRays() { return godRays; },
+  window.__hero = { scene, camera, renderer, edgeWant, edgePull, menu, quality,
                     get robot() { return robot; },
                     get butterfly() { return butterfly; } };
 }

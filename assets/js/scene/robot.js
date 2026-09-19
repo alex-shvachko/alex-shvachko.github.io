@@ -202,7 +202,7 @@ export class Robot {
 
     const alpha = Math.acos(clamp((a * a + L * L - b * b) / (2 * a * L), -1, 1));
     const upperDir = this._v[4].copy(this.aim)
-      .applyQuaternion(this._q[0].setFromAxisAngle(axis, -alpha)).normalize();
+      .applyQuaternion(this._q[0].setFromAxisAngle(axis, alpha)).normalize();
 
     // Elbow position follows from the upper arm, and the forearm simply points
     // from there at the goal the extension chose.

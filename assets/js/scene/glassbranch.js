@@ -30,9 +30,9 @@ const ROW_Y = [0.60, 0.22, -0.16, -0.54, -0.92];
 
 const BOUGH_Y = 1.12;                 // clear of the buttons, up where the canopy is
 const BOUGH_X = 1.35;                 // pivot off the right edge, where it sways from
-const BOUGH_R0 = 0.085;
-const BOUGH_R1 = 0.022;
-const LEAF_COUNT = 132;
+const BOUGH_R0 = 0.045;
+const BOUGH_R1 = 0.009;
+const LEAF_COUNT = 98;
 
 // Authored from the bough's pivot, running left across frame and sagging a
 // little under its own weight.
@@ -135,7 +135,6 @@ export function buildGlassMenu(scene, camera, nav, {
   frame.add(bough);
 
   scene.add(frame);
-  resize();                               // frame first, so the perches below
   frame.updateMatrixWorld(true);          // come out of the final matrices
 
   /* ------------------------------------------------------------- glass buttons */
@@ -144,13 +143,13 @@ export function buildGlassMenu(scene, camera, nav, {
   // roughness is what frosts the backdrop, and the frosting is what keeps the
   // label legible over a busy scene.
   const glass = new THREE.MeshPhysicalMaterial({
-    color: 0xeaf4ef, transmission: 0.97, thickness: 0.22, roughness: 0.17,
+    color: 0xeaf4df, transmission: 0.90, thickness: 0.12, roughness: 0.24,
     // A near-mirror clearcoat concentrates the sun into a pinpoint that crosses
     // the bloom threshold and, at bloom's half resolution, smears into a blocky
     // white square over the UI. Spreading the lobe keeps the sheen and loses the
     // artefact.
     ior: 1.42, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.28,
-    iridescence: 0.34, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 460],
+    iridescence: 0.08, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 460],
     attenuationColor: new THREE.Color('#6f9d86'), attenuationDistance: 1.9,
     envMapIntensity: 1.5,
   });
@@ -206,7 +205,7 @@ export function buildGlassMenu(scene, camera, nav, {
   bough.add(wood);
 
   const leafMat = new THREE.MeshPhysicalMaterial({
-    color: '#5f7d33', roughness: 0.9, metalness: 0, side: THREE.DoubleSide,
+    color: '#8baf62', roughness: 0.9, metalness: 0, side: THREE.DoubleSide,
     specularIntensity: 0.25, envMapIntensity: 0.6,
   });
   const leafGeo = leafGeometry();
@@ -229,7 +228,7 @@ export function buildGlassMenu(scene, camera, nav, {
             Math.sin(a) * 0.55).normalize();
     q.setFromUnitVectors(UP, dir);
     q.multiply(spin.setFromAxisAngle(UP, rand() * Math.PI * 2));
-    const s = 1.05 + rand() * 0.75;
+    const s = 0.65 + rand() * 0.42;
     sc.set(s, s, s);
     leaves.setMatrixAt(i, m.compose(p, q, sc));
     // setRGB takes linear values, so these are multipliers on the base green
@@ -253,23 +252,11 @@ export function buildGlassMenu(scene, camera, nav, {
   // the menu sends the butterfly to the bough. `point` is what puts it down on
   // the branch instead of wherever the catcher was struck; the catchers are
   // children of the bough so the butterfly rides the sway once it has settled.
-  ROW_Y.forEach((y, i) => {
-    const catcher = new THREE.Mesh(
-      new THREE.PlaneGeometry(BTN_W + 0.34, 0.42),
-      new THREE.MeshBasicMaterial({ visible: false }));
-    catcher.name = `MenuRow_${MENU[i].id}`;
-    catcher.position.set(-BOUGH_X, y - BOUGH_Y, 0.34);
-    bough.add(catcher);
-    catcher.updateWorldMatrix(true, false);
-
-    // Spread the five perches along the bough, so it matters which one you hover.
-    const t = 0.22 + (i / (ROW_Y.length - 1)) * 0.62;
-    const perch = curve.getPoint(t);
-    perch.y += THREE.MathUtils.lerp(BOUGH_R0, BOUGH_R1, t);
+  nodes.forEach((node) => {
     zones.push({
-      id: `menu-${MENU[i].id}`,
-      mesh: catcher,
-      point: catcher.worldToLocal(bough.localToWorld(perch)),
+      id: `menu-${node.id}`,
+      mesh: node.mesh,
+      point: new THREE.Vector3(0, BTN_H / 2, 0.03),
       normal: new THREE.Vector3(0, 1, 0),
     });
   });
@@ -295,10 +282,37 @@ export function buildGlassMenu(scene, camera, nav, {
   const proj = new THREE.Vector3();
 
   function resize() {
+    frame.position.copy(home);
+    frame.quaternion.setFromRotationMatrix(
+      new THREE.Matrix4().lookAt(home, focus, new THREE.Vector3(0, 1, 0)));
     const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * distance;
-    const shift = targetX * halfH * camera.aspect;
-    panel.position.x = shift;
-    bough.position.x = shift + BOUGH_X;
+    const width = nav.clientWidth, height = nav.clientHeight;
+    const unit = halfH * 2 / height;
+    const compact = camera.aspect < 0.95;
+    const margin = compact ? 20 : Math.max(24, Math.min(width * 0.065, 96));
+    const buttonW = compact ? (width - margin * 2 - 10) / 2
+      : Math.max(180, Math.min(266, width * 0.22));
+    const buttonH = compact ? 46 : Math.min(52, Math.max(44, height * 0.060));
+    const gap = compact ? 10 : 12;
+    panel.position.x = 0;
+    nodes.forEach((node, i) => {
+      const x = compact ? margin + buttonW / 2 + (i % 2) * (buttonW + gap)
+        : width - margin - buttonW / 2;
+      const y = compact ? height - 32 - (2 - Math.floor(i / 2)) * (buttonH + gap) - buttonH / 2
+        : height * 0.53 + (i - 2) * (buttonH + gap);
+      node.mesh.position.set((x - width / 2) * unit, (height / 2 - y) * unit, 0);
+      node.baseScale = new THREE.Vector3(buttonW * unit / BTN_W, buttonH * unit / BTN_H, 0.58);
+      node.mesh.scale.copy(node.baseScale);
+      if (node.label) {
+        node.label.style.width = `${buttonW}px`;
+        node.label.style.height = `${buttonH}px`;
+      }
+    });
+    const boughWidth = compact ? 170 : Math.min(360, width * 0.28);
+    bough.scale.setScalar(boughWidth * unit / 3);
+    bough.position.set((width / 2 - margin + 35) * unit,
+      (height / 2 - (compact ? 42 : height * 0.53 - 2.9 * (buttonH + gap))) * unit, -distance);
+    frame.updateMatrixWorld(true);
   }
 
   function update(t, dt, rect) {
@@ -310,8 +324,8 @@ export function buildGlassMenu(scene, camera, nav, {
     for (const n of nodes) {
       n.glow += (n.want - n.glow) * ease;
       // A press-forward, not a balloon: the slab lifts toward the viewer.
-      n.mesh.scale.setScalar(1 + n.glow * 0.045);
-      n.mesh.position.z = n.glow * 0.085;
+      n.mesh.scale.copy(n.baseScale).multiplyScalar(1 + n.glow * 0.02);
+      n.mesh.position.z = n.glow * 0.025;
       if (!n.label) continue;
       n.mesh.getWorldPosition(proj).project(camera);
       const x = (proj.x * 0.5 + 0.5) * rect.width;
@@ -320,6 +334,7 @@ export function buildGlassMenu(scene, camera, nav, {
     }
   }
 
+  resize();
   return {
     frame, panel, bough, nodes, buttons, zones, resize, update, setHover,
     get hovered() { return hovered; },

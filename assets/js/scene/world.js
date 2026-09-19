@@ -1,15 +1,15 @@
 import * as THREE from '../vendor/three.module.js';
 import { Water } from '../vendor/addons/objects/Water.js';
-import { mergeGeometries } from '../vendor/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from '../vendor/addons/utils/BufferGeometryUtils.js';
 
 export const LAYOUT = {
-  treeScale: 0.38,
+  treeScale: 1,
   // Sunk into the root flare and turned toward the camera: the oak has grown up
   // around him where he sat down.
   robot: { pos: new THREE.Vector3(1.28, 0.30, 3.95), rotY: -0.34, scale: 1 },
   // Drawn in under the root flare, so the water meets the roots beneath him.
-  pond: { centre: new THREE.Vector3(-0.75, -0.42, 4.95), radius: 2.9 },
-  sun: new THREE.Vector3(-4.2, 4.6, -17),
+  pond: { centre: new THREE.Vector3(-1.25, -0.28, 4.05), radius: 2.65 },
+  sun: new THREE.Vector3(-7, 12, 6),
   sunTarget: new THREE.Vector3(0.9, 1.3, 3.6),
 };
 
@@ -17,6 +17,86 @@ const rand = (() => {                     // deterministic: the scene must not
   let s = 20260913;                       // reshuffle between reloads
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
 })();
+
+function leafGeometry(width = 0.09, length = 0.22) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute([
+    0, 0, 0, -width, length * 0.42, 0, 0, length * 0.45, 0.024,
+    width, length * 0.42, 0, 0, length, -0.012,
+  ], 3));
+  geometry.setIndex([0, 2, 1, 0, 3, 2, 1, 2, 4, 2, 3, 4]);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function crownGeometry() {
+  const parts = [];
+  const core = new THREE.IcosahedronGeometry(0.85, 2);
+  core.deleteAttribute('uv');
+  parts.push(core);
+  const leaf = leafGeometry(0.11, 0.29);
+  const matrix = new THREE.Matrix4(), q = new THREE.Quaternion();
+  const direction = new THREE.Vector3(), position = new THREE.Vector3();
+  for (let i = 0; i < 170; i++) {
+    direction.set(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize();
+    position.copy(direction).multiplyScalar(0.8 + rand() * 0.2);
+    q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+    const part = leaf.clone().applyMatrix4(matrix.compose(position, q, new THREE.Vector3(1, 1, 1))).toNonIndexed();
+    parts.push(part);
+  }
+  const merged = mergeGeometries(parts);
+  parts.forEach(g => g.dispose());
+  leaf.dispose();
+  return merged;
+}
+
+/** Small shore plants and lily pads keep detail below the size of the robot. */
+export function buildBotanicals(scene) {
+  const group = new THREE.Group();
+  group.name = 'PondGarden';
+  const matrix = new THREE.Matrix4(), q = new THREE.Quaternion();
+  const e = new THREE.Euler(), p = new THREE.Vector3(), scale = new THREE.Vector3();
+  const padShape = new THREE.Shape();
+  padShape.moveTo(0, 0);
+  for (let i = 1; i <= 24; i++) {
+    const a = 0.16 + i / 24 * (Math.PI * 2 - 0.32);
+    padShape.lineTo(Math.cos(a), Math.sin(a));
+  }
+  padShape.lineTo(0, 0);
+  const pads = new THREE.InstancedMesh(new THREE.ShapeGeometry(padShape, 12),
+    new THREE.MeshStandardMaterial({ color: '#7d9c54', roughness: 0.64, side: THREE.DoubleSide }), 26);
+  for (let i = 0; i < pads.count; i++) {
+    const a = rand() * Math.PI * 2, r = 0.4 + rand() * 1.8;
+    p.set(LAYOUT.pond.centre.x + Math.cos(a) * r, LAYOUT.pond.centre.y + 0.018,
+      LAYOUT.pond.centre.z + Math.sin(a) * r * 0.8);
+    q.setFromEuler(e.set(-Math.PI / 2, 0, rand() * Math.PI * 2));
+    const s = 0.08 + rand() * 0.105;
+    pads.setMatrixAt(i, matrix.compose(p, q, scale.set(s, s * 0.85, s)));
+  }
+  group.add(pads);
+  const stems = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.009, 0.015, 1, 5),
+    new THREE.MeshStandardMaterial({ color: '#658343', roughness: 1 }), 68);
+  const flowers = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1),
+    new THREE.MeshStandardMaterial({ color: '#a08cc3', roughness: 0.85 }), 272);
+  for (let i = 0; i < stems.count; i++) {
+    const a = Math.PI * (0.72 + rand() * 0.98);
+    const r = LAYOUT.pond.radius * (1.02 + rand() * 0.48);
+    const x = LAYOUT.pond.centre.x + Math.cos(a) * r;
+    const z = LAYOUT.pond.centre.z + Math.sin(a) * r;
+    const y = groundHeight(x, z).y, h = 0.22 + rand() * 0.42;
+    q.setFromEuler(e.set(0, rand() * 6.28, (rand() - 0.5) * 0.15));
+    stems.setMatrixAt(i, matrix.compose(p.set(x, y + h / 2, z), q, scale.set(1, h, 1)));
+    for (let j = 0; j < 4; j++) {
+      const s = 0.036 - j * 0.005;
+      flowers.setMatrixAt(i * 4 + j, matrix.compose(p.set(x, y + h - j * 0.048, z),
+        q, scale.set(s, s * 1.25, s)));
+    }
+  }
+  group.add(stems, flowers);
+  group.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
+  scene.add(group);
+  return group;
+}
 
 /* ----------------------------------------------------------------- sky and IBL */
 /** A bright summer sky: deep blue overhead, warm haze toward the sun. */
@@ -54,10 +134,10 @@ export function buildEnvironment(scene, renderer) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
   scene.environment = pmrem.fromEquirectangular(sky).texture;
-  scene.environmentIntensity = 1.15;
+  scene.environmentIntensity = 0.65;
   scene.background = sky;
   scene.backgroundIntensity = 1.0;
-  scene.fog = new THREE.FogExp2('#8aa07e', 0.0115);
+  scene.fog = new THREE.FogExp2('#c5d9c2', 0.012);
   pmrem.dispose();
 }
 
@@ -95,7 +175,7 @@ function waterNormals() {
 export function placeTree(gltf, scene) {
   const tree = gltf.scene;
   tree.scale.setScalar(LAYOUT.treeScale);
-  tree.rotation.y = 0.6;
+  tree.rotation.y = 0;
   scene.add(tree);
 
   const leaves = [];
@@ -106,7 +186,7 @@ export function placeTree(gltf, scene) {
     o.receiveShadow = true;
     const m = o.material;
     if (m.map) m.map.anisotropy = 8;
-    if (m.transparent || m.alphaMap || /leaf/i.test(m.name)) {
+    if (/leaf/i.test(m.name)) {
       // Cutout, not blending: the canopy must write depth so it self-sorts, and
       // so its shadow keeps real leaf shapes - that is what dapples the ground.
       m.transparent = false;
@@ -114,16 +194,15 @@ export function placeTree(gltf, scene) {
       m.side = THREE.DoubleSide;
       m.shadowSide = THREE.DoubleSide;
       o.castShadow = true;
-      m.color.setRGB(0.62, 0.74, 0.46);   // pull the vivid nursery green down
+      m.color.set('#ffffff');
       m.roughness = 0.78;
       m.metalness = 0;
       translucentLeaves(m);
       leaves.push(o);
     } else {
-      m.color.setRGB(0.44, 0.38, 0.30);
       m.roughness = 0.97;
       m.metalness = 0;
-      if (m.normalScale) m.normalScale.set(1.35, 1.35);
+      if (m.normalScale) m.normalScale.set(0.55, 0.55);
     }
   });
   return { tree, leaves };
@@ -174,15 +253,17 @@ export function buildGround(scene) {
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   const colour = [];
-  const soil = new THREE.Color('#3b3221');
-  const moss = new THREE.Color('#4a5a26');
-  const silt = new THREE.Color('#2f3a25');
+  const soil = new THREE.Color('#a2a471');
+  const moss = new THREE.Color('#8da654');
+  const silt = new THREE.Color('#737b50');
   const { centre, radius } = LAYOUT.pond;
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), z = pos.getZ(i);
+    const px = pos.getX(i) / (size / 2), pz = pos.getZ(i) / (size / 2);
+    const x = Math.sign(px) * px * px * size / 2;
+    const z = Math.sign(pz) * pz * pz * size / 2;
     const { y, bump, d } = groundHeight(x, z);
-    pos.setY(i, y);
+    pos.setXYZ(i, x, y, z);
     const wet = THREE.MathUtils.smoothstep(d, radius * 0.72, radius * 1.45);
     const patch = Math.sin(x * 1.7 + z * 1.1) * Math.cos(x * 0.9 - z * 2.3);
     c.copy(silt).lerp(soil, wet)
@@ -205,9 +286,9 @@ export function buildGround(scene) {
 export function buildRocks(scene) {
   const group = new THREE.Group();
   const dry = new THREE.MeshStandardMaterial({
-    color: '#4a463d', roughness: 1, metalness: 0, vertexColors: true });
+    color: '#a5aba0', roughness: 0.91, metalness: 0, vertexColors: true });
   const wet = new THREE.MeshStandardMaterial({
-    color: '#41423a', roughness: 0.72, metalness: 0, vertexColors: true });
+    color: '#738e80', roughness: 0.48, metalness: 0, vertexColors: true });
 
   // Icosahedron geometry is non-indexed, so its shared corners exist as several
   // separate vertices. Jittering by vertex index pulls those copies apart and
@@ -225,7 +306,8 @@ export function buildRocks(scene) {
       const rx = Math.round(x * 1000) / 1000;
       const ry = Math.round(y * 1000) / 1000;
       const rz = Math.round(z * 1000) / 1000;
-      const k = 0.80 + hash(rx, ry, rz) * 0.30;
+      const k = 0.88 + Math.sin(rx * 4 + seed) * 0.08
+        + Math.cos(rz * 3 - ry * 2) * 0.06;
       pos.setXYZ(v, x * k, y * k * 0.70, z * k);
     }
     geo.computeVertexNormals();
@@ -243,7 +325,12 @@ export function buildRocks(scene) {
       col[v * 3 + 2] = 1 - moss * 0.72;
     }
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    return geo;
+    geo.deleteAttribute('normal');
+    geo.deleteAttribute('uv');
+    const smooth = mergeVertices(geo);
+    smooth.computeVertexNormals();
+    geo.dispose();
+    return smooth;
   };
 
   const { centre, radius } = LAYOUT.pond;
@@ -264,9 +351,9 @@ export function buildRocks(scene) {
   // Boulders close to the lens on the left, to shut that corner of the frame
   // the way the bough shuts the right. They ride in the dry instance list, so
   // they cost nothing but their triangles.
-  for (const [x, z, scale] of [[-2.35, 7.45, 1.55], [-1.10, 8.30, 1.25],
-                               [-3.20, 6.60, 1.20], [0.15, 8.85, 0.95],
-                               [-2.10, 9.05, 1.40]]) {
+  for (const [x, z, scale] of [[-2.55, 6.6, 0.78], [-1.6, 7.6, 0.50],
+                               [-3.2, 5.7, 0.90], [-.8, 7.8, 0.34],
+                               [-3.2, 7.3, 0.61]]) {
     place[0].push({
       x, y: groundHeight(x, z).y + scale * 0.28 - 0.34, z, scale,
       rx: rand() * 3, ry: rand() * 3, rz: rand() * 3,
@@ -304,8 +391,8 @@ export function buildPond(scene, sunDirection) {
     waterNormals: waterNormals(),
     sunDirection: sunDirection.clone().normalize(),
     sunColor: 0xfff0cf,
-    waterColor: 0x1b3a31,
-    distortionScale: 1.9,
+    waterColor: 0x498d7c,
+    distortionScale: 0.55,
     fog: true,
   });
   // Water's shader expects the surface in the mesh's XY plane, so the mesh - not
@@ -333,8 +420,11 @@ export function buildPond(scene, sunDirection) {
   // drifting leaves cost most of the geometry and read as noise at 256px, so
   // they sit this one out.
   water.reflectionSkips = [];
+  water.userData.refreshReflection = true;
   const baseOnBeforeRender = water.onBeforeRender;
   water.onBeforeRender = function (...args) {
+    if (!water.userData.refreshReflection) return;
+    water.userData.refreshReflection = false;
     const hidden = water.reflectionSkips.filter(o => o && o.visible);
     hidden.forEach(o => { o.visible = false; });
     baseOnBeforeRender.apply(this, args);
@@ -375,15 +465,15 @@ export function buildRoots(scene, material) {
 /* ---------------------------------------------------------------------- lights */
 export function buildLights(scene) {
   // Key: low and raking, so the canopy throws long dapples across the robot.
-  const sun = new THREE.DirectionalLight('#fff1d4', 4.2);
+  const sun = new THREE.DirectionalLight('#fff3d8', 3.0);
   sun.position.copy(LAYOUT.sun);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(4096, 4096);
+  sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.camera.near = 0.5;
   sun.shadow.camera.far = 48;
   // Tight frustum around the hero area: wide enough for the canopy overhead,
   // narrow enough that a shadow texel stays small enough to read leaf edges.
-  const s = 14;
+  const s = 9;
   sun.shadow.camera.left = -s;
   sun.shadow.camera.right = s;
   sun.shadow.camera.top = s;
@@ -395,17 +485,17 @@ export function buildLights(scene) {
   scene.add(sun, sun.target);
 
   // Sky bounce: just enough to keep the shade readable, not enough to flatten it.
-  const sky = new THREE.HemisphereLight('#a9cff2', '#5a6634', 1.9);
+  const sky = new THREE.HemisphereLight('#d8e8f2', '#b2ab7c', 1.15);
   scene.add(sky);
 
   // Cool rim from behind the trunk, separating the robot from the bark.
-  const rim = new THREE.DirectionalLight('#cfe6ff', 0.9);
+  const rim = new THREE.DirectionalLight('#cfe6ff', 0.6);
   rim.position.set(8, 4.2, -7);
   rim.target.position.copy(LAYOUT.sunTarget);
   scene.add(rim, rim.target);
 
   // Warm bounce off the forest floor, filling the undersides.
-  const bounce = new THREE.DirectionalLight('#c6a86a', 1.0);
+  const bounce = new THREE.DirectionalLight('#e4d4ad', 0.25);
   bounce.position.set(-2, -4, 6);
   scene.add(bounce);
 
@@ -414,9 +504,9 @@ export function buildLights(scene) {
 
 /** The glow from the robot's face screen, spilling onto bark and roots. */
 export function buildScreenLight(scene) {
-  const light = new THREE.PointLight('#6fe6ff', 7.5, 6.5, 2);
+  const light = new THREE.PointLight('#6fe6ff', 0.7, 2.0, 2);
   scene.add(light);
-  const bounce = new THREE.PointLight('#35c2e2', 3.2, 3.6, 2);
+  const bounce = new THREE.PointLight('#35c2e2', 0.25, 1.5, 2);
   scene.add(bounce);
   return { light, bounce };
 }
@@ -470,8 +560,8 @@ export function buildMotes(scene) {
 
 /** A slow fall of leaves, so the canopy above feels alive. */
 export function buildFallingLeaves(scene, leafMaterial) {
-  const count = 34;
-  const geo = new THREE.PlaneGeometry(0.17, 0.24);
+  const count = 16;
+  const geo = leafGeometry(0.055, 0.13);
   const mat = new THREE.MeshStandardMaterial({
     color: '#8d6a2c', roughness: 0.8, metalness: 0, side: THREE.DoubleSide,
   });
@@ -517,28 +607,29 @@ export function updateFallingLeaves(mesh, t, dt) {
  *  on a bare horizon. Instanced: two draw calls for the whole treeline. */
 export function buildTreeline(scene) {
   const group = new THREE.Group();
-  const count = 64;
-  const trunkMat = new THREE.MeshStandardMaterial({ color: '#2f2a1d', roughness: 1 });
+  const count = 42;
+  const trunkMat = new THREE.MeshStandardMaterial({ color: '#7a7752', roughness: 1 });
   const crownMat = new THREE.MeshStandardMaterial({
-    color: '#2b3a1c', roughness: 1, flatShading: true,
+    color: '#90b477', roughness: 1, side: THREE.DoubleSide,
   });
   const trunks = new THREE.InstancedMesh(
     new THREE.CylinderGeometry(0.26, 0.42, 6, 5), trunkMat, count);
   const crowns = new THREE.InstancedMesh(
-    new THREE.IcosahedronGeometry(1, 1), crownMat, count);
+    crownGeometry(), crownMat, count);
 
   const m = new THREE.Matrix4(), q = new THREE.Quaternion();
   const e = new THREE.Euler(), p = new THREE.Vector3(), sc = new THREE.Vector3();
   for (let i = 0; i < count; i++) {
     const a = (i / count) * Math.PI * 2 + rand() * 0.09;
-    const r = 23 + rand() * 24;
-    const h = 0.75 + rand() * 1.0;
+    const r = 15 + rand() * 18;
+    const h = 0.55 + rand() * 0.65;
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     q.identity();
     trunks.setMatrixAt(i, m.compose(p.set(x, 3 * h - 0.6, z), q, sc.set(h, h, h)));
-    q.setFromEuler(e.set(rand() * 3, rand() * 3, rand() * 3));
-    crowns.setMatrixAt(i, m.compose(p.set(x, 6.4 * h, z), q,
-      sc.set((2.1 + rand()) * h, (2.9 + rand()) * h, (2.1 + rand()) * h)));
+    q.setFromEuler(e.set(0, rand() * 6.28, 0));
+    crowns.setMatrixAt(i, m.compose(p.set(x, 5.5 * h, z), q,
+      sc.set((2.0 + rand()) * h, (2.3 + rand()) * h, (2.0 + rand()) * h)));
+    crowns.setColorAt(i, new THREE.Color().setHSL(0.23 + rand() * 0.05, 0.24, 0.64 + rand() * 0.18));
   }
   trunks.instanceMatrix.needsUpdate = true;
   crowns.instanceMatrix.needsUpdate = true;
@@ -600,10 +691,10 @@ function bladeGeometry(segments = 3, width = 0.046, bend = 0.16) {
  * (injected into MeshStandardMaterial so the grass still receives the canopy's
  * leaf shadows and the scene's image based lighting).
  */
-export function buildGrass(scene, { count = 5000, radius = 13 } = {}) {
-  const geo = bladeGeometry();
+export function buildGrass(scene, { count = 8500, radius = 16 } = {}) {
+  const geo = bladeGeometry(3, 0.028, 0.12);
   const mat = new THREE.MeshStandardMaterial({
-    color: '#55682c', roughness: 0.92, metalness: 0, side: THREE.DoubleSide,
+    color: '#94b95b', roughness: 0.92, metalness: 0, side: THREE.DoubleSide,
   });
 
   const uniforms = { uTime: { value: 0 }, uWind: { value: 0.42 } };
@@ -666,7 +757,7 @@ export function buildGrass(scene, { count = 5000, radius = 13 } = {}) {
     if (Math.hypot(x - robot.x, z - robot.z) < 0.85) continue;             // not through him
     const g = groundHeight(x, z);
     if (g.basin > 0.55) continue;
-    const h = 0.15 + rand() * 0.26;
+    const h = 0.14 + rand() * 0.22;
     p.set(x, g.y - 0.02, z);
     q.setFromEuler(e.set((rand() - 0.5) * 0.22, rand() * Math.PI * 2, (rand() - 0.5) * 0.22));
     sc.set(0.8 + rand() * 0.6, h, 1);
