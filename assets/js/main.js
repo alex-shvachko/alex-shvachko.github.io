@@ -1,7 +1,8 @@
 import * as THREE from './vendor/three.module.js';
 import { GLTFLoader } from './vendor/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from './vendor/addons/loaders/DRACOLoader.js';
-import { Robot } from './scene/robot.js?v=glade-1';
+import { Robot } from './scene/robot.js?v=glade-2';
+import { buildCascade } from './scene/cascade.js';
 import { ButterflyController } from './scene/butterfly.js';
 import { buildGlassMenu } from './scene/glassbranch.js?v=glade-1';
 import {
@@ -9,7 +10,7 @@ import {
   buildPond, buildLights, buildScreenLight,
   buildMotes, buildFallingLeaves, updateFallingLeaves, buildTreeline,
   buildGrass, buildBotanicals,
-} from './scene/world.js?v=glade-1';
+} from './scene/world.js?v=glade-2';
 
 const canvas = document.querySelector('#scene');
 const stage = canvas.parentElement;
@@ -27,7 +28,7 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 0.98;
 // The glass menu refracts what is behind it, which costs an extra pass over the
 // opaque scene. Half resolution is free of visible cost through frosted glass.
 renderer.transmissionResolutionScale = 0.5;
@@ -46,18 +47,20 @@ const FOCUS = new THREE.Vector3(1.15, 2.50, 3.6);
 const HOME = new THREE.Vector3(3.1, 3.55, 12.2);
 const DRIFT = { x: 0.22, y: 0.12 };
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const debugParams = new URLSearchParams(location.search);
+const debugPose = debugParams.has('debug') ? debugParams.get('pose') : null;
 let scrollS = 0;                          // 0..1 progress through the track
 function frameCamera() {
   const aspect = stage.clientWidth / stage.clientHeight;
   camera.aspect = aspect;
   // Keep the robot and the left pond in frame; reserve the lower area on phones.
   if (aspect < 0.95) {
-    FOCUS.set(0.90, 1.45, 3.65);
-    HOME.set(2.0, 3.8, 3.65 + Math.max(11.4, 5.8 / aspect));
+    FOCUS.set(0.05, 2.05, 3.65);
+    HOME.set(1.1, 4.1, 3.65 + Math.max(11.4, 7.6 / aspect));
     camera.fov = 38;
   } else {
-    FOCUS.set(1.55, 1.85, 3.6);
-    HOME.set(3.15, 5.45, 3.6 + Math.max(8.3, 10.8 / aspect));
+    FOCUS.set(1.35, 2.15, 3.6);
+    HOME.set(2.7, 3.65, 3.6 + Math.max(8.8, 10.8 / aspect));
     camera.fov = 38;
   }
   // Resizing mid-dive must NOT snap back to the hero framing; the frame loop
@@ -107,6 +110,7 @@ buildGround(scene);
 const treeline = buildTreeline(scene);
 const grass = buildGrass(scene);
 const water = buildPond(scene, LAYOUT.sun);
+const cascade = buildCascade(scene);
 buildBotanicals(scene);
 const screenLight = buildScreenLight(scene);
 const motes = buildMotes(scene);
@@ -117,7 +121,7 @@ const menu = buildGlassMenu(scene, camera, document.querySelector('.branch-menu'
 
 // The reflection re-renders the scene. At 256px in dark water none of these
 // read as anything but noise, and they are most of the geometry.
-water.reflectionSkips.push(grass, motes, treeline, menu.frame);
+water.reflectionSkips.push(grass, motes, treeline, menu.frame, cascade.group);
 
 /* --------------------------------------------------------------------- loading */
 const draco = new DRACOLoader().setDecoderPath('./assets/js/vendor/addons/libs/draco/');
@@ -129,10 +133,11 @@ let butterfly = null;
 let fallingLeaves = null;
 
 const ready = (async () => {
-  const [treeGltf, robotModel, shoreGltf] = await Promise.all([
-    loader.loadAsync('./assets/models/glade-oak.glb'),
+  const [treeGltf, robotModel, shoreGltf, gardenGltf] = await Promise.all([
+    loader.loadAsync('./assets/models/glade-oak.glb?v=2'),
     Robot.load(loader, './assets/models/robot-postman-refined.glb'),
     loader.loadAsync('./assets/models/glade-shore.glb'),
+    loader.loadAsync('./assets/models/glade-garden.glb'),
   ]);
 
   const { leaves } = placeTree(treeGltf, scene);
@@ -141,6 +146,12 @@ const ready = (async () => {
     o.material.side = THREE.DoubleSide;
   } });
   scene.add(shoreGltf.scene);
+  gardenGltf.scene.traverse(o => { if (o.isMesh) {
+    o.receiveShadow = true;
+    o.material.side = THREE.DoubleSide;
+    o.castShadow = /Root|Boulder|Ivy/.test(o.name);
+  } });
+  scene.add(gardenGltf.scene);
   water.reflectionSkips.push(...leaves);
   fallingLeaves = buildFallingLeaves(scene, leaves[0]?.material);
   water.reflectionSkips.push(fallingLeaves, robotModel.root);
@@ -152,7 +163,7 @@ const ready = (async () => {
   if (robot.screen?.material) {
     const m = robot.screen.material;
     m.emissive?.set('#8ff4ff');
-    m.emissiveIntensity = 0.55;
+    m.emissiveIntensity = 0.9;
     m.toneMapped = true;
   }
   scene.add(robot.root);
@@ -179,8 +190,7 @@ const ready = (async () => {
     },
   });
 
-  // The canopy and the sun are both static and leaves are the only casters, so
-  // the shadow map never needs to be re-rendered after the first frame.
+  // All shadow casters are static, so render the map once after asset loading.
   sun.shadow.needsUpdate = true;
   sun.shadow.autoUpdate = false;
 
@@ -368,6 +378,11 @@ function frame() {
   }
   if (robot) {
     aimTarget.copy(butterfly ? butterfly.root.position : FOCUS);
+    // Reproducible extreme poses for browser regression review (?debug&pose=right).
+    if (['left', 'right', 'behind'].includes(debugPose)) {
+      aimTarget.set(debugPose === 'left' ? -5 : 6, 2.3, debugPose === 'behind' ? -5 : 6);
+      robot.frozen = false;
+    }
     // Idle first: it moves the torso and neck, and the arm should solve against
     // where the shoulder has actually ended up this frame.
     robot.idle(t);
@@ -384,6 +399,7 @@ function frame() {
 
   menu.update(t, dt, rect);
   if (!reducedMotion.matches) water.material.uniforms.time.value += dt * 0.22;
+  cascade.update(t);
   motes.material.uniforms.uTime.value = t;
   grass.userData.uniforms.uTime.value = t;
   if (fallingLeaves && !reducedMotion.matches) updateFallingLeaves(fallingLeaves, t, dt);
@@ -403,7 +419,7 @@ new IntersectionObserver(([entry]) => {
 }, { threshold: 0 }).observe(stage);
 document.addEventListener('visibilitychange', syncPlayback);
 
-if (new URLSearchParams(location.search).has('debug')) {
+if (debugParams.has('debug')) {
   // A readout, so "is it 60?" is answered by measurement rather than by feel.
   const hud = document.createElement('div');
   hud.style.cssText = 'position:fixed;z-index:9;left:12px;top:12px;padding:7px 10px;'

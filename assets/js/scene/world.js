@@ -9,7 +9,7 @@ export const LAYOUT = {
   robot: { pos: new THREE.Vector3(1.28, 0.30, 3.95), rotY: -0.34, scale: 1 },
   // Drawn in under the root flare, so the water meets the roots beneath him.
   pond: { centre: new THREE.Vector3(-1.25, -0.28, 4.05), radius: 2.65 },
-  sun: new THREE.Vector3(-7, 12, 6),
+  sun: new THREE.Vector3(-5, 8, 8),
   sunTarget: new THREE.Vector3(0.9, 1.3, 3.6),
 };
 
@@ -31,15 +31,12 @@ function leafGeometry(width = 0.09, length = 0.22) {
 
 function crownGeometry() {
   const parts = [];
-  const core = new THREE.IcosahedronGeometry(0.85, 2);
-  core.deleteAttribute('uv');
-  parts.push(core);
-  const leaf = leafGeometry(0.11, 0.29);
+  const leaf = leafGeometry(0.18, 0.40);
   const matrix = new THREE.Matrix4(), q = new THREE.Quaternion();
   const direction = new THREE.Vector3(), position = new THREE.Vector3();
-  for (let i = 0; i < 170; i++) {
+  for (let i = 0; i < 240; i++) {
     direction.set(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize();
-    position.copy(direction).multiplyScalar(0.8 + rand() * 0.2);
+    position.copy(direction).multiplyScalar(0.35 + rand() * 0.65);
     q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
     const part = leaf.clone().applyMatrix4(matrix.compose(position, q, new THREE.Vector3(1, 1, 1))).toNonIndexed();
     parts.push(part);
@@ -64,7 +61,7 @@ export function buildBotanicals(scene) {
   }
   padShape.lineTo(0, 0);
   const pads = new THREE.InstancedMesh(new THREE.ShapeGeometry(padShape, 12),
-    new THREE.MeshStandardMaterial({ color: '#7d9c54', roughness: 0.64, side: THREE.DoubleSide }), 26);
+    new THREE.MeshStandardMaterial({ color: '#597b32', roughness: 0.64, side: THREE.DoubleSide }), 8);
   for (let i = 0; i < pads.count; i++) {
     const a = rand() * Math.PI * 2, r = 0.4 + rand() * 1.8;
     p.set(LAYOUT.pond.centre.x + Math.cos(a) * r, LAYOUT.pond.centre.y + 0.018,
@@ -134,10 +131,10 @@ export function buildEnvironment(scene, renderer) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
   scene.environment = pmrem.fromEquirectangular(sky).texture;
-  scene.environmentIntensity = 0.65;
+  scene.environmentIntensity = 0.38;
   scene.background = sky;
   scene.backgroundIntensity = 1.0;
-  scene.fog = new THREE.FogExp2('#c5d9c2', 0.012);
+  scene.fog = new THREE.FogExp2('#acb98a', 0.035);
   pmrem.dispose();
 }
 
@@ -156,8 +153,9 @@ function waterNormals() {
       v.set(-dx, -dy, 0.22).normalize();
       const i = (y * n + x) * 4;
       data[i] = (v.x * 0.5 + 0.5) * 255;
-      data[i + 1] = (v.z * 0.5 + 0.5) * 255;
-      data[i + 2] = (v.y * 0.5 + 0.5) * 255;
+      // Water.js does the tangent-to-world XZY swizzle itself.
+      data[i + 1] = (v.y * 0.5 + 0.5) * 255;
+      data[i + 2] = (v.z * 0.5 + 0.5) * 255;
       data[i + 3] = 255;
     }
   }
@@ -181,8 +179,8 @@ export function placeTree(gltf, scene) {
   const leaves = [];
   tree.traverse(o => {
     if (!o.isMesh) return;
-    // Only the canopy casts: the brief is leaf shadows and nothing else.
-    o.castShadow = false;
+    if (/Core/.test(o.name)) o.visible = false;
+    o.castShadow = !/Core/.test(o.name);
     o.receiveShadow = true;
     const m = o.material;
     if (m.map) m.map.anisotropy = 8;
@@ -193,7 +191,7 @@ export function placeTree(gltf, scene) {
       m.alphaTest = 0.42;
       m.side = THREE.DoubleSide;
       m.shadowSide = THREE.DoubleSide;
-      o.castShadow = true;
+      o.castShadow = !/Core/.test(o.name);
       m.color.set('#ffffff');
       m.roughness = 0.78;
       m.metalness = 0;
@@ -253,9 +251,9 @@ export function buildGround(scene) {
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   const colour = [];
-  const soil = new THREE.Color('#a2a471');
-  const moss = new THREE.Color('#8da654');
-  const silt = new THREE.Color('#737b50');
+  const soil = new THREE.Color('#596039');
+  const moss = new THREE.Color('#667b2d');
+  const silt = new THREE.Color('#3b5142');
   const { centre, radius } = LAYOUT.pond;
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
@@ -391,19 +389,20 @@ export function buildPond(scene, sunDirection) {
     waterNormals: waterNormals(),
     sunDirection: sunDirection.clone().normalize(),
     sunColor: 0xfff0cf,
-    waterColor: 0x498d7c,
-    distortionScale: 0.55,
+    waterColor: 0x226f64,
+    distortionScale: 1.2,
     fog: true,
   });
   // Water's shader expects the surface in the mesh's XY plane, so the mesh - not
   // the geometry - carries the lie-flat rotation. Rotating both tips it on edge.
   water.rotation.x = -Math.PI / 2;
   water.position.copy(LAYOUT.pond.centre);
-  water.material.uniforms.size.value = 2.4;
+  water.material.uniforms.size.value = 32.0;
   // Water.js floors its reflective term at a flat vec3(0.1), which reads as a
   // milky disc in a shaded glade. Drop it so the pond can actually go dark.
   water.material.fragmentShader = water.material.fragmentShader
     .replace('vec3( 0.1 )', 'vec3( 0.015 )')
+    .replace('float rf0 = 0.3;', 'float rf0 = 0.08;')
     // Bias every noise octave along a common direction so the surface reads as
     // moving water rather than chop stirring in place, and stretch the sampling
     // across the flow so the ripples elongate into streaks the way a current does.
@@ -414,7 +413,7 @@ export function buildPond(scene, sunDirection) {
         uv += uFlow * time * uFlowStrength;
         uv -= uFlow * dot( uv, uFlow ) * 0.22;`);
   water.material.uniforms.uFlow = { value: new THREE.Vector2(0.82, 0.57).normalize() };
-  water.material.uniforms.uFlowStrength = { value: 5.5 };
+  water.material.uniforms.uFlowStrength = { value: 1.8 };
 
   // The reflection pass renders the scene a second time. Grass, motes and
   // drifting leaves cost most of the geometry and read as noise at 256px, so
@@ -465,7 +464,7 @@ export function buildRoots(scene, material) {
 /* ---------------------------------------------------------------------- lights */
 export function buildLights(scene) {
   // Key: low and raking, so the canopy throws long dapples across the robot.
-  const sun = new THREE.DirectionalLight('#fff3d8', 3.0);
+  const sun = new THREE.DirectionalLight('#ffdc93', 4.2);
   sun.position.copy(LAYOUT.sun);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -485,18 +484,20 @@ export function buildLights(scene) {
   scene.add(sun, sun.target);
 
   // Sky bounce: just enough to keep the shade readable, not enough to flatten it.
-  const sky = new THREE.HemisphereLight('#d8e8f2', '#b2ab7c', 1.15);
+  const sky = new THREE.HemisphereLight('#b5d4d7', '#635a29', 0.48);
   scene.add(sky);
 
   // Cool rim from behind the trunk, separating the robot from the bark.
-  const rim = new THREE.DirectionalLight('#cfe6ff', 0.6);
+  const rim = new THREE.DirectionalLight('#cfe6ff', 0.4);
   rim.position.set(8, 4.2, -7);
   rim.target.position.copy(LAYOUT.sunTarget);
   scene.add(rim, rim.target);
 
   // Warm bounce off the forest floor, filling the undersides.
-  const bounce = new THREE.DirectionalLight('#e4d4ad', 0.25);
-  bounce.position.set(-2, -4, 6);
+  const bounce = new THREE.DirectionalLight('#ffdfaa', 1.0);
+  bounce.position.set(-3, 4, 10);
+  bounce.target.position.copy(LAYOUT.sunTarget);
+  scene.add(bounce.target);
   scene.add(bounce);
 
   return { sun, sky, rim, bounce };
@@ -607,7 +608,7 @@ export function updateFallingLeaves(mesh, t, dt) {
  *  on a bare horizon. Instanced: two draw calls for the whole treeline. */
 export function buildTreeline(scene) {
   const group = new THREE.Group();
-  const count = 42;
+  const count = 60;
   const trunkMat = new THREE.MeshStandardMaterial({ color: '#7a7752', roughness: 1 });
   const crownMat = new THREE.MeshStandardMaterial({
     color: '#90b477', roughness: 1, side: THREE.DoubleSide,
@@ -620,19 +621,32 @@ export function buildTreeline(scene) {
   const m = new THREE.Matrix4(), q = new THREE.Quaternion();
   const e = new THREE.Euler(), p = new THREE.Vector3(), sc = new THREE.Vector3();
   for (let i = 0; i < count; i++) {
-    const a = (i / count) * Math.PI * 2 + rand() * 0.09;
-    const r = 15 + rand() * 18;
-    const h = 0.55 + rand() * 0.65;
+    // Keep every background crown behind the glade, clear of the hero camera.
+    const a = Math.PI + (i + 0.5) / count * Math.PI;
+    const r = 10 + rand() * 20;
+    const h = 0.85 + rand() * 1.4;
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     q.identity();
     trunks.setMatrixAt(i, m.compose(p.set(x, 3 * h - 0.6, z), q, sc.set(h, h, h)));
     q.setFromEuler(e.set(0, rand() * 6.28, 0));
     crowns.setMatrixAt(i, m.compose(p.set(x, 5.5 * h, z), q,
       sc.set((2.0 + rand()) * h, (2.3 + rand()) * h, (2.0 + rand()) * h)));
-    crowns.setColorAt(i, new THREE.Color().setHSL(0.23 + rand() * 0.05, 0.24, 0.64 + rand() * 0.18));
+    crowns.setColorAt(i, new THREE.Color().setHSL(0.20 + rand() * 0.06, 0.38, 0.30 + rand() * 0.18));
   }
   trunks.instanceMatrix.needsUpdate = true;
   crowns.instanceMatrix.needsUpdate = true;
+  // A lower layer closes the bare horizon behind the oak and the cascade.
+  const shrubs = new THREE.InstancedMesh(crowns.geometry, crownMat, 36);
+  for (let i = 0; i < shrubs.count; i++) {
+    const x = -10 + rand() * 20, z = -5 + rand() * 5;
+    const h = 0.7 + rand() * 1.2;
+    q.setFromEuler(e.set(0, rand() * Math.PI * 2, 0));
+    shrubs.setMatrixAt(i, m.compose(p.set(x, groundHeight(x, z).y + h * 0.5, z),
+      q, sc.set(h * 1.2, h, h)));
+    shrubs.setColorAt(i, new THREE.Color().setHSL(0.20 + rand() * 0.06, 0.45, 0.30 + rand() * 0.12));
+  }
+  shrubs.receiveShadow = true;
+  group.add(shrubs);
   for (const mesh of [trunks, crowns]) {
     mesh.castShadow = false;
     mesh.receiveShadow = false;       // distant filler; shading is enough
@@ -691,13 +705,13 @@ function bladeGeometry(segments = 3, width = 0.046, bend = 0.16) {
  * (injected into MeshStandardMaterial so the grass still receives the canopy's
  * leaf shadows and the scene's image based lighting).
  */
-export function buildGrass(scene, { count = 8500, radius = 16 } = {}) {
-  const geo = bladeGeometry(3, 0.028, 0.12);
+export function buildGrass(scene, { count = 18000, radius = 12 } = {}) {
+  const geo = bladeGeometry(4, 0.055, 0.20);
   const mat = new THREE.MeshStandardMaterial({
-    color: '#94b95b', roughness: 0.92, metalness: 0, side: THREE.DoubleSide,
+    color: '#7d9c38', roughness: 0.92, metalness: 0, side: THREE.DoubleSide,
   });
 
-  const uniforms = { uTime: { value: 0 }, uWind: { value: 0.42 } };
+  const uniforms = { uTime: { value: 0 }, uWind: { value: 0.18 } };
   mat.onBeforeCompile = shader => {
     shader.uniforms.uTime = uniforms.uTime;
     shader.uniforms.uWind = uniforms.uWind;
@@ -757,7 +771,7 @@ export function buildGrass(scene, { count = 8500, radius = 16 } = {}) {
     if (Math.hypot(x - robot.x, z - robot.z) < 0.85) continue;             // not through him
     const g = groundHeight(x, z);
     if (g.basin > 0.55) continue;
-    const h = 0.14 + rand() * 0.22;
+    const h = 0.18 + rand() * 0.32;
     p.set(x, g.y - 0.02, z);
     q.setFromEuler(e.set((rand() - 0.5) * 0.22, rand() * Math.PI * 2, (rand() - 0.5) * 0.22));
     sc.set(0.8 + rand() * 0.6, h, 1);

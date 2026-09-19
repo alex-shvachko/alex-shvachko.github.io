@@ -55,6 +55,8 @@ export class Robot {
     this.foreLength = w.distanceTo(e);
     this.restShoulderWorldQ = this.shoulder.getWorldQuaternion(new THREE.Quaternion());
     this.restElbowWorldQ = this.elbow.getWorldQuaternion(new THREE.Quaternion());
+    this.restTorsoWorldQ = this.torso.getWorldQuaternion(new THREE.Quaternion());
+    this.armFrame = new THREE.Quaternion();
     this.restHeadWorldQ = this.head.getWorldQuaternion(new THREE.Quaternion());
     this.restHeadDir = new THREE.Vector3(0, 0, 1)
       .applyQuaternion(this.restHeadWorldQ).normalize();
@@ -84,7 +86,7 @@ export class Robot {
       });
     }
 
-    this.aim = this.restDir.clone();
+    this.aim = new THREE.Vector3(-0.65, -0.12, 0.75).normalize();
     this.gaze = this.restHeadDir.clone();
     this.extend = 1;
     this.frozen = false;
@@ -118,10 +120,10 @@ export class Robot {
     return this.perch.getWorldPosition(out);
   }
 
-  /** Apply a world-space swing to a bone, on top of its rest world rotation. */
+  /** Aim from the bind torso frame, then convert back to the bone's parent. */
   _swing(bone, parentWorldQ, restWorldQ, dir) {
     const swing = this._q[4].setFromUnitVectors(this.restDir, dir);
-    const world = this._q[5].copy(swing).multiply(restWorldQ);
+    const world = this._q[5].copy(this.armFrame).multiply(swing).multiply(restWorldQ);
     bone.quaternion.copy(this._q[3].copy(parentWorldQ).invert()).multiply(world);
     return world;
   }
@@ -179,7 +181,15 @@ export class Robot {
     const toTarget = this._v[1].subVectors(target, S);
     const reach = toTarget.length();
     if (reach < 1e-5) return;
-    toTarget.normalize();
+    // Solve in the bind torso frame: root placement and breathing must rotate
+    // the limits as well as the arm. +Z is forward, -X is his right side.
+    this.armFrame.copy(this.torso.getWorldQuaternion(this._q[7]))
+      .multiply(this._q[0].copy(this.restTorsoWorldQ).invert());
+    toTarget.applyQuaternion(this._q[0].copy(this.armFrame).invert()).normalize();
+    const yaw = clamp(Math.atan2(toTarget.x, toTarget.z), -1.30, 1.10);
+    const pitch = clamp(Math.asin(clamp(toTarget.y, -1, 1)), -0.60, 0.65);
+    toTarget.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch),
+      Math.cos(yaw) * Math.cos(pitch));
     this.aim.lerp(toTarget, damp(5.5, dt)).normalize();
 
     const a = this.upperLength;
@@ -192,10 +202,10 @@ export class Robot {
     // Never fully locked out, never folded flat: both ends of that range would
     // make the triangle degenerate.
     const L = span * clamp(
-      THREE.MathUtils.lerp(0.46, 0.96, this.extend) + breath, 0.34, 0.978);
+      THREE.MathUtils.lerp(0.55, 0.90, this.extend) + breath, 0.50, 0.94);
 
-    // Pole vector: the elbow hangs down and slightly back, as a real arm does.
-    const pole = this._v[2].set(0, -1, -0.45).normalize();
+    // Keep the elbow down and outside the rib cage, with a forward bias.
+    const pole = this._v[2].set(-0.65, -1, 0.35).normalize();
     const axis = this._v[3].crossVectors(this.aim, pole);
     if (axis.lengthSq() < 1e-8) axis.set(0, 0, 1);
     axis.normalize();
@@ -203,18 +213,23 @@ export class Robot {
     const alpha = Math.acos(clamp((a * a + L * L - b * b) / (2 * a * L), -1, 1));
     const upperDir = this._v[4].copy(this.aim)
       .applyQuaternion(this._q[0].setFromAxisAngle(axis, alpha)).normalize();
+    // Anatomical stop: no humerus behind the shoulder or through the torso,
+    // including during a rapid sweep from one side of the screen to the other.
+    upperDir.x = Math.min(upperDir.x, -0.12);
+    upperDir.z = Math.max(upperDir.z, 0.20);
+    upperDir.normalize();
 
     // Elbow position follows from the upper arm, and the forearm simply points
     // from there at the goal the extension chose.
-    const elbowPos = this._v[5].copy(S).addScaledVector(upperDir, a);
-    const goal = this._v[6].copy(S).addScaledVector(this.aim, L);
+    const elbowPos = this._v[5].copy(upperDir).multiplyScalar(a);
+    const goal = this._v[6].copy(this.aim).multiplyScalar(L);
     const foreDir = this._v[7].subVectors(goal, elbowPos);
     if (foreDir.lengthSq() < 1e-8) foreDir.copy(upperDir);
     foreDir.normalize();
 
     const parentQ = this.shoulder.parent.getWorldQuaternion(this._q[1]);
-    const shoulderWorld = this._swing(
-      this.shoulder, parentQ, this.restShoulderWorldQ, upperDir).clone();
+    this._swing(this.shoulder, parentQ, this.restShoulderWorldQ, upperDir);
+    const shoulderWorld = this.shoulder.getWorldQuaternion(this._q[2]);
     this._swing(this.elbow, shoulderWorld, this.restElbowWorldQ, foreDir);
   }
 
@@ -233,10 +248,14 @@ export class Robot {
    * behind him never twists the neck round.
    */
   watch(target, dt, maxAngle = 1.0) {
+    // The torso still breathes while a perched butterfly holds the arm still.
+    this.armFrame.copy(this.torso.getWorldQuaternion(this._q[7]))
+      .multiply(this._q[0].copy(this.restTorsoWorldQ).invert());
     const p = this.head.getWorldPosition(this._v[0]);
     const want = this._v[1].subVectors(target, p);
     if (want.lengthSq() < 1e-6) return;
     want.normalize();
+    want.applyQuaternion(this._q[0].copy(this.armFrame).invert());
 
     const angle = Math.acos(clamp(want.dot(this.restHeadDir), -1, 1));
     if (angle > maxAngle) {
@@ -250,7 +269,7 @@ export class Robot {
 
     const parentQ = this.head.parent.getWorldQuaternion(this._q[1]);
     const swing = this._q[2].setFromUnitVectors(this.restHeadDir, this.gaze);
-    const world = this._q[3].copy(swing).multiply(this.restHeadWorldQ);
+    const world = this._q[3].copy(this.armFrame).multiply(swing).multiply(this.restHeadWorldQ);
     this.head.quaternion.copy(this._q[4].copy(parentQ).invert()).multiply(world);
   }
 }
