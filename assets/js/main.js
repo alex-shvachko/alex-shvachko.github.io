@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three.module.js';
 import { GLTFLoader } from './vendor/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from './vendor/addons/loaders/DRACOLoader.js';
-import { Robot } from './scene/robot.js?v=glade-2';
+import { Robot } from './scene/robot.js?v=atom-2';
 import { buildCascade } from './scene/cascade.js';
 import { ButterflyController } from './scene/butterfly.js';
 import { buildGlassMenu } from './scene/glassbranch.js?v=glade-1';
@@ -86,11 +86,19 @@ function updateScrollProgress() {
   const r = heroTrack.getBoundingClientRect();
   const range = heroTrack.offsetHeight - stage.clientHeight;
   scrollS = range > 0 ? THREE.MathUtils.clamp(-r.top / range, 0, 1) : 0;
-  // As the camera passes through the eye (scrollS > 0.45), dim the hero canvas
-  // so the tech view fades in over the lingering eye-glow instead of hard-swapping.
-  stage.classList.toggle('is-through', scrollS > 0.45);
+  // As the blue section enters the last part of the pinned scene, dim the canvas
+  // so its arrival carries through the eye glow.
+  stage.classList.toggle('is-through', scrollS > 0.76);
 }
-addEventListener('scroll', updateScrollProgress, { passive: true });
+// Throttle scroll-progress to animation-frame cadence — getBoundingClientRect is not
+// cheap across rapid scroll events.
+let scrollTick = false;
+function onScrollFrame() {
+  if (scrollTick) return;
+  scrollTick = true;
+  requestAnimationFrame(() => { scrollTick = false; updateScrollProgress(); });
+}
+addEventListener('scroll', onScrollFrame, { passive: true });
 updateScrollProgress();
 const easeInOut = t => t * t * (3 - 2 * t);
 const easeIn = t => t * t * t;
@@ -135,7 +143,7 @@ let fallingLeaves = null;
 const ready = (async () => {
   const [treeGltf, robotModel, shoreGltf, gardenGltf] = await Promise.all([
     loader.loadAsync('./assets/models/glade-oak.glb?v=2'),
-    Robot.load(loader, './assets/models/robot-postman-refined.glb'),
+    Robot.load(loader, './assets/models/robot-atom.glb?v=2'),
     loader.loadAsync('./assets/models/glade-shore.glb'),
     loader.loadAsync('./assets/models/glade-garden.glb'),
   ]);

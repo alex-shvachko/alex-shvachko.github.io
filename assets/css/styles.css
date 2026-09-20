@@ -23,66 +23,75 @@
 .hero-track{position:relative;height:280svh;background:var(--paper)}
 .hero-track .hero-scene{position:sticky;top:0;height:100svh}
 
-/* ---- techview: the stylized view on the far side of the eye ---- */
-.techview{--tv:1;--line:0;position:relative;z-index:2;overflow:clip;padding-top:clamp(90px,14vh,150px);padding-bottom:130px;background:radial-gradient(130% 80% at 50% -12%,#a7ecf4 0%,#dceccd 30%,var(--paper) 60%);opacity:calc(.3 + .7 * var(--tv,1));transform:translateY(calc((1 - var(--tv,1)) * 46px))}
-.techview:before{content:'';position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(29,35,27,.16) 1px,transparent 1.2px);background-size:24px 24px;-webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 55%);mask-image:linear-gradient(to bottom,black 0%,transparent 55%)}
-.techview-inner{position:relative;max-width:1320px;margin:auto;padding-left:clamp(22px,4vw,70px);padding-right:clamp(22px,4vw,70px)}
-.techview h2{max-width:760px;margin:0 0 60px;font-size:clamp(40px,5.4vw,76px);line-height:.95;letter-spacing:-.065em;font-weight:700}
-.techview h2 em{font-family:Georgia,serif;font-weight:400;letter-spacing:-.07em;color:#4e8c91}
-.tech-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(40px,5vw,90px);align-items:start}
+/* ---- techview: a clear signal emerging from the robot's eye ---- */
+.hero-track:has(.hero-scene.is-ready) + .techview{margin-top:-46svh}
+.techview{--tv-ink:#183746;--tv-muted:#486475;--tv-blue:#176d98;--tv-line:#a9cbd9;position:relative;z-index:2;overflow:clip;padding:clamp(82px,12vh,140px) 0 110px;color:var(--tv-ink);background:radial-gradient(ellipse 72% 30% at 52% 0%,#9edfff 0%,transparent 74%),linear-gradient(180deg,#d9f1fb 0%,#eaf7fb 70%,var(--paper) 100%)}
+.techview:before{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(50,116,149,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(50,116,149,.065) 1px,transparent 1px);background-size:42px 42px;-webkit-mask-image:linear-gradient(to bottom,black,transparent 82%);mask-image:linear-gradient(to bottom,black,transparent 82%)}
+.techview:after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#6ac7f4 35%,#d7f4ff 50%,#6ac7f4 65%,transparent);transform-origin:center;box-shadow:0 8px 32px rgba(42,155,204,.25)}
+.techview.can-animate:after{transform:scaleX(0);transition:transform .75s cubic-bezier(.16,1,.3,1)}
+.techview.can-animate.is-visible:after{transform:scaleX(1)}
+.techview-inner{position:relative;max-width:1320px;margin:auto;padding:0 clamp(22px,4vw,70px)}
+.techview h2{max-width:810px;margin:0 0 clamp(55px,7vw,94px);font-size:clamp(42px,5.4vw,76px);line-height:1.02;letter-spacing:-.04em;font-weight:700;text-wrap:balance;transition:opacity .65s cubic-bezier(.16,1,.3,1),filter .65s cubic-bezier(.16,1,.3,1),transform .65s cubic-bezier(.16,1,.3,1)}
+.techview h2 em{font-family:Georgia,serif;font-weight:400;letter-spacing:-.04em;color:var(--tv-blue)}
+.tech-grid{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:clamp(44px,6vw,92px);align-items:start;transition:opacity .7s cubic-bezier(.16,1,.3,1) .1s,filter .7s cubic-bezier(.16,1,.3,1) .1s,transform .7s cubic-bezier(.16,1,.3,1) .1s}
+.techview.can-animate:not(.is-visible) h2{opacity:.55;filter:blur(7px);transform:translateY(16px)}
+.techview.can-animate:not(.is-visible) .tech-grid{opacity:.7;filter:blur(5px);transform:translateY(16px)}
 
 /* experience timeline */
-.tech-timeline{position:relative;padding-left:34px}
-.tl-line{position:absolute;left:8px;top:6px;bottom:6px;width:1px;background:var(--line)}
-.tl-line i{position:absolute;inset:0;background:var(--ink);transform:scaleY(var(--line,0));transform-origin:top}
-.tl-node{position:relative;padding:0 0 44px;opacity:0;transform:translateX(-16px);transition:opacity .7s ease,transform .7s cubic-bezier(.22,.8,.3,1)}
-.tl-node.is-in{opacity:1;transform:none}
-.tl-node:before{content:'';position:absolute;left:-31px;top:7px;width:11px;height:11px;border-radius:50%;border:1px solid var(--ink);background:var(--paper);box-shadow:0 0 0 4px rgba(232,234,220,.9)}
-.tl-node.is-in:before{background:var(--lime);border-color:var(--ink)}
-.tl-node header{display:flex;justify-content:space-between;gap:14px;align-items:baseline;font:11px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.tl-node .tl-years{color:var(--orange)}
-.tl-node h3{margin:10px 0 8px;font-size:clamp(22px,2.2vw,30px);letter-spacing:-.045em}
-.tl-node p{max-width:420px;margin:0;color:var(--muted);font-size:14px;line-height:1.62}
+.tech-timeline{position:relative;padding-left:35px}
+.tl-line{position:absolute;left:8px;top:7px;bottom:28px;width:1px;background:var(--tv-line)}
+.tl-line i{position:absolute;inset:0;background:var(--tv-blue);transform:scaleY(var(--line,0));transform-origin:top}
+.tl-node{position:relative;padding:0 0 39px;transition:opacity .55s cubic-bezier(.16,1,.3,1),filter .55s cubic-bezier(.16,1,.3,1),transform .55s cubic-bezier(.16,1,.3,1)}
+.techview.can-animate .tl-node:not(.is-in){opacity:.48;filter:blur(3px);transform:translateY(12px)}
+.tl-node:before{content:'';position:absolute;left:-32px;top:7px;width:11px;height:11px;border:1px solid var(--tv-blue);border-radius:50%;background:#eaf8fd;box-shadow:0 0 0 5px rgba(223,245,254,.94)}
+.tl-node.is-in:before{background:var(--tv-blue)}
+.tl-node.is-active:before{box-shadow:0 0 0 5px rgba(223,245,254,.94),0 0 0 8px rgba(23,109,152,.18)}
+.tl-node:not(:last-child):after{content:'';position:absolute;left:0;right:0;bottom:22px;border-bottom:1px solid rgba(88,145,169,.19)}
+.tl-node header{display:flex;justify-content:space-between;gap:14px;align-items:baseline;font:11px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--tv-muted)}
+.tl-node .tl-years{color:var(--tv-blue);white-space:nowrap}
+.tl-node h3{margin:9px 0 7px;font-size:clamp(22px,2.2vw,29px);letter-spacing:-.04em}
+.tl-node p{max-width:440px;margin:0;color:var(--tv-muted);font-size:14px;line-height:1.65}
 
-/* cloud of tags */
-.cloud-caption{margin-bottom:22px}
-.cloud-field{position:relative;min-height:520px}
-.cloud-tag{--rot:0deg;position:absolute;left:var(--x);top:var(--y);padding:9px 15px;border:1px solid var(--line);border-radius:999px;background:rgba(250,252,242,.72);backdrop-filter:blur(3px);color:var(--ink);font:12px/1 'DM Mono',monospace;letter-spacing:.02em;cursor:pointer;transform:rotate(var(--rot));transition:transform .35s ease,background .35s ease,border-color .35s ease,box-shadow .35s ease;white-space:nowrap}
-.cloud-tag:hover,.cloud-tag:focus-visible{transform:rotate(0deg) translateY(-3px);border-color:var(--ink);background:#fff;box-shadow:0 10px 24px rgba(29,35,27,.14)}
-.cloud-tag:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
-.cloud-tag[aria-pressed="true"]{background:var(--ink);color:var(--lime);border-color:var(--ink);transform:rotate(0deg)}
-.cloud-tag[data-cat="Creative AI"]{border-color:rgba(195,109,60,.55)}
-.cloud-tag[data-cat="AI·ML"]{border-color:rgba(78,140,145,.5)}
-
-.skill-detail{margin-top:46px;border-top:1px solid var(--line);padding-top:26px;max-width:640px}
-.skill-detail h4{margin:0;font-size:clamp(24px,2.6vw,34px);letter-spacing:-.05em}
-.skill-detail .sd-cat{display:block;margin-bottom:12px;font:11px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.1em;color:var(--orange)}
-.skill-detail p{margin:10px 0 0;color:var(--muted);font-size:15px;line-height:1.65}
-
-/* edge rail: points of clouds lighting up with scroll */
-.cloud-rail{position:absolute;right:clamp(10px,2vw,34px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:22px;z-index:2}
-.cloud-rail button{display:flex;align-items:center;gap:9px;padding:0;border:0;background:none;cursor:pointer;font:10px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.cloud-rail button i{width:8px;height:8px;border-radius:50%;border:1px solid var(--ink);background:transparent;transition:background .4s ease,transform .4s ease}
-.cloud-rail button span{opacity:0;transform:translateX(6px);transition:opacity .4s ease,transform .4s ease}
-.cloud-rail button.is-lit i{background:var(--lime);transform:scale(1.25)}
-.cloud-rail button.is-lit span,.cloud-rail button:hover span,.cloud-rail button:focus-visible span{opacity:1;transform:none}
-.cloud-rail button:focus-visible{outline:2px solid var(--orange);outline-offset:4px;border-radius:3px}
+/* grouped skill field */
+.tech-cloud{min-width:0}
+.cloud-caption{margin:0 0 17px;color:var(--tv-muted);font-size:13px;font-weight:600}
+.cloud-rail{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+.cloud-rail button{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--tv-line);border-radius:3px;background:rgba(249,253,255,.5);color:var(--tv-muted);font:10px 'DM Mono',monospace;cursor:pointer;transition:background .2s ease,border-color .2s ease,color .2s ease}
+.cloud-rail button i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.cloud-rail button.is-lit,.cloud-rail button:hover{background:#f6fcff;border-color:#6aaac9;color:#155c81}
+.cloud-rail button:focus-visible,.cloud-tag:focus-visible{outline:2px solid var(--tv-blue);outline-offset:3px}
+.cloud-field{display:grid;gap:25px}
+.cloud-group{padding-top:15px;border-top:1px solid var(--tv-line);scroll-margin-top:24px}
+.cloud-group h3{margin:0 0 12px;color:var(--tv-blue);font:11px 'DM Mono',monospace;letter-spacing:.07em;text-transform:uppercase}
+.cloud-group-tags{display:flex;flex-wrap:wrap;gap:8px}
+.cloud-tag{padding:9px 12px;border:1px solid #b4d3e0;border-radius:4px;background:rgba(250,253,255,.72);color:var(--tv-ink);font:12px/1.2 'DM Mono',monospace;cursor:pointer;transition:background .2s ease,border-color .2s ease,color .2s ease,box-shadow .2s ease}
+.cloud-tag:hover{background:#fff;border-color:#4e9dc2;box-shadow:0 5px 16px rgba(24,87,118,.12)}
+.cloud-tag.is-linked{background:#e0f5ff;border-color:#479cc3;color:#125d82}
+.cloud-tag[aria-pressed="true"]{background:#155b80;border-color:#155b80;color:#fff;box-shadow:0 6px 18px rgba(21,91,128,.18)}
+.skill-detail:not([hidden]){position:sticky;top:16px;z-index:3;margin:0 0 22px;padding:17px 76px 17px 19px;border:1px solid #8fbcd2;border-radius:4px;background:#f6fcff;box-shadow:0 12px 28px rgba(24,87,118,.12)}
+.sd-close{position:absolute;top:16px;right:17px;padding:0;border:0;border-bottom:1px solid currentColor;background:none;color:var(--tv-blue);font:11px 'DM Mono',monospace;cursor:pointer}
+.sd-close:focus-visible{outline:2px solid var(--tv-blue);outline-offset:3px}
+.skill-detail h4{margin:0;font-size:clamp(24px,2.6vw,34px);letter-spacing:-.04em}
+.skill-detail .sd-cat{display:block;margin-bottom:10px;color:var(--tv-blue);font:11px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
+.skill-detail p{margin:9px 0 0;color:var(--tv-muted);font-size:15px;line-height:1.65}
 
 @media(max-width:900px){
-  .tech-grid{grid-template-columns:1fr;gap:60px}
-  .cloud-field{min-height:0;display:flex;flex-wrap:wrap;gap:10px}
-  .cloud-tag{position:static;transform:none}
-  .cloud-tag:hover,.cloud-tag:focus-visible{transform:translateY(-2px)}
-  .cloud-rail{position:static;transform:none;flex-direction:row;flex-wrap:wrap;gap:16px;margin-top:60px;padding:0 clamp(22px,4vw,70px)}
-  .cloud-rail button span{opacity:1;transform:none}
+  .tech-grid{grid-template-columns:1fr;gap:38px}
+  .tech-cloud{max-width:670px}
+  .techview{padding-bottom:85px}
 }
-
+@media(max-width:600px){
+  .hero-track:has(.hero-scene.is-ready) + .techview{margin-top:-24svh}
+  .techview{padding-top:70px}
+  .techview h2{margin-bottom:52px}
+  .tl-node header{flex-wrap:wrap;gap:2px 12px}
+  .cloud-rail{gap:6px}
+}
 @media(prefers-reduced-motion:reduce){
   .hero-track{height:auto}
   .hero-track .hero-scene{position:relative}
-  .techview{opacity:1!important;transform:none!important}
-  .tl-node{opacity:1;transform:none;transition:none}
-  .tl-node:before{background:var(--lime)}
-  .tl-line i{transform:none;background:var(--ink)}
-  .cloud-tag{transition:none}
+  .hero-track:has(.hero-scene.is-ready) + .techview{margin-top:0}
+  .techview.can-animate:after,.techview h2,.tech-grid,.tl-node,.cloud-tag,.cloud-rail button{transition:none}
+  .techview.can-animate:not(.is-visible) h2,.techview.can-animate:not(.is-visible) .tech-grid,.techview.can-animate .tl-node:not(.is-in){opacity:1;filter:none;transform:none}
+  .tl-line i{transform:none}
 }

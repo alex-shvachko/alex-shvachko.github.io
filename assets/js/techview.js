@@ -1,6 +1,6 @@
 /* techview.js — the stylized view on the far side of the robot's eye:
-   self-drawing experience timeline, a cloud of skill tags with an expanding
-   detail card, and an edge rail of category markers that light up on scroll.
+   an experience timeline, grouped skill tags with an expanding detail card,
+   and category markers that light up on scroll.
    Vanilla only; honours prefers-reduced-motion. */
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -48,26 +48,25 @@ const SKILLS = [
   ['CLIP', 'Creative AI', 'The joint text-image embedding space everything creative-AI stands on.'],
 ];
 
-// Percentage positions + rotation inside .cloud-field (desktop layout only;
-// mobile collapses to a flex wrap and ignores these).
-const POS = [
-  [4, 4, -6], [34, 2, 3.5], [62, 5, -3], [82, 12, 5],
-  [12, 16, 4], [44, 14, -7], [70, 26, 2.5], [6, 30, -4],
-  [30, 27, 6], [52, 33, -3.5], [78, 40, 7], [20, 42, -6],
-  [40, 49, 3], [64, 55, -5], [8, 55, 4.5], [28, 62, -3],
-  [54, 68, 6.5], [76, 68, -4], [12, 72, 3], [36, 78, -6.5],
-  [60, 82, 4], [84, 52, -2.5], [4, 86, 5], [24, 90, -4],
-  [48, 91, 2], [70, 13, -7], [90, 30, 3], [88, 84, -5],
-  [16, 8, 7], [58, 44, -8], [86, 64, 4.5], [32, 38, 5.5],
-  [68, 96, -3], [44, 22, 8], [10, 48, -7.5], [80, 92, 6],
-  [2, 66, -3.5], [56, 9, -5],
-];
-
 const field = document.getElementById('cloud-field');
 const detail = document.getElementById('skill-detail');
 const rail = document.getElementById('cloud-rail');
 const techview = document.getElementById('techview');
 let openBtn = null;
+
+const groups = new Map();
+for (const [, cat] of SKILLS) {
+  if (groups.has(cat)) continue;
+  const group = document.createElement('section');
+  group.className = 'cloud-group';
+  const heading = document.createElement('h3');
+  heading.textContent = cat;
+  const tags = document.createElement('div');
+  tags.className = 'cloud-group-tags';
+  group.append(heading, tags);
+  field.append(group);
+  groups.set(cat, tags);
+}
 
 function closeDetail() {
   detail.hidden = true;
@@ -75,18 +74,14 @@ function closeDetail() {
   openBtn = null;
 }
 
-SKILLS.forEach(([name, cat, line], i) => {
+SKILLS.forEach(([name, cat, line]) => {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'cloud-tag';
   b.dataset.cat = cat;
   b.textContent = name;
-  const [x, y, r] = POS[i % POS.length];
-  const j = Math.floor(i / POS.length);           // wrap-around ring for >38 tags
-  b.style.setProperty('--x', `clamp(0%, ${(x + j * 7) % 95}%, 78%)`);
-  b.style.setProperty('--y', `${(y + j * 11) % 96}%`);
-  b.style.setProperty('--rot', r + 'deg');
   b.setAttribute('aria-pressed', 'false');
+  b.setAttribute('aria-controls', 'skill-detail');
   b.setAttribute('aria-label', `${name} — ${cat}. Show details`);
   b.addEventListener('click', () => {
     if (openBtn === b) { closeDetail(); return; }
@@ -99,12 +94,21 @@ SKILLS.forEach(([name, cat, line], i) => {
     const c = document.createElement('span');
     c.className = 'sd-cat';
     const p = document.createElement('p');
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'sd-close';
+    close.textContent = 'Close';
+    close.addEventListener('click', () => {
+      const previous = openBtn;
+      closeDetail();
+      previous?.focus();
+    });
     h.textContent = name;
     c.textContent = cat;
     p.textContent = line;
-    detail.append(c, h, p);
+    detail.append(close, c, h, p);
   });
-  field.appendChild(b);
+  groups.get(cat).appendChild(b);
 });
 
 document.addEventListener('keydown', e => {
@@ -112,21 +116,46 @@ document.addEventListener('keydown', e => {
 });
 
 /* ------------------------------------------------------------ reveal + line */
+const NODE_LINKS = {
+  'CrazyLabs':            ['Python', 'SQL', 'Docker', 'RAG', 'MCP', 'AI agents'],
+  'Millimedical Solutions': ['Python', 'SQL', 'Spark', 'AWS', 'scikit-learn', 'PyTorch', 'XGBoost'],
+  'Cyber Education Center': ['JavaScript', 'React', 'three.js', 'NLP / LLMs'],
+  'Freelance':            ['n8n', 'Make', 'Zapier', 'Webhooks', 'AI agents', 'REST APIs'],
+  'Independent':          ['Stable Diffusion', 'Flux', 'Wan', 'ComfyUI', 'LoRA training', 'ControlNet', 'three.js', 'JavaScript'],
+};
+function linkNodeToCloud(node) {
+  const org = node.querySelector('.tl-org')?.textContent.trim();
+  const names = NODE_LINKS[org];
+  if (!names) return;
+  field.querySelectorAll('.cloud-tag').forEach(tag => {
+    tag.classList.toggle('is-linked', names.includes(tag.textContent.trim()));
+  });
+}
+
 const nodes = [...document.querySelectorAll('.tl-node')];
+let activeNode = null;
 if (reduced.matches || !('IntersectionObserver' in window)) {
   nodes.forEach(n => n.classList.add('is-in'));
   techview.style.setProperty('--line', 1);
 } else {
+  techview.classList.add('can-animate');
+  const entrance = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      techview.classList.add('is-visible');
+      entrance.disconnect();
+    }
+  }, { rootMargin: '0px 0px -15% 0px', threshold: 0 });
+  entrance.observe(techview);
   const inObs = new IntersectionObserver(entries => {
     for (const e of entries) if (e.isIntersecting) {
       e.target.classList.add('is-in');
       inObs.unobserve(e.target);
     }
-  }, { threshold: 0.4 });
+  }, { threshold: 0.3 });
   nodes.forEach(n => inObs.observe(n));
 }
 
-/* -------------------- --tv fade-in and --line draw, driven by raw scroll --- */
+/* -------------------- line draw and category markers, driven by scroll --- */
 let ticking = false;
 function onScroll() {
   if (ticking) return;
@@ -134,15 +163,22 @@ function onScroll() {
   requestAnimationFrame(() => {
     ticking = false;
     const vh = innerHeight;
-    const r = techview.getBoundingClientRect();
-    // Long overlap with the pinned canvas: starts fading in ~80vh before the
-    // section top reaches the viewport, so there is no hard swap point.
-    const tv = Math.min(1, Math.max(0, (vh * 1.25 - r.top) / (vh * 0.8)));
-    techview.style.setProperty('--tv', tv.toFixed(3));
     // Draw the timeline line with how far we've scrolled into its track.
     const tl = techview.querySelector('.tech-timeline').getBoundingClientRect();
     const line = Math.min(1, Math.max(0, (vh * 0.85 - tl.top) / (tl.height + vh * 0.15)));
     techview.style.setProperty('--line', reduced.matches ? 1 : line.toFixed(3));
+    if (tl.top < vh * 0.85 && tl.bottom > 0) {
+      let nearest = nodes[0];
+      for (const node of nodes) {
+        if (node.getBoundingClientRect().top < vh * 0.36) nearest = node;
+      }
+      if (nearest !== activeNode) {
+        activeNode?.classList.remove('is-active');
+        nearest.classList.add('is-active');
+        activeNode = nearest;
+        linkNodeToCloud(nearest);
+      }
+    }
     // Rail: light each category once its first tag crosses mid-viewport.
     rail.querySelectorAll('button').forEach(btn => {
       const first = field.querySelector(`.cloud-tag[data-cat="${CSS.escape(btn.dataset.rail)}"]`);

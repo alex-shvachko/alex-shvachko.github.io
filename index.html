@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Alex Shvachko builds AI systems, data infrastructure, automation and creative technology.">
   <title>Alex Shvachko — AI systems & creative technology</title>
-  <link rel="stylesheet" href="assets/css/styles.css?v=glade-1">
+  <link rel="stylesheet" href="assets/css/styles.css?v=techview-4">
   <link rel="preload" as="fetch" href="assets/models/glade-oak.glb" crossorigin>
-  <link rel="preload" as="fetch" href="assets/models/robot-postman-refined.glb" crossorigin>
+  <link rel="preload" as="fetch" href="assets/models/robot-atom.glb?v=2" crossorigin>
   <script type="importmap">
   { "imports": { "three": "./assets/js/vendor/three.module.js" } }
   </script>
@@ -24,8 +24,8 @@
 
   <main>
     <div class="hero-track">
-      <section class="hero-scene" aria-label="A postman robot seated inside an old oak; move the cursor to lead the butterfly">
-        <img class="scene-fallback" src="assets/img/robot-postman-oak.png" alt="" aria-hidden="true">
+      <section class="hero-scene" aria-label="Robot Atom moving inside an old oak; move the cursor to lead the butterfly">
+        <img class="scene-fallback" src="assets/img/robot-atom.png" alt="" aria-hidden="true">
         <canvas id="scene"></canvas>
         <p class="scene-hint"><span>Move your cursor</span><span>The butterfly follows it</span></p>
         <nav class="branch-menu" aria-label="Sections">
@@ -40,7 +40,6 @@
 
     <section class="techview" id="techview" aria-label="Experience and skill constellation">
       <div class="techview-inner">
-        <p class="eyebrow">05 / through the eye</p>
         <h2>Where the field robot <em>looks in.</em></h2>
         <div class="tech-grid">
           <div class="tech-timeline" role="list" aria-label="Experience timeline">
@@ -60,20 +59,30 @@
               <h3>Data Science Instructor</h3>
               <p>Taught Python and core AI to 40+ students; built an AI pipeline for automated, personalised homework feedback.</p>
             </article>
+            <article class="tl-node" role="listitem" data-mock="true">
+              <header><span class="tl-org">Freelance</span><span class="tl-years">Self-directed · mock</span></header>
+              <h3>Automation &amp; AI Consultant</h3>
+              <p>Built workflow automations and AI tooling for small teams — a mock entry; replace with the client's real interim work before launch.</p>
+            </article>
+            <article class="tl-node" role="listitem" data-mock="true">
+              <header><span class="tl-org">Independent</span><span class="tl-years">Exploration · mock</span></header>
+              <h3>Creative Technologist, self-directed</h3>
+              <p>Open-ended work at the seam of AI, games and visual craft — a mock entry standing in for whatever comes next before launch.</p>
+            </article>
           </div>
           <div class="tech-cloud" aria-label="Skills, press a tag for detail">
-            <p class="cloud-caption eyebrow">A cloud of tags — press one</p>
+            <p class="cloud-caption">Select a skill to explore</p>
+            <nav class="cloud-rail" id="cloud-rail" aria-label="Skill categories">
+              <button type="button" data-rail="AI·ML" aria-label="Scroll to AI and ML skills"><i></i><span>AI·ML</span></button>
+              <button type="button" data-rail="Data·Infra" aria-label="Scroll to data and infrastructure skills"><i></i><span>Data·Infra</span></button>
+              <button type="button" data-rail="Web·Creative" aria-label="Scroll to web and creative skills"><i></i><span>Web</span></button>
+              <button type="button" data-rail="Creative AI" aria-label="Scroll to creative AI skills"><i></i><span>Gen·AI</span></button>
+            </nav>
+            <div class="skill-detail" id="skill-detail" hidden aria-live="polite"></div>
             <div class="cloud-field" id="cloud-field"></div>
           </div>
         </div>
-        <div class="skill-detail" id="skill-detail" hidden aria-live="polite"></div>
       </div>
-      <nav class="cloud-rail" id="cloud-rail" aria-label="Skill categories">
-        <button type="button" data-rail="AI·ML" aria-label="Scroll to AI and ML skills"><i></i><span>AI·ML</span></button>
-        <button type="button" data-rail="Data·Infra" aria-label="Scroll to data and infrastructure skills"><i></i><span>Data·Infra</span></button>
-        <button type="button" data-rail="Web·Creative" aria-label="Scroll to web and creative skills"><i></i><span>Web</span></button>
-        <button type="button" data-rail="Creative AI" aria-label="Scroll to creative AI skills"><i></i><span>Gen·AI</span></button>
-      </nav>
     </section>
 
     <section class="manifesto shell" id="about">
@@ -104,7 +113,7 @@
     <section class="contact shell" id="contact"><p class="eyebrow">04 / next signal</p><h2>Have a knot worth untying?</h2><a class="contact-link" href="mailto:alex.shvachko.wrk@gmail.com">alex.shvachko.wrk@gmail.com <span>↗</span></a></section>
   </main>
   <footer class="site-footer shell"><span>© 2026 Alex Shvachko</span><span>AI systems · data · creative technology</span><a href="https://www.linkedin.com/in/alex-shvachko-71573823a/">LinkedIn ↗</a></footer>
-  <script type="module" src="assets/js/main.js?v=glade-reference-2"></script>
-  <script type="module" src="assets/js/techview.js?v=techview-1"></script>
+  <script type="module" src="assets/js/main.js?v=robot-atom-2"></script>
+  <script type="module" src="assets/js/techview.js?v=techview-4"></script>
 </body>
 </html>

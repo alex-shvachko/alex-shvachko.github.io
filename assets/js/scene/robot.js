@@ -4,9 +4,8 @@ const damp = (rate, dt) => 1 - Math.exp(-rate * dt);
 const clamp = THREE.MathUtils.clamp;
 
 /**
- * The postman robot, rigged in Blender as one skinned mesh. Everything except
- * the right arm, the head and the idle joints ships in its final seated pose;
- * those are exported at rest so they can be driven here.
+ * The scene's character wrapper. Robot Atom uses its exported in-place walk;
+ * the legacy branch retains the bespoke articulated pose controls.
  *
  * Bone maths note: in the rest pose the upper arm and the forearm both point
  * along the same axis (the arm is straight in the T-pose it was rigged from).
@@ -37,6 +36,35 @@ export class Robot {
 
     this.bones = {};
     this.root.traverse(o => { if (o.isBone) this.bones[o.name] = o; });
+
+    // Robot Atom is exported with its own compact biped rig and an in-place
+    // walk. It is intentionally handled without the postman's bespoke arm IK.
+    // The shared perch/body interfaces keep the butterfly interaction intact.
+    // Names arrive sanitized: three strips [].:/ from every glTF node name, so
+    // the exported "hand.R" is the bone called "handR" here.
+    const handR = this.bones[THREE.PropertyBinding.sanitizeNodeName('hand.R')];
+    if (handR) {
+      this.atom = true;
+      this.handBone = handR;
+      this.perch = new THREE.Mesh(
+        new THREE.SphereGeometry(0.22, 10, 8),
+        new THREE.MeshBasicMaterial({ visible: false }));
+      this.perch.name = 'HandPerch';
+      this.handBone.add(this.perch);
+      this.body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.05, 2.05, 0.9),
+        new THREE.MeshBasicMaterial({ visible: false }));
+      this.body.name = 'BodyProxy';
+      this.body.position.set(0, 1.02, 0);
+      this.root.add(this.body);
+      if (gltf.animations.length) {
+        this.mixer = new THREE.AnimationMixer(this.root);
+        this.mixer.clipAction(gltf.animations[0]).play();
+      }
+      this.frozen = false;
+      this._atomLastT = null;
+      return;
+    }
     this.shoulder = this.bones.Shoulder_R;
     this.elbow = this.bones.Elbow_R;
     this.wrist = this.bones.Wrist_R;
@@ -133,6 +161,12 @@ export class Robot {
    * that a machine sitting still still reads as a machine that is running.
    */
   idle(t) {
+    if (this.atom) {
+      const dt = this._atomLastT === null ? 0 : Math.min(t - this._atomLastT, 0.05);
+      this._atomLastT = t;
+      if (!this.frozen) this.mixer?.update(dt);
+      return;
+    }
     const delta = this._q[6];
     const e = this._e;
     if (this.torso) {
@@ -176,6 +210,7 @@ export class Robot {
    * far things open it out, and a slow breath keeps it from ever being still.
    */
   pointAt(target, dt, t = 0) {
+    if (this.atom) return;
     if (this.frozen) return;
     const S = this.shoulder.getWorldPosition(this._v[0]);
     const toTarget = this._v[1].subVectors(target, S);
@@ -235,6 +270,7 @@ export class Robot {
 
   /** The angle at the elbow, in radians. Straight is 0. Used by the tests. */
   elbowAngle() {
+    if (this.atom) return 0;
     const s = this.shoulder.getWorldPosition(this._v[0]);
     const e = this.elbow.getWorldPosition(this._v[1]);
     const w = this.wrist.getWorldPosition(this._v[2]);
@@ -248,6 +284,7 @@ export class Robot {
    * behind him never twists the neck round.
    */
   watch(target, dt, maxAngle = 1.0) {
+    if (this.atom) return;
     // The torso still breathes while a perched butterfly holds the arm still.
     this.armFrame.copy(this.torso.getWorldQuaternion(this._q[7]))
       .multiply(this._q[0].copy(this.restTorsoWorldQ).invert());
