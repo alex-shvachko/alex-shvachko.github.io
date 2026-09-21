@@ -45,6 +45,49 @@ export class Robot {
     const handR = this.bones[THREE.PropertyBinding.sanitizeNodeName('hand.R')];
     if (handR) {
       this.atom = true;
+      this.head = this.bones.head;
+      this.headRest = this.head.quaternion.clone();
+      this._headQ = new THREE.Quaternion();
+      this._headLimitedQ = new THREE.Quaternion();
+      this._headParentQ = new THREE.Quaternion();
+      this._headDirection = new THREE.Vector3();
+      this._headPosition = new THREE.Vector3();
+      this._headMatrix = new THREE.Matrix4();
+      this._headUp = new THREE.Vector3(0, 1, 0);
+      this._headForward = new THREE.Vector3(0, 0, 1);
+      this.screenAnchor = new THREE.Object3D();
+      // The imported blue material belongs to the side panels. The front display
+      // is part of RobotBlack: isolate its triangles without changing the chassis.
+      this.root.traverse(o => {
+        if (!o.isMesh || o.material?.name !== 'RobotBlack') return;
+        const g = o.geometry, pos = g.attributes.position;
+        const face = [], body = [], bounds = new THREE.Box3();
+        const v = new THREE.Vector3();
+        for (let i = 0; i < g.index.count; i += 3) {
+          const ids = [g.index.getX(i), g.index.getX(i + 1), g.index.getX(i + 2)];
+          const isDisplay = ids.every(id => pos.getY(id) > 1.94 && pos.getZ(id) > 0.06);
+          (isDisplay ? face : body).push(...ids);
+          if (isDisplay) ids.forEach(id => bounds.expandByPoint(v.fromBufferAttribute(pos, id)));
+        }
+        if (!face.length) return;
+        const display = new THREE.MeshStandardMaterial({
+          name: 'AtomFrontDisplay', color: '#000817', emissive: '#1260ff',
+          emissiveIntensity: 1.1, roughness: 0.32, metalness: 0, toneMapped: false,
+        });
+        g.setIndex([...body, ...face]);
+        g.clearGroups();
+        g.addGroup(0, body.length, 0);
+        g.addGroup(body.length, face.length, 1);
+        o.material = [o.material, display];
+        this.screen = o;
+        this.screenMaterial = display;
+        this.root.updateMatrixWorld(true);
+        bounds.getCenter(v);
+        o.localToWorld(v);
+        this.head.worldToLocal(v);
+        this.screenAnchor.position.copy(v);
+      });
+      this.head.add(this.screenAnchor);
       this.handBone = handR;
       this.perch = new THREE.Mesh(
         new THREE.SphereGeometry(0.22, 10, 8),
@@ -59,7 +102,9 @@ export class Robot {
       this.root.add(this.body);
       if (gltf.animations.length) {
         this.mixer = new THREE.AnimationMixer(this.root);
-        this.mixer.clipAction(gltf.animations[0]).play();
+        const walk = gltf.animations[0].clone();
+        walk.tracks = walk.tracks.filter(track => !track.name.startsWith('head.'));
+        this.mixer.clipAction(walk).play();
       }
       this.frozen = false;
       this._atomLastT = null;
@@ -284,7 +329,23 @@ export class Robot {
    * behind him never twists the neck round.
    */
   watch(target, dt, maxAngle = 1.0) {
-    if (this.atom) return;
+    if (this.atom) {
+      this.head.getWorldPosition(this._headPosition);
+      this._headDirection.subVectors(target, this._headPosition).normalize();
+      this.head.parent.getWorldQuaternion(this._headParentQ);
+      this._headDirection.applyQuaternion(this._headParentQ.invert());
+      const angle = this._headForward.angleTo(this._headDirection);
+      this._headQ.setFromUnitVectors(this._headForward, this._headDirection);
+      if (angle > maxAngle) this._headQ.identity().slerp(
+        this._headLimitedQ.setFromUnitVectors(this._headForward, this._headDirection), maxAngle / angle);
+      this._headQ.multiply(this.headRest);
+      if (maxAngle === Math.PI) {
+        this._headQ.setFromRotationMatrix(this._headMatrix.lookAt(target, this._headPosition, this._headUp));
+        this._headQ.premultiply(this._headParentQ);
+      }
+      this.head.quaternion.slerp(this._headQ, damp(10, dt));
+      return;
+    }
     // The torso still breathes while a perched butterfly holds the arm still.
     this.armFrame.copy(this.torso.getWorldQuaternion(this._q[7]))
       .multiply(this._q[0].copy(this.restTorsoWorldQ).invert());

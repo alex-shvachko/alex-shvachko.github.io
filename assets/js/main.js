@@ -1,10 +1,10 @@
 import * as THREE from './vendor/three.module.js';
 import { GLTFLoader } from './vendor/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from './vendor/addons/loaders/DRACOLoader.js';
-import { Robot } from './scene/robot.js?v=atom-2';
+import { Robot } from './scene/robot.js?v=blue-dive-3';
 import { buildCascade } from './scene/cascade.js';
 import { ButterflyController } from './scene/butterfly.js';
-import { buildGlassMenu } from './scene/glassbranch.js?v=glade-1';
+import { buildGlassMenu } from './scene/glassbranch.js?v=blue-dive-3';
 import {
   LAYOUT, buildEnvironment, placeTree, buildGround,
   buildPond, buildLights, buildScreenLight,
@@ -29,26 +29,24 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.98;
-// The glass menu refracts what is behind it, which costs an extra pass over the
-// opaque scene. Half resolution is free of visible cost through frosted glass.
-renderer.transmissionResolutionScale = 0.5;
 // info resets itself on every render() call, so by default it only ever reports
 // the last pass of the chain. Reset it once per frame instead, and the counters
 // describe the frame.
 renderer.info.autoReset = false;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 160);
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.02, 160);
 
 /* ----------------------------------------------------------------- camera rig */
-// Locked framing on the robot and the butterfly. The camera never orbits or
-// zooms; it only drifts a little once the cursor approaches the edge of frame.
+// The home pose drifts gently at the edges; scrolling then enters the display.
 const FOCUS = new THREE.Vector3(1.15, 2.50, 3.6);
 const HOME = new THREE.Vector3(3.1, 3.55, 12.2);
 const DRIFT = { x: 0.22, y: 0.12 };
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const debugParams = new URLSearchParams(location.search);
 const debugPose = debugParams.has('debug') ? debugParams.get('pose') : null;
+let assetsReady = false;
+let needsFrame = true;
 let scrollS = 0;                          // 0..1 progress through the track
 function frameCamera() {
   const aspect = stage.clientWidth / stage.clientHeight;
@@ -78,17 +76,17 @@ const DEADZONE = 0.45;                   // cursor stays central until this far 
 // The hero is pinned inside .hero-track (280svh); scrolling through the track
 // pushes the camera through the robot's glowing screen toward the tech view.
 const heroTrack = document.querySelector('.hero-track');
-const EYE_POS = new THREE.Vector3(1.03, 2.62, 4.6);   // tight on the head
-const EYE_TARGET = new THREE.Vector3(1.02, 2.66, 3.94); // the glowing screen
-const THROUGH_POS = new THREE.Vector3(1.03, 2.62, 3.15); // past the screen
+// Updated from the animated front display before positioning the camera.
+const EYE_POS = new THREE.Vector3();
+const EYE_TARGET = new THREE.Vector3();
+const THROUGH_POS = new THREE.Vector3();
 function updateScrollProgress() {
-  if (reducedMotion.matches || !heroTrack) { scrollS = 0; return; }
+  if (reducedMotion.matches || !heroTrack) { scrollS = 0; stage.classList.remove('is-through'); return; }
   const r = heroTrack.getBoundingClientRect();
   const range = heroTrack.offsetHeight - stage.clientHeight;
   scrollS = range > 0 ? THREE.MathUtils.clamp(-r.top / range, 0, 1) : 0;
-  // As the blue section enters the last part of the pinned scene, dim the canvas
-  // so its arrival carries through the eye glow.
-  stage.classList.toggle('is-through', scrollS > 0.76);
+  // Clear the hint and controls as the viewer starts entering the display.
+  stage.classList.toggle('is-through', scrollS > 0.16);
 }
 // Throttle scroll-progress to animation-frame cadence — getBoundingClientRect is not
 // cheap across rapid scroll events.
@@ -99,9 +97,9 @@ function onScrollFrame() {
   requestAnimationFrame(() => { scrollTick = false; updateScrollProgress(); });
 }
 addEventListener('scroll', onScrollFrame, { passive: true });
+reducedMotion.addEventListener('change', () => { needsFrame = true; updateScrollProgress(); });
 updateScrollProgress();
 const easeInOut = t => t * t * (3 - 2 * t);
-const easeIn = t => t * t * t;
 const camWant = new THREE.Vector3();
 const aimWant = new THREE.Vector3();
 
@@ -116,11 +114,13 @@ buildEnvironment(scene, renderer);
 const { sun } = buildLights(scene);
 buildGround(scene);
 const treeline = buildTreeline(scene);
-const grass = buildGrass(scene);
+const grass = buildGrass(scene, { count: 8000 });
 const water = buildPond(scene, LAYOUT.sun);
 const cascade = buildCascade(scene);
 buildBotanicals(scene);
 const screenLight = buildScreenLight(scene);
+screenLight.light.color.set('#328aff');
+screenLight.light.intensity = 0.65;
 const motes = buildMotes(scene);
 
 // The navigation, as a glass bough of the oak hanging into the right of frame.
@@ -132,7 +132,8 @@ const menu = buildGlassMenu(scene, camera, document.querySelector('.branch-menu'
 water.reflectionSkips.push(grass, motes, treeline, menu.frame, cascade.group);
 
 /* --------------------------------------------------------------------- loading */
-const draco = new DRACOLoader().setDecoderPath('./assets/js/vendor/addons/libs/draco/');
+const draco = new DRACOLoader().setDecoderPath('./assets/js/vendor/addons/libs/draco/').setWorkerLimit(2);
+draco.preload();
 const loader = new GLTFLoader().setDRACOLoader(draco);
 
 const pointer = new THREE.Vector2(0, 0);
@@ -168,12 +169,6 @@ const ready = (async () => {
   robot.root.position.copy(LAYOUT.robot.pos);
   robot.root.rotation.y = LAYOUT.robot.rotY;
   robot.root.scale.setScalar(LAYOUT.robot.scale);
-  if (robot.screen?.material) {
-    const m = robot.screen.material;
-    m.emissive?.set('#8ff4ff');
-    m.emissiveIntensity = 0.9;
-    m.toneMapped = true;
-  }
   scene.add(robot.root);
 
   const hand = robot.handPosition(new THREE.Vector3());
@@ -202,7 +197,12 @@ const ready = (async () => {
   sun.shadow.needsUpdate = true;
   sun.shadow.autoUpdate = false;
 
+  water.reflectionSkips.push(butterfly.root);
+  await renderer.compileAsync(scene, camera);
+  clock.getDelta();
+  assetsReady = true;
   stage.classList.add('is-ready');
+  draco.dispose();
 })();
 
 stage.classList.add('is-webgl');
@@ -228,6 +228,7 @@ function perchUnderCursor() {
 }
 
 function onMove(e) {
+  needsFrame = true;
   rect = stage.getBoundingClientRect();
   const fx = (e.clientX - rect.left) / rect.width;
   const fy = (e.clientY - rect.top) / rect.height;
@@ -282,6 +283,8 @@ stage.addEventListener('click', e => {
   menu.nodes.find(n => n.id === menu.hovered)?.label?.click();
 });
 addEventListener('resize', () => {
+  needsFrame = true;
+  reflectionPosition.set(Infinity, Infinity, Infinity);
   frameCamera();
   updateScrollProgress();
   edgePull.set(0, 0);
@@ -297,15 +300,12 @@ const clock = new THREE.Clock();
 // Adaptive resolution. Rather than guess a device tier, watch the actual frame
 // time and step the pixel ratio down (and back up) to hold a smooth rate.
 const quality = { ratio: Math.min(devicePixelRatio, 1.5), acc: 0, frames: 0,
-                  fps: 60, calls: 0, tris: 0 };
-const RATIO_MIN = Math.min(devicePixelRatio, 1);
+                  fps: 60, calls: 0, tris: 0, stable: 0 };
+const RATIO_MIN = Math.min(devicePixelRatio, 0.75);
 const RATIO_MAX = Math.min(devicePixelRatio, 1.5);
 
 function applyQuality() {
   renderer.setPixelRatio(quality.ratio);
-  // Refraction through frosted glass hides a low-resolution backdrop; give it
-  // up first when the frame budget is tight.
-  renderer.transmissionResolutionScale = quality.ratio > 1.2 ? 0.5 : 0.35;
 }
 
 const GRASS_MAX = grass.count;
@@ -319,7 +319,8 @@ function adapt(dt) {
   quality.frames = 0;
 
   const slow = quality.fps < 50;
-  const fast = quality.fps > 58;
+  const fast = quality.fps > 59 && ++quality.stable >= 8;
+  if (quality.fps <= 59) quality.stable = 0;
   const next = slow ? quality.ratio - 0.25 : fast ? quality.ratio + 0.25 : quality.ratio;
   const clamped = THREE.MathUtils.clamp(next, RATIO_MIN, RATIO_MAX);
 
@@ -327,40 +328,75 @@ function adapt(dt) {
   // the frame is still missing does the sward start thinning out, which an
   // InstancedMesh will do for free by drawing fewer of its instances.
   if (quality.ratio <= RATIO_MIN + 0.01 && slow) {
-    grass.count = Math.max(5000, Math.round(grass.count * 0.8));
+    grass.count = Math.max(3000, Math.round(grass.count * 0.8));
   } else if (fast && grass.count < GRASS_MAX) {
     grass.count = Math.min(GRASS_MAX, Math.round(grass.count * 1.15) + 60);
   }
 
   if (Math.abs(clamped - quality.ratio) < 0.01) return;
+  quality.stable = 0;
   quality.ratio = clamped;
   applyQuality();
 }
 applyQuality();
-const camPos = new THREE.Vector3();
-const screenPos = new THREE.Vector3();
+let dive = 0;
+const screenQ = new THREE.Quaternion();
+const nav = document.querySelector('.branch-menu');
 const aimTarget = new THREE.Vector3();
 const forward = new THREE.Vector3();
 const lureTarget = new THREE.Vector3();
 const lureNdc = new THREE.Vector2();
-let frameNumber = 0;
+const reflectionPosition = new THREE.Vector3(Infinity, Infinity, Infinity);
+const reflectionRotation = new THREE.Quaternion();
 
 function frame() {
-  water.userData.refreshReflection = frameNumber++ % 4 === 0;
+  if (!assetsReady || (reducedMotion.matches && !needsFrame)) return;
+  needsFrame = false;
   renderer.info.reset();
-  const dt = Math.min(clock.getDelta(), 0.05);
+  const rawDt = clock.getDelta();
+  const dt = Math.min(rawDt, 0.05);
   const t = reducedMotion.matches ? 0 : clock.elapsedTime;
-  adapt(dt);
+  dive = reducedMotion.matches ? 0 : dive + (scrollS - dive) * (1 - Math.exp(-12 * dt));
+  if (Math.abs(dive - scrollS) < 0.0001) dive = scrollS;
+  const wash = THREE.MathUtils.smoothstep(dive, 0.64, 0.80);
+  stage.style.setProperty('--screen-wash', wash.toFixed(4));
+  nav.style.opacity = String(1 - THREE.MathUtils.smoothstep(dive, 0.02, 0.16));
+  nav.inert = dive > 0.16;
+  menu.frame.visible = dive < 0.18;
+  // Once blue fills the viewport, no hidden woodland frames are needed.
+  if (wash >= 1) return;
+  adapt(rawDt);
+  if (robot) {
+    if (robot.mixer) robot.mixer.timeScale = 1 - THREE.MathUtils.smoothstep(dive, 0, 0.14);
+    robot.idle(t);
+    aimTarget.copy(butterfly ? butterfly.root.position : FOCUS);
+    if (['left', 'right', 'behind'].includes(debugPose)) {
+      aimTarget.set(debugPose === 'left' ? -5 : 6, 2.3, debugPose === 'behind' ? -5 : 6);
+      robot.frozen = false;
+    }
+    robot.pointAt(aimTarget, dt, t);
+    robot.watch(dive > 0.005 ? HOME : aimTarget, dt, dive > 0.005 ? Math.PI : 0.7);
+    if (robot.screenAnchor) {
+      robot.root.updateMatrixWorld(true);
+      robot.screenAnchor.getWorldPosition(EYE_TARGET);
+      robot.head.getWorldQuaternion(screenQ);
+      forward.set(0, 0, 1).applyQuaternion(screenQ);
+      EYE_POS.copy(EYE_TARGET).addScaledVector(forward, 0.75);
+      THROUGH_POS.copy(EYE_TARGET).addScaledVector(forward, 0.035);
+      screenLight.light.position.copy(EYE_TARGET).addScaledVector(forward, 0.16);
+      screenLight.bounce.position.copy(EYE_TARGET).setY(EYE_TARGET.y - 0.25);
+    }
+  }
 
   edgePull.lerp(edgeWant, 1 - Math.exp(-3.2 * dt));
-  if (scrollS > 0.001) {
+  if (dive > 0.001) {
     // Scroll dive: 0→0.5 closes onto the eye, 0.5→1 passes through the screen.
-    if (scrollS < 0.5) {
-      const u = easeInOut(scrollS * 2);
+    if (dive < 0.5) {
+      const u = easeInOut(THREE.MathUtils.clamp((dive - 0.10) / 0.40, 0, 1));
       camWant.lerpVectors(HOME, EYE_POS, u);
       aimWant.lerpVectors(FOCUS, EYE_TARGET, u);
     } else {
-      const u = easeIn(scrollS * 2 - 1);
+      const u = easeInOut(THREE.MathUtils.clamp((dive - 0.5) / 0.23, 0, 1));
       camWant.lerpVectors(EYE_POS, THROUGH_POS, u);
       aimWant.copy(EYE_TARGET);
     }
@@ -370,8 +406,15 @@ function frame() {
                 HOME.z - Math.abs(edgePull.x) * 0.25);
     aimWant.set(FOCUS.x + edgePull.x * 0.18, FOCUS.y - edgePull.y * 0.12, FOCUS.z);
   }
-  camera.position.lerp(camWant, 1 - Math.exp(-5.0 * dt));
+  camera.position.copy(camWant);
   camera.lookAt(aimWant);
+  // All reflected objects are static. Reuse the pond image until the camera moves.
+  water.userData.refreshReflection = camera.position.distanceToSquared(reflectionPosition) > 0.000004
+    || camera.quaternion.angleTo(reflectionRotation) > 0.002;
+  if (water.userData.refreshReflection) {
+    reflectionPosition.copy(camera.position);
+    reflectionRotation.copy(camera.quaternion);
+  }
 
   if (butterfly) {
     // While the cursor rests on him, steer the butterfly with a ray aimed at the
@@ -384,28 +427,8 @@ function frame() {
     }
     if (!reducedMotion.matches || luring) butterfly.update(dt);
   }
-  if (robot) {
-    aimTarget.copy(butterfly ? butterfly.root.position : FOCUS);
-    // Reproducible extreme poses for browser regression review (?debug&pose=right).
-    if (['left', 'right', 'behind'].includes(debugPose)) {
-      aimTarget.set(debugPose === 'left' ? -5 : 6, 2.3, debugPose === 'behind' ? -5 : 6);
-      robot.frozen = false;
-    }
-    // Idle first: it moves the torso and neck, and the arm should solve against
-    // where the shoulder has actually ended up this frame.
-    robot.idle(t);
-    robot.pointAt(aimTarget, dt, t);
-    robot.watch(aimTarget, dt);
-    if (robot.screen) {
-      robot.head.getWorldPosition(screenPos);
-      forward.set(0, 0, 1).applyQuaternion(robot.root.quaternion);
-      screenLight.light.position.copy(screenPos).addScaledVector(forward, 0.42);
-      screenLight.light.intensity = 0.7 + Math.sin(t * 2.1) * 0.06;
-      screenLight.bounce.position.copy(screenPos).setY(screenPos.y - 0.5);
-    }
-  }
 
-  menu.update(t, dt, rect);
+  if (menu.frame.visible) menu.update(t, dt, rect);
   if (!reducedMotion.matches) water.material.uniforms.time.value += dt * 0.22;
   cascade.update(t);
   motes.material.uniforms.uTime.value = t;
@@ -419,6 +442,8 @@ renderer.setAnimationLoop(frame);
 let inView = true;
 function syncPlayback() {
   clock.getDelta();
+  quality.acc = 0;
+  quality.frames = 0;
   renderer.setAnimationLoop(inView && !document.hidden ? frame : null);
 }
 new IntersectionObserver(([entry]) => {

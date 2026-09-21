@@ -138,20 +138,12 @@ export function buildGlassMenu(scene, camera, nav, {
   frame.updateMatrixWorld(true);          // come out of the final matrices
 
   /* ------------------------------------------------------------- glass buttons */
-  // Transmission rather than opacity: the buttons bend the woodland behind them,
-  // which is the whole difference between glass and a tinted overlay. The
-  // roughness is what frosts the backdrop, and the frosting is what keeps the
-  // label legible over a busy scene.
+  // Environment-lit glass edges plus the label's small CSS frosted pane avoid
+  // re-rendering the entire woodland for five tiny refractive buttons.
   const glass = new THREE.MeshPhysicalMaterial({
-    color: 0xeaf4df, transmission: 0.90, thickness: 0.12, roughness: 0.24,
-    // A near-mirror clearcoat concentrates the sun into a pinpoint that crosses
-    // the bloom threshold and, at bloom's half resolution, smears into a blocky
-    // white square over the UI. Spreading the lobe keeps the sheen and loses the
-    // artefact.
-    ior: 1.42, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.28,
-    iridescence: 0.08, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 460],
-    attenuationColor: new THREE.Color('#6f9d86'), attenuationDistance: 1.9,
-    envMapIntensity: 1.5,
+    color: 0xeaf4ef, transparent: true, opacity: 0.24, depthWrite: false,
+    roughness: 0.18, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.3,
+    envMapIntensity: 1.2,
   });
 
   const slab = new THREE.ExtrudeGeometry(roundedRect(BTN_W, BTN_H, BTN_R), {
@@ -179,7 +171,12 @@ export function buildGlassMenu(scene, camera, nav, {
   /* ------------------------------------------------------- the bough, and leaves */
   const curve = new THREE.CatmullRomCurve3(
     BOUGH_PTS.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
-  const parts = [taperedTube(curve, 56, 9, BOUGH_R0, BOUGH_R1)];
+  const extension = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(8, 0.42, -0.18), new THREE.Vector3(4, 0.15, -0.04),
+    new THREE.Vector3(0, 0, 0),
+  ]);
+  const parts = [taperedTube(curve, 40, 7, BOUGH_R0, BOUGH_R1),
+    taperedTube(extension, 12, 7, BOUGH_R0 * 1.7, BOUGH_R0)];
 
   // A couple of forks, so it reads as a bough rather than a dowel.
   for (const [t, dx, dy, dz] of [[0.34, -0.42, 0.30, 0.10], [0.62, -0.38, -0.26, -0.08]]) {

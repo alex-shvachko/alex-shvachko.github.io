@@ -1,3 +1,70 @@
+# Hero refinement verification — 2026-09-21
+
+The hero retains the existing local Three.js WebGL renderer and static GitHub Pages
+output. No server, new dependency, or WebGPU requirement was introduced.
+
+## Changes
+
+- Split the actual front display (24 triangles) from RobotBlack. RobotBlueScreen
+  labels side panels in this export. The display now emits blue and a nearby light
+  illuminates the tree. The chassis and neck retain their materials.
+- Restore head tracking for Robot Atom, remove the competing head animation track,
+  and turn toward the viewer before approaching the animated display anchor.
+  The camera stops in front of the screen; a scroll-controlled blue blend handles
+  the handoff without passing through geometry or flipping the camera.
+- Extend the right branch eight local units beyond its previous root.
+- Replace the five buttons' whole-scene transmission pass with environment-lit
+  glass edges and small CSS frosted panes. Reduce initial grass from 18,000 to
+  8,000 instances, with a 3,000-instance adaptive floor.
+- Cache the pond reflection until the camera changes. Pause hidden/offscreen work,
+  skip rendering once the blue handoff covers the scene, and render reduced-motion
+  scenes only when interaction or resizing requires it.
+- Prewarm shaders before revealing the canvas, limit Draco to two workers and
+  release them after loading. Match the tree preload URL to the actual request;
+  lazy-load below-the-fold project images.
+- Measure uncapped frame intervals, allow a 0.75 pixel-ratio floor, and require
+  sustained headroom before increasing quality.
+
+## Verification
+
+All three Node checks pass:
+
+```powershell
+node tools/check_hero.mjs
+node tools/check_robot_atom.mjs
+node tools/check_robot.mjs
+```
+
+The hero check decodes the shipped Draco geometry, verifies blue emission,
+preserved triangle count, front-display anchor, head alignment at three root
+rotations, and offscreen branch endpoints at 390x844, 1280x720, and 2560x720,
+with both camera-drift extremes. Node syntax checks and `git diff --check` pass.
+This is a static site without a package/build target.
+
+Browser review covered the loaded hero, front-facing close-up, blue handoff,
+reverse scrolling, and 390x844 responsive controls. No runtime errors were
+reported by the inspected browser. Reduced motion was checked in code; a native
+reduced-motion browser emulation was not available in this review.
+
+Comparable in-app desktop preview observations (approximately 1265x715):
+
+| Observation | Before | After |
+| --- | ---: | ---: |
+| FPS readout | 19 | 30 |
+| Pixel ratio after adaptation | 1.00 | 0.75 |
+| Submitted triangles in sampled frame | 782k | 320k |
+| Draw calls in sampled frame | 93 | 42 |
+
+These are sampled observations, not a percentile benchmark. The baseline counter
+was corrected in the temporary comparison copy to use uncapped frame intervals.
+The different adaptive resolutions are part of the change, so the FPS comparison
+is not an equal-resolution GPU benchmark. The mobile preview showed roughly
+42–54 fps during the checked states. Sustained 60 fps on physical devices and
+cold-network loading times are not verified. Earlier measurements below describe
+an older scene and renderer configuration, not this Robot Atom revision.
+
+---
+
 # Hero scene performance
 
 Notes on what the three.js hero costs, what was cut, and how to check it on your
