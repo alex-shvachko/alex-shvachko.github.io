@@ -7,11 +7,11 @@ const clamp = THREE.MathUtils.clamp;
  * The scene's character wrapper. Both supported rigs hold a live right-hand
  * pointing pose; the legacy branch additionally has articulated fingers.
  *
- * Bone maths note: in the rest pose the upper arm and the forearm both point
+ * Legacy rig: in the rest pose the upper arm and the forearm both point
  * along the same axis (the arm is straight in the T-pose it was rigged from).
  * So a single `restDir` describes both, and aiming a bone is just the swing
  * that takes `restDir` to the direction we want, applied on top of that bone's
- * rest world rotation.
+ * rest world rotation. Atom stores a separate rest direction for each segment.
  */
 export class Robot {
   static async load(loader, url) {
@@ -45,6 +45,99 @@ export class Robot {
     if (handR) {
       this.atom = true;
       this.head = this.bones.head;
+      // Match the mechanical joints, keeping the exported surface in place.
+      this.root.updateMatrixWorld(true);
+      const oldWorld = new Map();
+      Object.values(this.bones).forEach(b => oldWorld.set(b, b.matrixWorld.clone()));
+      const movePivot = (bone, position) => {
+        const children = bone.children.map(child => [child, child.matrixWorld.clone()]);
+        bone.position.copy(bone.parent.worldToLocal(position));
+        bone.updateMatrixWorld(true);
+        for (const [child, world] of children) {
+          world.premultiply(bone.matrixWorld.clone().invert())
+            .decompose(child.position, child.quaternion, child.scale);
+        }
+        bone.updateMatrixWorld(true);
+      };
+      movePivot(this.head, new THREE.Vector3(0, 1.90, 0));
+      for (const [side, sign] of [['R', -1], ['L', 1]]) {
+        movePivot(this.bones[`upper_arm${side}`], new THREE.Vector3(sign * 0.30, 1.69, 0));
+        movePivot(this.bones[`forearm${side}`], new THREE.Vector3(sign * 0.30, 1.36, 0.04));
+        movePivot(this.bones[`hand${side}`], new THREE.Vector3(sign * 0.35, 1.12, 0.06));
+      }
+      const skeletons = new Set();
+      this.root.traverse(o => {
+        if (!o.isSkinnedMesh) return;
+        const skeleton = o.skeleton;
+        if (!skeletons.has(skeleton)) {
+          skeleton.bones.forEach((bone, i) => {
+            skeleton.boneInverses[i].premultiply(oldWorld.get(bone))
+              .premultiply(bone.matrixWorld.clone().invert());
+          });
+          skeletons.add(skeleton);
+        }
+        // The collar is rigidly attached to the chest, not the head swivel.
+        const headIndex = skeleton.bones.indexOf(this.head);
+        const chestIndex = skeleton.bones.indexOf(this.bones.chest);
+        const { position, skinIndex, skinWeight } = o.geometry.attributes;
+        // Rigid robot plates must move as complete connected pieces. The
+        // imported per-vertex groups split plates across unrelated joints.
+        const parent = Array.from({ length: position.count }, (_, i) => i);
+        const find = i => {
+          while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; }
+          return i;
+        };
+        const join = (a, b) => { parent[find(a)] = find(b); };
+        const welded = new Map();
+        for (let i = 0; i < position.count; i++) {
+          const key = [position.getX(i), position.getY(i), position.getZ(i)]
+            .map(v => Math.round(v * 10000)).join(',');
+          if (welded.has(key)) join(i, welded.get(key));
+          else welded.set(key, i);
+        }
+        const index = o.geometry.index;
+        for (let i = 0; i < index.count; i += 3) {
+          join(index.getX(i), index.getX(i + 1));
+          join(index.getX(i), index.getX(i + 2));
+        }
+        const pieces = new Map();
+        for (let i = 0; i < position.count; i++) {
+          const id = find(i);
+          if (!pieces.has(id)) pieces.set(id, []);
+          pieces.get(id).push(i);
+        }
+        for (const vertices of pieces.values()) {
+          const bounds = new THREE.Box3();
+          const weights = new Float32Array(skeleton.bones.length);
+          for (const i of vertices) {
+            bounds.expandByPoint(new THREE.Vector3().fromBufferAttribute(position, i));
+            for (let k = 0; k < 4; k++) weights[skinIndex.getComponent(i, k)] += skinWeight.getComponent(i, k);
+          }
+          const center = bounds.getCenter(new THREE.Vector3());
+          let joint = weights.indexOf(Math.max(...weights));
+          const outerArm = Math.abs(center.x) > 0.25 && center.y > 0.95 && center.y < 1.70;
+          if (!outerArm && weights[headIndex] === 0) continue;
+          if (joint === headIndex && center.y < 1.90) joint = chestIndex;
+          if (outerArm) {
+            const side = center.x < 0 ? 'R' : 'L';
+            const part = center.y > 1.36 ? 'upper_arm' : center.y > 1.23 ? 'forearm' : 'hand';
+            joint = skeleton.bones.indexOf(this.bones[part + side]);
+          }
+          for (const i of vertices) {
+            skinIndex.setXYZW(i, joint, 0, 0, 0);
+            skinWeight.setXYZW(i, 1, 0, 0, 0);
+          }
+        }
+        skinWeight.needsUpdate = true;
+        skinIndex.needsUpdate = true;
+        const materials = Array.isArray(o.material) ? o.material : [o.material];
+        for (const material of materials) {
+          if (material.name === 'RobotWhite') {
+            material.color.setRGB(0.40, 0.43, 0.47);
+            material.roughness = 0.78;
+          }
+        }
+      });
       this.headRest = this.head.quaternion.clone();
       this._headQ = new THREE.Quaternion();
       this._headLimitedQ = new THREE.Quaternion();
@@ -71,7 +164,7 @@ export class Robot {
         if (!face.length) return;
         const display = new THREE.MeshStandardMaterial({
           name: 'AtomFrontDisplay', color: '#000817', emissive: '#1260ff',
-          emissiveIntensity: 1.1, roughness: 0.32, metalness: 0, toneMapped: false,
+          emissiveIntensity: 0.65, roughness: 0.32, metalness: 0, toneMapped: false,
         });
         g.setIndex([...body, ...face]);
         g.clearGroups();
@@ -96,6 +189,8 @@ export class Robot {
       const elbowPosition = this.elbow.getWorldPosition(new THREE.Vector3());
       const wristPosition = this.wrist.getWorldPosition(new THREE.Vector3());
       this.restDir = elbowPosition.clone().sub(shoulderPosition).normalize();
+      this.restForeDir = wristPosition.clone().sub(elbowPosition).normalize();
+      this.restRootWorldQ = this.root.getWorldQuaternion(new THREE.Quaternion());
       this.upperLength = elbowPosition.distanceTo(shoulderPosition);
       this.foreLength = wristPosition.distanceTo(elbowPosition);
       this.restShoulderWorldQ = this.shoulder.getWorldQuaternion(new THREE.Quaternion());
@@ -204,8 +299,8 @@ export class Robot {
   }
 
   /** Aim from the bind torso frame, then convert back to the bone's parent. */
-  _swing(bone, parentWorldQ, restWorldQ, dir) {
-    const swing = this._q[4].setFromUnitVectors(this.restDir, dir);
+  _swing(bone, parentWorldQ, restWorldQ, dir, restDir = this.restDir) {
+    const swing = this._q[4].setFromUnitVectors(restDir, dir);
     const world = this._q[5].copy(this.armFrame).multiply(swing).multiply(restWorldQ);
     bone.quaternion.copy(this._q[3].copy(parentWorldQ).invert()).multiply(world);
     return world;
@@ -270,7 +365,8 @@ export class Robot {
     // Solve in the bind torso frame: root placement and breathing must rotate
     // the limits as well as the arm. +Z is forward, -X is his right side.
     if (this.atom) {
-      this.armFrame.identity();
+      this.armFrame.copy(this.root.getWorldQuaternion(this._q[7]))
+        .multiply(this._q[0].copy(this.restRootWorldQ).invert());
     } else {
       this.armFrame.copy(this.torso.getWorldQuaternion(this._q[7]))
         .multiply(this._q[0].copy(this.restTorsoWorldQ).invert());
@@ -320,12 +416,11 @@ export class Robot {
     const parentQ = this.shoulder.parent.getWorldQuaternion(this._q[1]);
     this._swing(this.shoulder, parentQ, this.restShoulderWorldQ, upperDir);
     const shoulderWorld = this.shoulder.getWorldQuaternion(this._q[2]);
-    this._swing(this.elbow, shoulderWorld, this.restElbowWorldQ, foreDir);
+    this._swing(this.elbow, shoulderWorld, this.restElbowWorldQ, foreDir, this.restForeDir || this.restDir);
   }
 
   /** The angle at the elbow, in radians. Straight is 0. Used by the tests. */
   elbowAngle() {
-    if (this.atom) return 0;
     const s = this.shoulder.getWorldPosition(this._v[0]);
     const e = this.elbow.getWorldPosition(this._v[1]);
     const w = this.wrist.getWorldPosition(this._v[2]);

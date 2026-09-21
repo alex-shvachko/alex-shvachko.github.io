@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three.module.js';
 import { GLTFLoader } from './vendor/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from './vendor/addons/loaders/DRACOLoader.js';
-import { Robot } from './scene/robot.js?v=blue-dive-3';
+import { Robot } from './scene/robot.js?v=rig-fix-8';
 import { buildCascade } from './scene/cascade.js';
 import { ButterflyController } from './scene/butterfly.js';
 import { buildGlassMenu } from './scene/glassbranch.js?v=blue-dive-3';
