@@ -4,8 +4,8 @@ const damp = (rate, dt) => 1 - Math.exp(-rate * dt);
 const clamp = THREE.MathUtils.clamp;
 
 /**
- * The scene's character wrapper. Robot Atom uses its exported in-place walk;
- * the legacy branch retains the bespoke articulated pose controls.
+ * The scene's character wrapper. Both supported rigs hold a live right-hand
+ * pointing pose; the legacy branch additionally has articulated fingers.
  *
  * Bone maths note: in the rest pose the upper arm and the forearm both point
  * along the same axis (the arm is straight in the T-pose it was rigged from).
@@ -37,9 +37,8 @@ export class Robot {
     this.bones = {};
     this.root.traverse(o => { if (o.isBone) this.bones[o.name] = o; });
 
-    // Robot Atom is exported with its own compact biped rig and an in-place
-    // walk. It is intentionally handled without the postman's bespoke arm IK.
-    // The shared perch/body interfaces keep the butterfly interaction intact.
+    // Robot Atom supplies a compact biped rig. Keep it still in the tree and
+    // drive its right arm procedurally, matching the original pointing cue.
     // Names arrive sanitized: three strips [].:/ from every glTF node name, so
     // the exported "hand.R" is the bone called "handR" here.
     const handR = this.bones[THREE.PropertyBinding.sanitizeNodeName('hand.R')];
@@ -89,6 +88,24 @@ export class Robot {
       });
       this.head.add(this.screenAnchor);
       this.handBone = handR;
+      this.shoulder = this.bones[THREE.PropertyBinding.sanitizeNodeName('upper_arm.R')];
+      this.elbow = this.bones[THREE.PropertyBinding.sanitizeNodeName('forearm.R')];
+      this.wrist = handR;
+      this.root.updateMatrixWorld(true);
+      const shoulderPosition = this.shoulder.getWorldPosition(new THREE.Vector3());
+      const elbowPosition = this.elbow.getWorldPosition(new THREE.Vector3());
+      const wristPosition = this.wrist.getWorldPosition(new THREE.Vector3());
+      this.restDir = elbowPosition.clone().sub(shoulderPosition).normalize();
+      this.upperLength = elbowPosition.distanceTo(shoulderPosition);
+      this.foreLength = wristPosition.distanceTo(elbowPosition);
+      this.restShoulderWorldQ = this.shoulder.getWorldQuaternion(new THREE.Quaternion());
+      this.restElbowWorldQ = this.elbow.getWorldQuaternion(new THREE.Quaternion());
+      this.armFrame = new THREE.Quaternion();
+      this.aim = new THREE.Vector3();
+      this.extend = 1;
+      this._v = Array.from({ length: 8 }, () => new THREE.Vector3());
+      this._q = Array.from({ length: 8 }, () => new THREE.Quaternion());
+      this._e = new THREE.Euler();
       this.perch = new THREE.Mesh(
         new THREE.SphereGeometry(0.22, 10, 8),
         new THREE.MeshBasicMaterial({ visible: false }));
@@ -100,14 +117,7 @@ export class Robot {
       this.body.name = 'BodyProxy';
       this.body.position.set(0, 1.02, 0);
       this.root.add(this.body);
-      if (gltf.animations.length) {
-        this.mixer = new THREE.AnimationMixer(this.root);
-        const walk = gltf.animations[0].clone();
-        walk.tracks = walk.tracks.filter(track => !track.name.startsWith('head.'));
-        this.mixer.clipAction(walk).play();
-      }
       this.frozen = false;
-      this._atomLastT = null;
       return;
     }
     this.shoulder = this.bones.Shoulder_R;
@@ -207,9 +217,6 @@ export class Robot {
    */
   idle(t) {
     if (this.atom) {
-      const dt = this._atomLastT === null ? 0 : Math.min(t - this._atomLastT, 0.05);
-      this._atomLastT = t;
-      if (!this.frozen) this.mixer?.update(dt);
       return;
     }
     const delta = this._q[6];
@@ -255,7 +262,6 @@ export class Robot {
    * far things open it out, and a slow breath keeps it from ever being still.
    */
   pointAt(target, dt, t = 0) {
-    if (this.atom) return;
     if (this.frozen) return;
     const S = this.shoulder.getWorldPosition(this._v[0]);
     const toTarget = this._v[1].subVectors(target, S);
@@ -263,8 +269,12 @@ export class Robot {
     if (reach < 1e-5) return;
     // Solve in the bind torso frame: root placement and breathing must rotate
     // the limits as well as the arm. +Z is forward, -X is his right side.
-    this.armFrame.copy(this.torso.getWorldQuaternion(this._q[7]))
-      .multiply(this._q[0].copy(this.restTorsoWorldQ).invert());
+    if (this.atom) {
+      this.armFrame.identity();
+    } else {
+      this.armFrame.copy(this.torso.getWorldQuaternion(this._q[7]))
+        .multiply(this._q[0].copy(this.restTorsoWorldQ).invert());
+    }
     toTarget.applyQuaternion(this._q[0].copy(this.armFrame).invert()).normalize();
     const yaw = clamp(Math.atan2(toTarget.x, toTarget.z), -1.30, 1.10);
     const pitch = clamp(Math.asin(clamp(toTarget.y, -1, 1)), -0.60, 0.65);

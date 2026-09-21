@@ -13,7 +13,7 @@ for (const name of ['RobotAtom_Rig', 'root', 'head', 'hand.L', 'hand.R', 'thigh.
   assert(names.has(name), `missing Robot Atom bone: ${name}`);
 }
 assert(gltf.skins?.length, 'Robot Atom has no skin');
-assert(gltf.animations?.length, 'Robot Atom has no walk animation');
+assert(gltf.animations?.length, 'Robot Atom rig export has no animation data');
 assert(bytes.length < 5_000_000, `Robot Atom payload is too large: ${bytes.length}`);
 
 const joints = new Set(gltf.skins.flatMap(skin => skin.joints));
@@ -30,11 +30,12 @@ const nodes = gltf.nodes.map((node, index) => {
 gltf.nodes.forEach((node, index) => node.children?.forEach(child => nodes[index].add(nodes[child])));
 const scene = new THREE.Group();
 gltf.scenes[gltf.scene || 0].nodes.forEach(index => scene.add(nodes[index]));
-const robot = new Robot({ scene, animations: [new THREE.AnimationClip('walk', 1, [])] });
+const robot = new Robot({ scene, animations: gltf.animations });
 robot.idle(0);
 robot.idle(1 / 60);
-robot.pointAt(new THREE.Vector3());
+robot.pointAt(new THREE.Vector3(-2, 1, 2), 1 / 60);
 robot.watch(new THREE.Vector3());
 assert(robot.atom, 'Robot Atom did not use its web animation bridge');
 assert(Number.isFinite(robot.handPosition().length()), 'Robot Atom hand target is invalid');
-console.log(`PASS: ${bytes.length.toLocaleString()} byte Robot Atom GLB, ${gltf.animations.length} animation clip(s), web bridge.`);
+assert.equal(robot.mixer, undefined, 'Robot Atom should not play its walk animation');
+console.log(`PASS: ${bytes.length.toLocaleString()} byte Robot Atom GLB, ${gltf.animations.length} animation clip(s), pointing bridge.`);
