@@ -1,3 +1,41 @@
+# First-scene release tuning - 2026-09-26
+
+Preserves the static WebGL scene and GitHub Pages deployment. No new dependencies.
+
+- Correct procedural sky sRGB encoding; balance key light, bounce, fog and grass.
+- Diffuse shading for matte grass/background foliage; freeze static matrices.
+- Skip unchanged DOM writes; stop hidden poster animation; add quality hysteresis.
+- Refine glass contrast, focus, accessibility fallbacks and responsive placement.
+- Keep reduced-motion scenes still; recover from context loss, including lighting.
+- Add bounded 600-frame p50/p95 timing in the `?debug` readout.
+- Preserve the pending Life path and navigation edits.
+
+## Verification
+
+Desktop preview at 1280x720: baseline sampled 49-51 FPS at ratio 0.75 and
+319k triangles. Final sample: 77 FPS at ratio 0.75, 359k triangles, p50 12.9 ms
+and p95 13.9 ms over 600 frames. Adaptive grass retained more detail afterward.
+390x844 viewport on the same desktop host: 123 FPS at ratio 1.0, p50 8.1 ms,
+p95 8.4 ms. These local samples are not hardware-independent guarantees or
+physical-phone measurements.
+
+Checked desktop/mobile composition, keyboard focus, Life path navigation,
+reverse scrolling, mobile overflow, and normal-operation console errors.
+A temporary browser harness forced reduced-motion/transparency inputs: idle
+render count remained 27; controls were opaque without backdrop blur. This
+is harness coverage, not native OS preference emulation. The harness also
+exercised context loss and restoration, with fallback navigation available.
+
+All existing Node checks pass: check_hero.mjs, check_robot_atom.mjs,
+check_robot.mjs, plus JavaScript syntax and git diff --check.
+There is no package/build target in this static site.
+
+Color management reference: https://threejs.org/manual/pages/color-management.html
+
+Earlier observations below describe previous revisions.
+
+---
+
 # Hero refinement verification — 2026-09-21
 
 The hero retains the existing local Three.js WebGL renderer and static GitHub Pages

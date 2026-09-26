@@ -115,6 +115,8 @@ function skyTexture() {
       const glow = Math.pow(Math.max(0, Math.cos(az - 4.35)), 5) *
         Math.max(0, 1 - Math.abs(t - 0.26) * 3.2);
       t2.copy(c).lerp(warm, glow * 0.85);
+      // Color stores linear values; encode once before tagging these bytes sRGB.
+      t2.convertLinearToSRGB();
       const i = (y * w + x) * 4;
       data[i] = t2.r * 255; data[i + 1] = t2.g * 255; data[i + 2] = t2.b * 255; data[i + 3] = 255;
     }
@@ -130,12 +132,14 @@ export function buildEnvironment(scene, renderer) {
   const sky = skyTexture();
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
-  scene.environment = pmrem.fromEquirectangular(sky).texture;
+  const environment = pmrem.fromEquirectangular(sky);
+  scene.environment = environment.texture;
   scene.environmentIntensity = 0.38;
   scene.background = sky;
   scene.backgroundIntensity = 1.0;
-  scene.fog = new THREE.FogExp2('#acb98a', 0.035);
+  scene.fog = new THREE.FogExp2('#a7bdac', 0.032);
   pmrem.dispose();
+  return { dispose() { environment.dispose(); sky.dispose(); } };
 }
 
 /* --------------------------------------------------------------- water normals */
@@ -464,7 +468,7 @@ export function buildRoots(scene, material) {
 /* ---------------------------------------------------------------------- lights */
 export function buildLights(scene) {
   // Key: low and raking, so the canopy throws long dapples across the robot.
-  const sun = new THREE.DirectionalLight('#ffdc93', 4.2);
+  const sun = new THREE.DirectionalLight('#ffe8bd', 3.5);
   sun.position.copy(LAYOUT.sun);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -494,7 +498,7 @@ export function buildLights(scene) {
   scene.add(rim, rim.target);
 
   // Warm bounce off the forest floor, filling the undersides.
-  const bounce = new THREE.DirectionalLight('#ffdfaa', 1.0);
+  const bounce = new THREE.DirectionalLight('#e5edda', 0.8);
   bounce.position.set(-3, 4, 10);
   bounce.target.position.copy(LAYOUT.sunTarget);
   scene.add(bounce.target);
@@ -609,9 +613,10 @@ export function updateFallingLeaves(mesh, t, dt) {
 export function buildTreeline(scene) {
   const group = new THREE.Group();
   const count = 60;
-  const trunkMat = new THREE.MeshStandardMaterial({ color: '#7a7752', roughness: 1 });
-  const crownMat = new THREE.MeshStandardMaterial({
-    color: '#90b477', roughness: 1, side: THREE.DoubleSide,
+  // Matte background foliage needs diffuse light, not per-pixel PBR reflections.
+  const trunkMat = new THREE.MeshLambertMaterial({ color: '#7a7752' });
+  const crownMat = new THREE.MeshLambertMaterial({
+    color: '#90b477', side: THREE.DoubleSide,
   });
   const trunks = new THREE.InstancedMesh(
     new THREE.CylinderGeometry(0.26, 0.42, 6, 5), trunkMat, count);
@@ -707,8 +712,8 @@ function bladeGeometry(segments = 3, width = 0.046, bend = 0.16) {
  */
 export function buildGrass(scene, { count = 18000, radius = 12 } = {}) {
   const geo = bladeGeometry(4, 0.055, 0.20);
-  const mat = new THREE.MeshStandardMaterial({
-    color: '#7d9c38', roughness: 0.92, metalness: 0, side: THREE.DoubleSide,
+  const mat = new THREE.MeshLambertMaterial({
+    color: '#759448', side: THREE.DoubleSide,
   });
 
   const uniforms = { uTime: { value: 0 }, uWind: { value: 0.18 } };

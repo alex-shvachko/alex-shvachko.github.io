@@ -4,13 +4,13 @@ import { DRACOLoader } from './vendor/addons/loaders/DRACOLoader.js';
 import { Robot } from './scene/robot.js?v=rig-fix-8';
 import { buildCascade } from './scene/cascade.js';
 import { ButterflyController } from './scene/butterfly.js';
-import { buildGlassMenu } from './scene/glassbranch.js?v=blue-dive-3';
+import { buildGlassMenu } from './scene/glassbranch.js?v=ship-3';
 import {
   LAYOUT, buildEnvironment, placeTree, buildGround,
   buildPond, buildLights, buildScreenLight,
   buildMotes, buildFallingLeaves, updateFallingLeaves, buildTreeline,
   buildGrass, buildBotanicals,
-} from './scene/world.js?v=glade-2';
+} from './scene/world.js?v=ship-3';
 
 const canvas = document.querySelector('#scene');
 const stage = canvas.parentElement;
@@ -35,6 +35,7 @@ renderer.toneMappingExposure = 0.98;
 renderer.info.autoReset = false;
 
 const scene = new THREE.Scene();
+scene.matrixAutoUpdate = false;
 const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.02, 160);
 
 /* ----------------------------------------------------------------- camera rig */
@@ -46,6 +47,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const debugParams = new URLSearchParams(location.search);
 const debugPose = debugParams.has('debug') ? debugParams.get('pose') : null;
 let assetsReady = false;
+let contextLost = false;
 let needsFrame = true;
 let scrollS = 0;                          // 0..1 progress through the track
 function frameCamera() {
@@ -110,7 +112,7 @@ camera.position.copy(HOME);
 camera.lookAt(FOCUS);
 
 /* ----------------------------------------------------------------- composition */
-buildEnvironment(scene, renderer);
+let environment = buildEnvironment(scene, renderer);
 const { sun } = buildLights(scene);
 buildGround(scene);
 const treeline = buildTreeline(scene);
@@ -198,6 +200,13 @@ const ready = (async () => {
   sun.shadow.autoUpdate = false;
 
   water.reflectionSkips.push(butterfly.root);
+  // Static scenery retains its world matrices. Animated groups stay live.
+  scene.updateMatrixWorld(true);
+  const moving = new Set([robot.root, butterfly.root, menu.frame, fallingLeaves,
+    screenLight.light, screenLight.bounce]);
+  for (const child of scene.children) {
+    if (!moving.has(child)) child.traverse(o => { o.matrixAutoUpdate = false; });
+  }
   await renderer.compileAsync(scene, camera);
   clock.getDelta();
   assetsReady = true;
@@ -272,11 +281,15 @@ function onMove(e) {
 
 stage.addEventListener('pointermove', onMove);
 stage.addEventListener('pointerleave', () => {
+  needsFrame = true;
+  luring = false;
   edgeWant.set(0, 0);
   menu.setHover(null);
   stage.classList.remove('is-pointing');
   if (butterfly?.state === 'landed') butterfly.resetButterfly();
 });
+stage.addEventListener('focusin', () => { needsFrame = true; });
+stage.addEventListener('focusout', () => { needsFrame = true; });
 // Clicking the bead itself follows the link the same way its label does.
 stage.addEventListener('click', e => {
   if (e.target.closest?.('.branch-menu a')) return;
@@ -318,9 +331,10 @@ function adapt(dt) {
   quality.acc = 0;
   quality.frames = 0;
 
-  const slow = quality.fps < 50;
-  const fast = quality.fps > 59 && ++quality.stable >= 8;
-  if (quality.fps <= 59) quality.stable = 0;
+  const slow = quality.fps < 58;
+  // Require real headroom, so a 60 Hz display does not oscillate between tiers.
+  const fast = quality.fps > 78 && ++quality.stable >= 12;
+  if (quality.fps <= 78) quality.stable = 0;
   const next = slow ? quality.ratio - 0.25 : fast ? quality.ratio + 0.25 : quality.ratio;
   const clamped = THREE.MathUtils.clamp(next, RATIO_MIN, RATIO_MAX);
 
@@ -348,9 +362,11 @@ const lureTarget = new THREE.Vector3();
 const lureNdc = new THREE.Vector2();
 const reflectionPosition = new THREE.Vector3(Infinity, Infinity, Infinity);
 const reflectionRotation = new THREE.Quaternion();
+let previousWash = '', previousNavOpacity = '';
+const frameTimes = [];
 
 function frame() {
-  if (!assetsReady || (reducedMotion.matches && !needsFrame)) return;
+  if (!assetsReady || contextLost || (reducedMotion.matches && !needsFrame)) return;
   needsFrame = false;
   renderer.info.reset();
   const rawDt = clock.getDelta();
@@ -359,9 +375,17 @@ function frame() {
   dive = reducedMotion.matches ? 0 : dive + (scrollS - dive) * (1 - Math.exp(-12 * dt));
   if (Math.abs(dive - scrollS) < 0.0001) dive = scrollS;
   const wash = THREE.MathUtils.smoothstep(dive, 0.64, 0.80);
-  stage.style.setProperty('--screen-wash', wash.toFixed(4));
-  nav.style.opacity = String(1 - THREE.MathUtils.smoothstep(dive, 0.02, 0.16));
-  nav.inert = dive > 0.16;
+  const washValue = wash.toFixed(4);
+  const navOpacity = (1 - THREE.MathUtils.smoothstep(dive, 0.02, 0.16)).toFixed(4);
+  if (washValue !== previousWash) {
+    stage.style.setProperty('--screen-wash', washValue);
+    previousWash = washValue;
+  }
+  if (navOpacity !== previousNavOpacity) {
+    nav.style.opacity = navOpacity;
+    previousNavOpacity = navOpacity;
+  }
+  if (nav.inert !== (dive > 0.16)) nav.inert = dive > 0.16;
   menu.frame.visible = dive < 0.18;
   // Once blue fills the viewport, no hidden woodland frames are needed.
   if (wash >= 1) return;
@@ -374,8 +398,10 @@ function frame() {
       aimTarget.set(debugPose === 'left' ? -5 : 6, 2.3, debugPose === 'behind' ? -5 : 6);
       robot.frozen = false;
     }
-    robot.pointAt(aimTarget, dt, t);
-    robot.watch(dive > 0.005 ? HOME : aimTarget, dt, dive > 0.005 ? Math.PI : 0.7);
+    if (!reducedMotion.matches) {
+      robot.pointAt(aimTarget, dt, t);
+      robot.watch(dive > 0.005 ? HOME : aimTarget, dt, dive > 0.005 ? Math.PI : 0.7);
+    }
     if (robot.screenAnchor) {
       robot.root.updateMatrixWorld(true);
       robot.screenAnchor.getWorldPosition(EYE_TARGET);
@@ -437,6 +463,10 @@ function frame() {
   renderer.render(scene, camera);
   quality.calls = renderer.info.render.calls;
   quality.tris = renderer.info.render.triangles;
+  if (debugParams.has('debug') && rawDt < 0.25) {
+    frameTimes.push(rawDt * 1000);
+    if (frameTimes.length > 600) frameTimes.shift();
+  }
 }
 renderer.setAnimationLoop(frame);
 let inView = true;
@@ -451,19 +481,46 @@ new IntersectionObserver(([entry]) => {
   syncPlayback();
 }, { threshold: 0 }).observe(stage);
 document.addEventListener('visibilitychange', syncPlayback);
+canvas.addEventListener('webglcontextlost', () => {
+  contextLost = true;
+  stage.classList.remove('is-ready', 'is-webgl');
+  stage.style.setProperty('--screen-wash', '0');
+  previousWash = '';
+  nav.inert = false;
+  nav.style.opacity = '1';
+});
+canvas.addEventListener('webglcontextrestored', async () => {
+  try {
+    await ready;
+    environment.dispose();
+    environment = buildEnvironment(scene, renderer);
+    await renderer.compileAsync(scene, camera);
+    sun.shadow.needsUpdate = true;
+    reflectionPosition.set(Infinity, Infinity, Infinity);
+    previousNavOpacity = '';
+    needsFrame = true;
+    contextLost = false;
+    stage.classList.add('is-webgl', 'is-ready');
+    syncPlayback();
+  } catch (err) {
+    console.error('[hero] scene recovery failed', err);
+  }
+});
 
 if (debugParams.has('debug')) {
   // A readout, so "is it 60?" is answered by measurement rather than by feel.
   const hud = document.createElement('div');
+  hud.id = 'hero-performance';
   hud.style.cssText = 'position:fixed;z-index:9;left:12px;top:12px;padding:7px 10px;'
     + 'background:rgba(12,20,10,.72);color:#dcef9a;font:11px/1.5 monospace;'
     + 'white-space:pre;border-radius:3px;pointer-events:none';
   document.body.appendChild(hud);
   setInterval(() => {
-    const r = renderer.info.render;
+    const sorted = [...frameTimes].sort((a, b) => a - b);
+    const percentile = p => (sorted[Math.floor((sorted.length - 1) * p)] || 0).toFixed(1);
     hud.textContent = `${quality.fps.toFixed(0)} fps   ratio ${quality.ratio.toFixed(2)}\n`
-      + `${r.calls} calls   ${(r.triangles / 1000).toFixed(0)}k tris\n`
-      + `native antialiasing`;
+      + `${quality.calls} calls   ${(quality.tris / 1000).toFixed(0)}k tris\n`
+      + `frame ms: p50 ${percentile(0.5)} / p95 ${percentile(0.95)} (${sorted.length})`;
   }, 250);
   const isolate = document.createElement('button');
   isolate.textContent = 'Inspect robot';

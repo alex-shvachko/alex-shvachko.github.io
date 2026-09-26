@@ -16,17 +16,15 @@ import { mergeGeometries } from '../vendor/addons/utils/BufferGeometryUtils.js';
  */
 
 export const MENU = [
-  { id: 'skills', href: '#skills' },
+  { id: 'path', href: '#path' },
   { id: 'portfolio', href: '#work' },
-  { id: 'education', href: '#education' },
-  { id: 'about', href: '#about' },
   { id: 'contact', href: '#contact' },
 ];
 
 const BTN_W = 1.42;                   // sized to hold the type, not the other way round
 const BTN_H = 0.26;
 const BTN_R = 0.09;                   // corner radius: rounded, not a pill
-const ROW_Y = [0.60, 0.22, -0.16, -0.54, -0.92];
+const ROW_Y = [0.45, 0.02, -0.41];
 
 const BOUGH_Y = 1.12;                 // clear of the buttons, up where the canopy is
 const BOUGH_X = 1.35;                 // pivot off the right edge, where it sways from
@@ -164,7 +162,7 @@ export function buildGlassMenu(scene, camera, nav, {
     buttons.push(mesh);
     nodes.push({
       ...item, mesh, label: nav.querySelector(`[data-node="${item.id}"]`),
-      glow: 0, want: 0,
+      glow: 0, want: 0, transform: '',
     });
   });
 
@@ -261,6 +259,7 @@ export function buildGlassMenu(scene, camera, nav, {
   /* ------------------------------------------------------------------ behaviour */
   let hovered = null;
   const setHover = id => {
+    if (hovered === id) return;
     hovered = id;
     for (const n of nodes) {
       n.want = n.id === id ? 1 : 0;
@@ -293,10 +292,11 @@ export function buildGlassMenu(scene, camera, nav, {
     const gap = compact ? 10 : 12;
     panel.position.x = 0;
     nodes.forEach((node, i) => {
-      const x = compact ? margin + buttonW / 2 + (i % 2) * (buttonW + gap)
+      const lastSingle = compact && nodes.length % 2 === 1 && i === nodes.length - 1;
+      const x = lastSingle ? width / 2 : compact ? margin + buttonW / 2 + (i % 2) * (buttonW + gap)
         : width - margin - buttonW / 2;
-      const y = compact ? height - 32 - (2 - Math.floor(i / 2)) * (buttonH + gap) - buttonH / 2
-        : height * 0.53 + (i - 2) * (buttonH + gap);
+      const y = compact ? height - 32 - (Math.ceil(nodes.length / 2) - 1 - Math.floor(i / 2)) * (buttonH + gap) - buttonH / 2
+        : height * 0.53 + (i - (nodes.length - 1) / 2) * (buttonH + gap);
       node.mesh.position.set((x - width / 2) * unit, (height / 2 - y) * unit, 0);
       node.baseScale = new THREE.Vector3(buttonW * unit / BTN_W, buttonH * unit / BTN_H, 0.58);
       node.mesh.scale.copy(node.baseScale);
@@ -317,9 +317,10 @@ export function buildGlassMenu(scene, camera, nav, {
       bough.rotation.z = Math.sin(t * 0.47) * 0.019 + Math.sin(t * 0.93) * 0.007;
       bough.rotation.x = Math.sin(t * 0.36 + 1.7) * 0.013;
     }
-    const ease = 1 - Math.exp(-9 * dt);
+    const ease = still.matches ? 1 : 1 - Math.exp(-9 * dt);
     for (const n of nodes) {
       n.glow += (n.want - n.glow) * ease;
+      if (Math.abs(n.want - n.glow) < 0.001) n.glow = n.want;
       // A press-forward, not a balloon: the slab lifts toward the viewer.
       n.mesh.scale.copy(n.baseScale).multiplyScalar(1 + n.glow * 0.02);
       n.mesh.position.z = n.glow * 0.025;
@@ -327,7 +328,11 @@ export function buildGlassMenu(scene, camera, nav, {
       n.mesh.getWorldPosition(proj).project(camera);
       const x = (proj.x * 0.5 + 0.5) * rect.width;
       const y = (-proj.y * 0.5 + 0.5) * rect.height;
-      n.label.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      const transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) translate(-50%, -50%)`;
+      if (transform !== n.transform) {
+        n.label.style.transform = transform;
+        n.transform = transform;
+      }
     }
   }
 
