@@ -1,0 +1,344 @@
+import * as THREE from '../vendor/three.module.js';
+import { mergeGeometries } from '../vendor/addons/utils/BufferGeometryUtils.js';
+
+/**
+ * The right-hand furniture of the hero: a stack of liquid-glass buttons, and,
+ * separate from them, a horizontal leafy bough that exists only as somewhere for
+ * the butterfly to land.
+ *
+ * Both live in world space rather than parented to the camera. That is what lets
+ * the glass refract the real woodland behind it, lets the bough take the real
+ * sun, and puts the bough somewhere the butterfly can actually fly to.
+ *
+ * The frame group sits at the camera's home pose and looks at the focus point,
+ * so everything inside it is authored in comfortable screen-ish coordinates:
+ * +x right, +y up, -z away from the viewer.
+ */
+
+export const MENU = [
+  { id: 'path', href: '#path' },
+  { id: 'portfolio', href: '#work' },
+  { id: 'contact', href: '#contact' },
+];
+
+const BTN_W = 1.42;                   // sized to hold the type, not the other way round
+const BTN_H = 0.26;
+const BTN_R = 0.09;                   // corner radius: rounded, not a pill
+const ROW_Y = [0.45, 0.02, -0.41];
+
+const BOUGH_Y = 1.12;                 // clear of the buttons, up where the canopy is
+const BOUGH_X = 1.35;                 // pivot off the right edge, where it sways from
+const BOUGH_R0 = 0.045;
+const BOUGH_R1 = 0.009;
+const LEAF_COUNT = 98;
+
+// Authored from the bough's pivot, running left across frame and sagging a
+// little under its own weight.
+const BOUGH_PTS = [
+  [0, 0, 0], [-0.62, -0.07, 0.06], [-1.24, -0.15, 0.04],
+  [-1.86, -0.19, -0.04], [-2.48, -0.17, -0.12], [-2.95, -0.08, -0.22],
+];
+
+const rand = (() => {                 // deterministic: it must not reshuffle
+  let s = 991137;
+  return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+})();
+
+/**
+ * A tube whose radius tapers along the curve, which three's TubeGeometry cannot
+ * do. A branch of constant radius reads as plumbing.
+ *
+ * The normals are the exact ring normals, so they ignore the slope the taper
+ * introduces. Over a taper this gentle that error stays well under a degree.
+ */
+function taperedTube(curve, tubular, radial, r0, r1) {
+  const frames = curve.computeFrenetFrames(tubular, false);
+  const position = [], normal = [], uv = [], index = [];
+  const P = new THREE.Vector3();
+  for (let i = 0; i <= tubular; i++) {
+    const u = i / tubular;
+    curve.getPointAt(u, P);
+    const N = frames.normals[i], B = frames.binormals[i];
+    const r = THREE.MathUtils.lerp(r0, r1, u);
+    for (let j = 0; j <= radial; j++) {
+      const a = (j / radial) * Math.PI * 2;
+      const cx = -Math.cos(a), cy = -Math.sin(a);
+      const dx = N.x * cx + B.x * cy, dy = N.y * cx + B.y * cy, dz = N.z * cx + B.z * cy;
+      normal.push(dx, dy, dz);
+      position.push(P.x + r * dx, P.y + r * dy, P.z + r * dz);
+      uv.push(u, j / radial);
+    }
+  }
+  for (let i = 1; i <= tubular; i++) {
+    for (let j = 1; j <= radial; j++) {
+      const a = (radial + 1) * (i - 1) + (j - 1);
+      const b = (radial + 1) * i + (j - 1);
+      const c = (radial + 1) * i + j;
+      const d = (radial + 1) * (i - 1) + j;
+      index.push(a, b, d, b, c, d);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setIndex(index);
+  g.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  return g;
+}
+
+/** A rounded rectangle. Corners, not a circle and not a pill. */
+function roundedRect(w, h, r) {
+  const s = new THREE.Shape();
+  const x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y);
+  s.lineTo(x + w - r, y);
+  s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r);
+  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h);
+  s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r);
+  s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+
+/** A simple pointed leaf, as geometry rather than an alpha-cut card. */
+function leafGeometry() {
+  const s = new THREE.Shape();
+  s.moveTo(0, 0);
+  s.bezierCurveTo(0.055, 0.035, 0.085, 0.125, 0, 0.215);
+  s.bezierCurveTo(-0.085, 0.125, -0.055, 0.035, 0, 0);
+  return new THREE.ShapeGeometry(s, 7);
+}
+
+export function buildGlassMenu(scene, camera, nav, {
+  home, focus, distance = 4.6, targetX = 0.62,
+} = {}) {
+  /* ------------------------------------------------------------------- framing */
+  const frame = new THREE.Group();
+  frame.name = 'MenuFrame';
+  frame.position.copy(home);
+  // Matrix4.lookAt, not Object3D.lookAt: the latter aims +Z at the target for a
+  // plain object and only cameras and lights get the -Z convention. Using it
+  // here would build the whole thing behind the viewer.
+  frame.quaternion.setFromRotationMatrix(
+    new THREE.Matrix4().lookAt(home, focus, new THREE.Vector3(0, 1, 0)));
+
+  const panel = new THREE.Group();        // the buttons: UI, so it holds still
+  panel.position.set(0, 0, -distance);
+  frame.add(panel);
+
+  const bough = new THREE.Group();        // the perch: swings in the wind
+  bough.position.set(BOUGH_X, BOUGH_Y, -distance);
+  frame.add(bough);
+
+  scene.add(frame);
+  frame.updateMatrixWorld(true);          // come out of the final matrices
+
+  /* ------------------------------------------------------------- glass buttons */
+  // Environment-lit glass edges plus the label's small CSS frosted pane avoid
+  // re-rendering the entire woodland for five tiny refractive buttons.
+  const glass = new THREE.MeshPhysicalMaterial({
+    color: 0xeaf4ef, transparent: true, opacity: 0.24, depthWrite: false,
+    roughness: 0.18, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.3,
+    envMapIntensity: 1.2,
+  });
+
+  const slab = new THREE.ExtrudeGeometry(roundedRect(BTN_W, BTN_H, BTN_R), {
+    depth: 0.07, bevelEnabled: true, bevelSize: 0.022,
+    bevelThickness: 0.022, bevelSegments: 3, curveSegments: 7,
+  });
+  slab.translate(0, 0, -0.035);
+
+  const nodes = [];
+  const buttons = [];
+  MENU.forEach((item, i) => {
+    const mesh = new THREE.Mesh(slab, glass);
+    mesh.position.set(0, ROW_Y[i], 0);
+    mesh.userData.nodeId = item.id;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    panel.add(mesh);
+    buttons.push(mesh);
+    nodes.push({
+      ...item, mesh, label: nav.querySelector(`[data-node="${item.id}"]`),
+      glow: 0, want: 0, transform: '',
+    });
+  });
+
+  /* ------------------------------------------------------- the bough, and leaves */
+  const curve = new THREE.CatmullRomCurve3(
+    BOUGH_PTS.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+  const extension = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(8, 0.42, -0.18), new THREE.Vector3(4, 0.15, -0.04),
+    new THREE.Vector3(0, 0, 0),
+  ]);
+  const parts = [taperedTube(curve, 40, 7, BOUGH_R0, BOUGH_R1),
+    taperedTube(extension, 12, 7, BOUGH_R0 * 1.7, BOUGH_R0)];
+
+  // A couple of forks, so it reads as a bough rather than a dowel.
+  for (const [t, dx, dy, dz] of [[0.34, -0.42, 0.30, 0.10], [0.62, -0.38, -0.26, -0.08]]) {
+    const a = curve.getPoint(t);
+    parts.push(taperedTube(new THREE.CatmullRomCurve3([
+      a.clone(),
+      a.clone().add(new THREE.Vector3(dx * 0.45, dy * 0.55, dz * 0.5)),
+      a.clone().add(new THREE.Vector3(dx, dy, dz)),
+    ]), 18, 7, 0.030, 0.014));
+  }
+  // MeshPhysicalMaterial purely for `specularIntensity`. A dark, rough cylinder
+  // silhouetted against a bright sky picks up a near-total Fresnel rim across
+  // most of its projected width, which washed the bough out to pale grey
+  // whatever its albedo. MeshStandardMaterial gives no way to turn that down.
+  const wood = new THREE.Mesh(mergeGeometries(parts), new THREE.MeshPhysicalMaterial({
+    color: '#4a3520', roughness: 1, metalness: 0,
+    specularIntensity: 0.12, envMapIntensity: 0.35,
+  }));
+  parts.forEach(g => g.dispose());
+  wood.name = 'PerchBough';
+  wood.castShadow = false;      // the canopy's shadow map is baked once and frozen
+  wood.receiveShadow = true;
+  bough.add(wood);
+
+  const leafMat = new THREE.MeshPhysicalMaterial({
+    color: '#8baf62', roughness: 0.9, metalness: 0, side: THREE.DoubleSide,
+    specularIntensity: 0.25, envMapIntensity: 0.6,
+  });
+  const leafGeo = leafGeometry();
+  const leaves = new THREE.InstancedMesh(leafGeo, leafMat, LEAF_COUNT);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), spin = new THREE.Quaternion();
+  const p = new THREE.Vector3(), sc = new THREE.Vector3(), dir = new THREE.Vector3();
+  const UP = new THREE.Vector3(0, 1, 0);
+  const tint = new THREE.Color();
+  for (let i = 0; i < LEAF_COUNT; i++) {
+    const t = 0.05 + (i / LEAF_COUNT) * 0.93;
+    const a = rand() * Math.PI * 2;
+    const r = THREE.MathUtils.lerp(BOUGH_R0, BOUGH_R1, t);
+    curve.getPoint(t, p);
+    p.x += (rand() - 0.5) * 0.1;
+    p.y += Math.sin(a) * r * 0.85;
+    p.z += Math.cos(a) * r * 0.85 + (rand() - 0.5) * 0.08;
+    // Leaves fan outward and hang: mostly down, splayed around the stem.
+    dir.set(Math.cos(a) * 0.55 + (rand() - 0.5) * 0.3,
+            -0.62 - rand() * 0.35,
+            Math.sin(a) * 0.55).normalize();
+    q.setFromUnitVectors(UP, dir);
+    q.multiply(spin.setFromAxisAngle(UP, rand() * Math.PI * 2));
+    const s = 0.65 + rand() * 0.42;
+    sc.set(s, s, s);
+    leaves.setMatrixAt(i, m.compose(p, q, sc));
+    // setRGB takes linear values, so these are multipliers on the base green
+    // rather than sRGB swatches: some leaves warmer and older, some fresher.
+    const warm = rand();
+    leaves.setColorAt(i, tint.setRGB(0.74 + warm * 0.50, 0.92 + warm * 0.18,
+                                     0.58 + warm * 0.30));
+  }
+  leaves.instanceMatrix.needsUpdate = true;
+  leaves.instanceColor.needsUpdate = true;
+  leaves.castShadow = false;
+  leaves.receiveShadow = true;
+  leaves.frustumCulled = false;
+  bough.add(leaves);
+
+  /* -------------------------------------------------------------- landing zones */
+  // The bough itself, so hovering it lands the butterfly wherever you point.
+  const zones = [{ id: 'bough', mesh: wood, normal: new THREE.Vector3(0, 1, 0) }];
+
+  // And one invisible catcher per button row, so simply moving the cursor onto
+  // the menu sends the butterfly to the bough. `point` is what puts it down on
+  // the branch instead of wherever the catcher was struck; the catchers are
+  // children of the bough so the butterfly rides the sway once it has settled.
+  nodes.forEach((node) => {
+    zones.push({
+      id: `menu-${node.id}`,
+      mesh: node.mesh,
+      point: new THREE.Vector3(0, BTN_H / 2, 0.03),
+      normal: new THREE.Vector3(0, 1, 0),
+    });
+  });
+
+  /* ------------------------------------------------------------------ behaviour */
+  let hovered = null;
+  const setHover = id => {
+    if (hovered === id) return;
+    hovered = id;
+    for (const n of nodes) {
+      n.want = n.id === id ? 1 : 0;
+      n.label?.classList.toggle('is-active', n.id === id);
+    }
+  };
+  for (const n of nodes) {
+    if (!n.label) continue;
+    n.label.addEventListener('pointerenter', () => setHover(n.id));
+    n.label.addEventListener('focus', () => setHover(n.id));
+    n.label.addEventListener('pointerleave', () => { if (hovered === n.id) setHover(null); });
+    n.label.addEventListener('blur', () => { if (hovered === n.id) setHover(null); });
+  }
+
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  const proj = new THREE.Vector3();
+
+  function resize() {
+    frame.position.copy(home);
+    frame.quaternion.setFromRotationMatrix(
+      new THREE.Matrix4().lookAt(home, focus, new THREE.Vector3(0, 1, 0)));
+    const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * distance;
+    const width = nav.clientWidth, height = nav.clientHeight;
+    const unit = halfH * 2 / height;
+    const compact = camera.aspect < 0.95;
+    const margin = compact ? 20 : Math.max(24, Math.min(width * 0.065, 96));
+    const buttonW = compact ? (width - margin * 2 - 10) / 2
+      : Math.max(180, Math.min(266, width * 0.22));
+    const buttonH = compact ? 46 : Math.min(52, Math.max(44, height * 0.060));
+    const gap = compact ? 10 : 12;
+    panel.position.x = 0;
+    nodes.forEach((node, i) => {
+      const lastSingle = compact && nodes.length % 2 === 1 && i === nodes.length - 1;
+      const x = lastSingle ? width / 2 : compact ? margin + buttonW / 2 + (i % 2) * (buttonW + gap)
+        : width - margin - buttonW / 2;
+      const y = compact ? height - 32 - (Math.ceil(nodes.length / 2) - 1 - Math.floor(i / 2)) * (buttonH + gap) - buttonH / 2
+        : height * 0.53 + (i - (nodes.length - 1) / 2) * (buttonH + gap);
+      node.mesh.position.set((x - width / 2) * unit, (height / 2 - y) * unit, 0);
+      node.baseScale = new THREE.Vector3(buttonW * unit / BTN_W, buttonH * unit / BTN_H, 0.58);
+      node.mesh.scale.copy(node.baseScale);
+      if (node.label) {
+        node.label.style.width = `${buttonW}px`;
+        node.label.style.height = `${buttonH}px`;
+      }
+    });
+    const boughWidth = compact ? 170 : Math.min(360, width * 0.28);
+    bough.scale.setScalar(boughWidth * unit / 3);
+    bough.position.set((width / 2 - margin + 35) * unit,
+      (height / 2 - (compact ? 42 : height * 0.53 - 2.9 * (buttonH + gap))) * unit, -distance);
+    frame.updateMatrixWorld(true);
+  }
+
+  function update(t, dt, rect) {
+    if (!still.matches) {
+      bough.rotation.z = Math.sin(t * 0.47) * 0.019 + Math.sin(t * 0.93) * 0.007;
+      bough.rotation.x = Math.sin(t * 0.36 + 1.7) * 0.013;
+    }
+    const ease = still.matches ? 1 : 1 - Math.exp(-9 * dt);
+    for (const n of nodes) {
+      n.glow += (n.want - n.glow) * ease;
+      if (Math.abs(n.want - n.glow) < 0.001) n.glow = n.want;
+      // A press-forward, not a balloon: the slab lifts toward the viewer.
+      n.mesh.scale.copy(n.baseScale).multiplyScalar(1 + n.glow * 0.02);
+      n.mesh.position.z = n.glow * 0.025;
+      if (!n.label) continue;
+      n.mesh.getWorldPosition(proj).project(camera);
+      const x = (proj.x * 0.5 + 0.5) * rect.width;
+      const y = (-proj.y * 0.5 + 0.5) * rect.height;
+      const transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) translate(-50%, -50%)`;
+      if (transform !== n.transform) {
+        n.label.style.transform = transform;
+        n.transform = transform;
+      }
+    }
+  }
+
+  resize();
+  return {
+    frame, panel, bough, nodes, buttons, zones, resize, update, setHover,
+    get hovered() { return hovered; },
+  };
+}
