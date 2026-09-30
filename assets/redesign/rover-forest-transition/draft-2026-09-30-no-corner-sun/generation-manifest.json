@@ -1,0 +1,93 @@
+{
+  "date": "2026-09-30",
+  "project": {
+    "project_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+    "default_folder_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+    "workspace_id": "08861a73-4204-434e-9a7b-b230d8850cf9",
+    "name": "Rover forest website transition — 20 second draft"
+  },
+  "jobs": [
+    {
+      "index": 0,
+      "job_id": "2915466a-8fad-4d16-8ecd-a8428437b323"
+    },
+    {
+      "index": 1,
+      "job_id": "120df406-ed02-4d44-983d-ce72623aa46f"
+    }
+  ],
+  "params": [
+    {
+      "model": "seedance_2_0_mini",
+      "duration": 10,
+      "resolution": "720p",
+      "bitrate_mode": "high",
+      "aspect_ratio": "16:9",
+      "generate_audio": false,
+      "folder_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+      "medias": [
+        {
+          "role": "start_image",
+          "value": "95818644-e803-4d2a-9028-27c0df319369"
+        },
+        {
+          "role": "image",
+          "value": "131d9beb-c92b-4087-9a30-f2cd1997df7f"
+        },
+        {
+          "role": "image",
+          "value": "2ca465f4-83b2-4e33-92e8-dd826186e8a4"
+        },
+        {
+          "role": "image",
+          "value": "827fb4e5-ef59-4b1d-8d79-093b78396042"
+        },
+        {
+          "role": "image",
+          "value": "88720dac-b950-4e02-abd8-61de93a86ad1"
+        },
+        {
+          "role": "image",
+          "value": "42f51eb2-38e5-4ef1-b93c-0ef08950e0d5"
+        },
+        {
+          "role": "image",
+          "value": "4ca6ce25-cb6e-479b-ae52-6a75d7b4764f"
+        },
+        {
+          "role": "image",
+          "value": "3c59069a-51d0-45b1-ae43-4b4f655cb8c3"
+        },
+        {
+          "role": "end_image",
+          "value": "197d5fe5-417a-4d69-aaf6-0989917eeb80"
+        }
+      ],
+      "prompt": "One continuous 10-second camera move for a premium website transition. Nine ordered storyboard landmarks: start 01, references 02,03,04,05,06, added 06.5,07, then END IMAGE is the newly supplied overhead forest. Exactly ONE identical rover throughout: solid white roof and chassis, four black wheels, roof lidar, rear antenna, front black face with cyan ring eyes. All references depict this same subject at different times. Never blend two rover positions; never spawn a second rover to satisfy the aerial endpoint.\n\n0–1.4s: Rover sits inside tilted white paper panel on deep green page. Paper expands toward camera until white fills screen; edges move naturally beyond viewport.\n1.4–3.5s: Begin one smooth clockwise orbit around rover's right side, through 02 and03 into rear view04. Moss spreads over ground.\n3.5–5s: Rover drives forward AWAY from rear camera with natural wheel motion; greenery thickens and young trees emerge as in05.\n5–6.5s: Without any cut or direction reversal, camera cranes up, recedes and continues the same clockwise arc around toward rover's FRONT. Preserve white roof, all panels, four wheels and sensor. Pass06.\n6.5–7.5s: Pass added06.5 then07 as continuous stages of the same rise and pullback, not cuts. White disappears entirely into dense forest.\n7.5–9.4s: Camera reaches straight overhead. SAME single rover follows existing trail into upper starting position. Its cyan FRONT points toward bottom edge. Camera settles into EXACT END IMAGE: winding thin tan trail left of center, pond to its right, identical trees and rocks. Rover small near top, NOT at bottom or in forest off trail.\n9.4–10s: End frame is the supplied end image, with exact composition, rover position/size/heading, forest, trail and pond. Lock camera and hold. Do not retain a second rover from the close view.\n\nLIGHTING: match end image's controlled daylight and natural green canopy. Light source entirely outside frame. No visible sun disk in any corner, no luminous corner hotspot, no golden wash, no sunburst, no lens flare, no rays or vignette. Top-right remains detailed green trees at normal exposure. Consistent exposure through the aerial transition.\nSharp forest and mechanical details, restrained blur, continuous smooth acceleration/deceleration, realistic parallax, no jumps, no slideshow, no dissolves, no flicker, no text. Reach exact end image before stopping."
+    },
+    {
+      "model": "seedance_2_0_mini",
+      "duration": 10,
+      "resolution": "720p",
+      "bitrate_mode": "high",
+      "aspect_ratio": "16:9",
+      "generate_audio": false,
+      "folder_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+      "medias": [
+        {
+          "role": "start_image",
+          "value": "197d5fe5-417a-4d69-aaf6-0989917eeb80"
+        },
+        {
+          "role": "image",
+          "value": "d9885879-01e7-4780-bd2b-d0ecac3442e5"
+        },
+        {
+          "role": "image",
+          "value": "e94b36c5-8c42-4b4a-a3f5-a6220e6e03ae"
+        }
+      ],
+      "prompt": "10-second silent locked OVERHEAD forest video. START IMAGE is authoritative for the ENTIRE background, light and scale. Additional references09 and10 describe ONLY rover's successive trail positions, never their lighting or camera crops. Use start image's forest, trail, pond, rocks and normal exposed tree detail exactly throughout.\n\nCRITICAL LIGHT: no visible sun disk, no corner sun, no upper-right glow, no amber corner wash, no sunburst, lens flare, rays, bloom, light leaks or bright hotspot. Upper-right corner shows crisp GREEN FOREST with the same exposure as the supplied start image, for every frame. Preserve daytime shadows and ordinary foliage highlights without adding any light source in frame. No changing brightness.\n\nCamera completely stationary: zero pan, tilt, roll, zoom, tracking, shake or drift. Forest, trail, pond, leaves and lighting still. Exactly ONE rover moves along the existing LEFT-side trail, never new or duplicate rovers. Preserve the same small rover scale, white roof/chassis, four black tires, lidar, rear antenna and cyan-eyed FRONT.\n\n0–0.5s exact start image, rover near upper trail, front pointing DOWN.\n0.5–4.5s drive FORWARD down the thin winding trail, top toward bottom, cyan front leading and rear antenna trailing. Wheels roll, body turns smoothly tangent to bends; no backing up, teleport, sideways sliding or leaving dirt path.\n4.5–5.5s pass middle trail position suggested by09. Keep original background and rover size.\n5.5–9.5s continue down trail toward lower position suggested by10; smooth constant progress suitable for website progress meter.\n9.5–10s gently settle on lower trail, entirely inside screen.\n\nThis is the same fixed aerial world as supplied start image. Only rover and its attached contact shadow move. No subject size growth, no water animation, no moving trees, no new trail, no extra sun. Crisp fine detail, stable exposure, continuous smooth motion, no cuts, no fades, no text or graphic progress bar."
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "project": {
+    "project_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+    "default_folder_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+    "workspace_id": "08861a73-4204-434e-9a7b-b230d8850cf9",
+    "name": "Rover forest website transition — 20 second draft"
+  },
+  "references": [
+    {
+      "name": "01_paper-rover-opening.png",
+      "id": "95818644-e803-4d2a-9028-27c0df319369"
+    },
+    {
+      "name": "02_white-frame-front-rover.png",
+      "id": "131d9beb-c92b-4087-9a30-f2cd1997df7f"
+    },
+    {
+      "name": "03_camera-orbit-right-inbetween.png",
+      "id": "2ca465f4-83b2-4e33-92e8-dd826186e8a4"
+    },
+    {
+      "name": "04_rear-view-greenery-ground.png",
+      "id": "827fb4e5-ef59-4b1d-8d79-093b78396042"
+    },
+    {
+      "name": "05_more-greenery-trees-begin.png",
+      "id": "88720dac-b950-4e02-abd8-61de93a86ad1"
+    },
+    {
+      "name": "06_camera-rises-trees-spread.png",
+      "id": "42f51eb2-38e5-4ef1-b93c-0ef08950e0d5"
+    },
+    {
+      "name": "07_high-zoomout-rover-forest.png",
+      "id": "3c59069a-51d0-45b1-ae43-4b4f655cb8c3"
+    },
+    {
+      "name": "08_aerial-rover-starts-downtrail.png",
+      "id": "ddbbaf68-8813-4175-a866-20f6c2377cf5"
+    },
+    {
+      "name": "09_aerial-rover-midtrail.png",
+      "id": "d9885879-01e7-4780-bd2b-d0ecac3442e5"
+    },
+    {
+      "name": "10_aerial-rover-lowertrail.png",
+      "id": "e94b36c5-8c42-4b4a-a3f5-a6220e6e03ae"
+    }
+  ],
+  "jobs": [
+    {
+      "index": 0,
+      "job_id": "d7436a9b-285b-46db-8697-14853c5895d8"
+    },
+    {
+      "index": 1,
+      "job_id": "fc2cee50-d994-486a-b138-1a5728845a5c"
+    }
+  ],
+  "clips": [
+    {
+      "model": "seedance_2_0_mini",
+      "duration": 10,
+      "resolution": "720p",
+      "bitrate_mode": "high",
+      "aspect_ratio": "16:9",
+      "generate_audio": false,
+      "folder_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+      "medias": [
+        {
+          "role": "start_image",
+          "value": "95818644-e803-4d2a-9028-27c0df319369"
+        },
+        {
+          "role": "image",
+          "value": "131d9beb-c92b-4087-9a30-f2cd1997df7f"
+        },
+        {
+          "role": "image",
+          "value": "2ca465f4-83b2-4e33-92e8-dd826186e8a4"
+        },
+        {
+          "role": "image",
+          "value": "827fb4e5-ef59-4b1d-8d79-093b78396042"
+        },
+        {
+          "role": "image",
+          "value": "88720dac-b950-4e02-abd8-61de93a86ad1"
+        },
+        {
+          "role": "image",
+          "value": "42f51eb2-38e5-4ef1-b93c-0ef08950e0d5"
+        },
+        {
+          "role": "image",
+          "value": "3c59069a-51d0-45b1-ae43-4b4f655cb8c3"
+        },
+        {
+          "role": "end_image",
+          "value": "ddbbaf68-8813-4175-a866-20f6c2377cf5"
+        }
+      ],
+      "prompt": "Create a single continuous 10-second premium portfolio website section-transition shot, silent, landscape 16:9. Follow ALL EIGHT supplied storyboard images in their chronological order. The start image is storyboard 01, the six intermediate image references are storyboard 02 through 07 in order, and the end image is storyboard 08. They depict ONE AND THE SAME rover at successive stages, never multiple robots or a collage. Preserve the white mechanical chassis, four rugged black wheels, black face with two cyan ring eyes at the FRONT, circular lidar, and tall antenna at the REAR. Maintain rigid coherent construction.\n\nTIMELINE / CAMERA:\n0.0–1.4s: Begin exactly on the deep emerald webpage composition with the tilted white paper panel and rover on the right (01). Smoothly move the camera into the white panel; the paper edges pass outside the viewport. Resolve seamlessly into the full white front three-quarter rover portrait (02). This is a spatial portal from homepage into the next section, not a cut or slideshow.\n1.4–3.5s: Continue a controlled clockwise camera orbit around the rover's right-hand side, passing the side/rear intermediate view (03) and reaching the rear view (04). Rover stays a single grounded solid object; camera moves around it. Moss and small green ground plants spread organically outward across the white floor.\n3.5–5.0s: Match stage 05. Greenery thickens, saplings rise naturally from the ground, filling the surrounding space. Fine leaves, tire treads, metal edges and contact shadows stay crisp. No ghost images or morphing robot panels.\n5.0–7.0s: Match stage 06. Camera cranes smoothly up and pulls away while continuing its arc, revealing more trees and continuous ground. White recedes completely. Move through the higher forest view (07), revealing the SAME rover's cyan-eyed front pointing toward the lower part of the picture as the camera completes the arc.\n7.0–9.5s: Rise to the exact wide aerial composition of end image 08: winding tan trail in the left portion, dense rich green forest, pond to the right. The single rover is small near the UPPER trail, its cyan-eyed nose facing DOWN the trail toward the bottom edge. Smoothly decelerate ALL camera translation, rotation and zoom.\n9.5–10.0s: Completely settle and hold the exact end-image framing, focus, light and forest geometry. Rover remains at the upper starting position, ready to drive downward in the next shot.\n\nContinuous optically plausible motion, gentle acceleration/deceleration, no abrupt speed changes, no dissolve between different robots. Sharp high-detail foliage and crisp mechanical forms, stable exposure, consistent warm sunlight, minimal motion blur, no focus pumping, no wobble, no melting trees, no duplicate rover, no text, no logos, no UI graphics, no borders. End camera perfectly locked so the next segment can function as a stable website progress indicator."
+    },
+    {
+      "model": "seedance_2_0_mini",
+      "duration": 10,
+      "resolution": "720p",
+      "bitrate_mode": "high",
+      "aspect_ratio": "16:9",
+      "generate_audio": false,
+      "folder_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+      "medias": [
+        {
+          "role": "start_image",
+          "value": "ddbbaf68-8813-4175-a866-20f6c2377cf5"
+        },
+        {
+          "role": "image",
+          "value": "d9885879-01e7-4780-bd2b-d0ecac3442e5"
+        },
+        {
+          "role": "image",
+          "value": "e94b36c5-8c42-4b4a-a3f5-a6220e6e03ae"
+        }
+      ],
+      "prompt": "Generate a single continuous 10-second silent aerial shot for a premium website scroll-progress animation. All THREE supplied references are chronological storyboard stages 08, 09, 10. START IMAGE 08 is the authoritative fixed background and camera. Additional image references 09 and 10 describe ONLY the single rover progressing to middle and lower trail positions. Their different crops, forest arrangements, brightness and rover sizes must NOT cause camera movement or background changes. Maintain image 08's exact trail coordinates, pond position, trees, rocks, framing, light, scale and perspective for EVERY frame.\n\nABSOLUTE CAMERA LOCK: fixed aerial camera from first to last frame, zero pan, zero tilt, zero orbit, zero zoom, zero tracking, zero drift. The winding tan trail stays in the LEFT part of the screen. Forest, pond, leaves, water, shadows and sunlight are completely still. ONLY ONE ROVER and its attached contact shadow move. The rover must remain the same small size throughout; it does not approach the camera.\n\nMOTION TIMELINE:\n0.0–0.5s: Exact starting composition 08, one small white four-wheel rover on the upper trail. Cyan ring eyes mark the FRONT pointing toward the BOTTOM edge; tall antenna is at the trailing REAR.\n0.5–4.5s: Rover drives FORWARD from the TOP toward the BOTTOM of the screen along the center of the existing winding dirt trail. Advance smoothly and visibly through every curve with wheels rolling naturally and nose turning tangent to the road. Do not slide sideways, reverse, teleport, duplicate, or drive uphill. The cyan-eyed FRONT always leads and the antenna REAR follows.\n4.5–5.5s: Pass the middle-trail milestone suggested by reference 09, keeping the initial background and original rover scale unchanged. No pause, shot change or scene transition.\n5.5–9.5s: Continue steadily downward through the next bends toward the lower-trail milestone in reference 10. Travel monotonically toward lower screen positions while steering left/right only to follow the fixed road.\n9.5–10.0s: Ease gently to a stop near the lower trail, still inside the viewport and still facing forward down the road. Hold cleanly for a usable end state.\n\nThis is an elegant moving progress marker within a stationary website section. Favor unmistakable top-to-bottom forward travel and perfect scene stability. High-detail crisp forest textures and sharply defined rover, stable colors and exposure, clean edges, continuous smooth motion, minimal motion blur, no depth-of-field pulsing, no atmospheric movement, no new trail, no changing trees, no animated water, no new objects, no extra robots, no text, no progress-bar overlay, no cuts or dissolves."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "job_id": "89928822-1d26-4f71-bb7c-70e8b6c7ee8b",
+  "params": {
+    "model": "seedance_2_0_mini",
+    "duration": 15,
+    "resolution": "720p",
+    "bitrate_mode": "high",
+    "aspect_ratio": "16:9",
+    "generate_audio": false,
+    "folder_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+    "prompt": "Create one uninterrupted 15-second cinematic website transition starring ONE physical four-wheel exploration rover. This is the visual journey from the homepage into the Work Experience and Education section. In the final aerial phase the fixed winding trail on the LEFT functions as the website timeline, and the SINGLE rover's forward travel DOWN it functions as the user's progress marker. Preserve a stable landscape so website content can be placed beside it later. Do not generate words, dates, labels, milestone graphics, logos or interface panels.\n\nONE SUBJECT, ONE TRAJECTORY: Track the original rover continuously from the opening photograph through the forest into the overhead view. White solid chassis and roof, four rugged black wheels, black suspension, roof lidar, rear antenna, black FRONT face with two cyan ring eyes remain consistent. The front always leads; the rear follows. The camera travels around this same rover; the robot never turns into another subject. As the camera climbs, the original rover gets smaller continuously. An upper-trail reference is a future view of THIS rover, never a new rover to introduce. Never keep the close rover in the foreground while creating an aerial rover. Never crossfade between independently placed robots. Never teleport the rover up the trail to satisfy a reference.\n\nREFERENCES: In order, opening01; front02; side03; rear04; plants05; rising06; extra06.5; higher07; clean overhead08; then progression toward lower trail10. They are landmarks within one moving world, not separate scenes. Extra06.5 and07 are identical files and may be supplied once as one visual landmark spanning both beats. The clean overhead08 defines the locked forest composition and illumination. Lower-trail10 guides position along the path; its different crop is not permission to move the camera. Omit sun-glow reference09. The overhead08 is an intermediate stage, not the final rover position of the complete story.\n\n0–1.5s: Original rover sits on a tilted white paper panel on a deep emerald page. Paper expands smoothly toward viewer until its edges pass outside the screen and white fills the viewport. Camera smoothly begins moving around the rover's right side.\n1.5–3.75s: Continue the same camera arc through right side to rear. Moss and tiny plants spread over ground. The same rover begins rolling forward away from the rear camera, grounded with natural wheel rotation.\n3.75–6s: Greenery thickens and saplings grow. Camera rises and pulls back while continuing one consistent arc around toward the rover's front. Keep the white roof and body unchanged. White recedes completely into dense forest.\n6–7.5s: Pass the extra farther forest view and high zoom-out stage. Camera continues climbing with continuous parallax. Keep tracking the one original rover and its world position; do not spawn a replacement near the trail's top. Reveal the winding trail as one connected route beneath it.\n7.5–9s: Resolve into clean overhead08 composition. By this moment the same rover occupies the UPPER trail, its cyan-eyed nose oriented DOWN the road. Resolve the camera position smoothly, then lock it completely. The lower area of the trail is EMPTY until this single rover reaches it. No second approaching vehicle.\n9–14.25s: Camera and forest are fixed. ONLY the original rover and attached contact shadow move. It drives FORWARD from the upper trail through its middle toward the lower trail, front leading downward. Follow bends with smooth steering, natural wheel rotation and constant apparent rover scale. Screen progress goes top to bottom, never reverse or upward. Forest, trail, pond, rocks, vegetation, lighting and all frame edges stay in exactly the same positions. No zoom or tracking. Keep the trail on the left and the pond to its right.\n14.25–15s: Ease the rover to its lower milestone while staying fully visible and facing down the trail. Hold camera and landscape without resetting the rover to the upper starting point.\n\nControlled daylight with light source outside the image. All four corners contain normally exposed, detailed forest: no visible sun disk, top-right glow, bloom, flare, rays or golden corner wash. Stable color and exposure. Crisp mechanical and leaf detail, restrained blur, smooth acceleration, coherent scale and geometry. No cuts, dissolves, teleportation, duplicate bodies, extra wheels, robot deformation, changing background, water animation or foliage drift. Exactly one visible rover in every frame from beginning to end.",
+    "medias": [
+      {
+        "role": "start_image",
+        "value": "95818644-e803-4d2a-9028-27c0df319369"
+      },
+      {
+        "role": "image",
+        "value": "131d9beb-c92b-4087-9a30-f2cd1997df7f"
+      },
+      {
+        "role": "image",
+        "value": "2ca465f4-83b2-4e33-92e8-dd826186e8a4"
+      },
+      {
+        "role": "image",
+        "value": "827fb4e5-ef59-4b1d-8d79-093b78396042"
+      },
+      {
+        "role": "image",
+        "value": "88720dac-b950-4e02-abd8-61de93a86ad1"
+      },
+      {
+        "role": "image",
+        "value": "42f51eb2-38e5-4ef1-b93c-0ef08950e0d5"
+      },
+      {
+        "role": "image",
+        "value": "4ca6ce25-cb6e-479b-ae52-6a75d7b4764f"
+      },
+      {
+        "role": "image",
+        "value": "197d5fe5-417a-4d69-aaf6-0989917eeb80"
+      },
+      {
+        "role": "end_image",
+        "value": "e94b36c5-8c42-4b4a-a3f5-a6220e6e03ae"
+      }
+    ]
+  },
+  "targetDuration": 20,
+  "method": "One 15-second generation, uniform slowdown to 20 seconds; no independent clip join"
+}

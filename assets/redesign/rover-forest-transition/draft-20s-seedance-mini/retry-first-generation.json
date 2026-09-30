@@ -1,0 +1,25 @@
+{
+  "job_id": "2aa718fd-503a-4f78-a787-83eede581cbb",
+  "model": "seedance_2_0_mini",
+  "duration_seconds": 10,
+  "resolution": "720p",
+  "output": "01-paper-to-forest-retry.mp4",
+  "references": [
+    "01_paper-rover-opening.png",
+    "02_white-frame-front-rover.png",
+    "03_camera-orbit-right-inbetween.png",
+    "04_rear-view-greenery-ground.png",
+    "05_more-greenery-trees-begin.png",
+    "06_camera-rises-trees-spread.png",
+    "Create-a-farther-zoomed-out-version-of-t-065.png",
+    "07_high-zoomout-rover-forest.png",
+    "08_aerial-rover-starts-downtrail.png"
+  ],
+  "qa": {
+    "one_rover_visible_in_sampled_frames": true,
+    "continuous_camera_move_readable": true,
+    "added_frame_06_5_included": true,
+    "aerial_handoff_present": true
+  }
+}
+

@@ -1,0 +1,26 @@
+{
+  "replacementAerialJob": "bdb589a2-0d31-490e-ac54-3d6a98e92cf7",
+  "replacementAerialParams": {
+    "model": "seedance_2_0_mini",
+    "duration": 10,
+    "resolution": "720p",
+    "bitrate_mode": "high",
+    "aspect_ratio": "16:9",
+    "generate_audio": false,
+    "folder_id": "8a04505f-0da1-43e1-803f-97b4fc7d5495",
+    "medias": [
+      {
+        "role": "start_image",
+        "value": "197d5fe5-417a-4d69-aaf6-0989917eeb80"
+      }
+    ],
+    "prompt": "10-second silent locked OVERHEAD forest video. START IMAGE is authoritative for the ENTIRE background, light and scale. There is only ONE reference image; copy its illumination and landscape for every frame. Use start image's forest, trail, pond, rocks and normal exposed tree detail exactly throughout.\n\nCRITICAL LIGHT: no visible sun disk, no corner sun, no upper-right glow, no amber corner wash, no sunburst, lens flare, rays, bloom, light leaks or bright hotspot. Upper-right corner shows crisp GREEN FOREST with the same exposure as the supplied start image, for every frame. Preserve daytime shadows and ordinary foliage highlights without adding any light source in frame. No changing brightness.\n\nCamera completely stationary: zero pan, tilt, roll, zoom, tracking, shake or drift. Forest, trail, pond, leaves and lighting still. Exactly ONE rover moves along the existing LEFT-side trail, never new or duplicate rovers. Preserve the same small rover scale, white roof/chassis, four black tires, lidar, rear antenna and cyan-eyed FRONT.\n\n0–0.5s exact start image, rover near upper trail, front pointing DOWN.\n0.5–4.5s drive FORWARD down the thin winding trail, top toward bottom, cyan front leading and rear antenna trailing. Wheels roll, body turns smoothly tangent to bends; no backing up, teleport, sideways sliding or leaving dirt path.\n4.5–5.5s pass the middle portion of the existing winding trail. Keep original background and rover size.\n5.5–9.5s continue down trail toward the lower portion of that same existing trail; smooth constant progress suitable for website progress meter.\n9.5–10s gently settle on lower trail, entirely inside screen.\n\nThis is the same fixed aerial world as supplied start image. Only rover and its attached contact shadow move. No subject size growth, no water animation, no moving trees, no new trail, no extra sun. Crisp fine detail, stable exposure, continuous smooth motion, no cuts, no fades, no text or graphic progress bar. Absolute lighting requirement: all four corners retain detailed green foliage throughout, with no brightening at the end. Offscreen diffuse daylight, static exposure."
+  },
+  "qa": {
+    "cornerSunAbsentInSampledReplacement": true,
+    "openingDuplicateRoverAround7Seconds": true,
+    "openingEndpoint": "Supplied image scaled to 1280x720; 0.25-second dissolve, then 0.25-second hold",
+    "stitchedDurationSeconds": 20
+  },
+  "status": "Review draft; opening duplicate and aerial background drift remain"
+}
