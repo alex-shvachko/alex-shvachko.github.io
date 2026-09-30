@@ -1,0 +1,345 @@
+{
+  "model": "xai/grok-imagine-image-2.0",
+  "count_requested": 20,
+  "count_downloaded": 0,
+  "images": [
+    {
+      "name": "01-home-opening",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Opening viewport. Closely match the green opening reference: left two-thirds typography 'I build playful intelligence.' with playful in cobalt italic condensed type, subline 'AI, automation & creative technology', prominent blue 'EXPLORE MY WORK' button and tiny pink burst. Right tilted ivory paper frame holding one white rover, five delicate connected labels AI / ML, Web & Apps, Automation, Creative AI, Robotics. Add restrained top navigation Alex Shvachko / Journey / Work / Contact. Elegant breathing room.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "02-home-hover-explore",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Second home moment with the same exact layout and rover. Explore My Work button appears actively hovered with small right arrow, thin underline Journey navigation; curved category label connections draw attention to rover on right. Maintain deep green, tilted paper and cobalt expressive headline, no wholesale redesign. A slim bottom scroll indicator says 'SCROLL TO EXPLORE'.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "03-home-scroll-start",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Beginning of scrolling from the same home: ivory rover paper frame on right grows outward, now occupying 65 percent of viewport; left headline slides partially upward while remaining legible. One rover larger in the growing paper frame. Small blue UI reading 'THE JOURNEY' at top-left marks the transition; no full-screen white yet. Single continuous composition, not a split screen.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "04-white-takeover",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: White takeover moment: ivory paper now fills almost the whole viewport, only thin deep-green edge remains. One rover sits slightly right of center in clean white space, camera three-quarter toward its right side. Sparse first tiny moss sprouts beneath tires; UI has faded to only small dark top navigation. No forest prematurely filling screen, no second rover.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "05-rear-moss-growth",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-0.png",
+        "08_aerial-rover-starts-downtrail.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Transition middle: now view one consistent white-roof rover FROM BEHIND moving forward into growing moss, ferns and young saplings on ivory ground. Camera is a little elevated and orbiting continuously toward front. Green plants occupy lower70percent, upper background softly ivory. A restrained website overlay at right reads 'Learning by building.' with ample clear space, no timeline cards yet.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "06-rising-forest",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "08_aerial-rover-starts-downtrail.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Transition late: forest now surrounds one rover, elevated oblique camera revealing its white roof and front blue eyes while camera pulls upward. Realistic moss rocks young trees; last narrow ivory clearing disappears behind it. Thin trail starts emerging toward upper-left of composition. Tiny 'JOURNEY' navigation and small right-side text 'From curiosity to craft.' integrate with the forest, no cuts implied.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "07-experience-arrival",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "08_aerial-rover-starts-downtrail.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Locked overhead forest arrival. Reproduce aerial reference geometry: narrow winding trail on LEFT around42percentx, pond with fallen log on right. One tiny white rover enters near TOP of trail and faces downward. Website UI uses rightmost45percent with ivory editorial panel 'Experience' and first SAMPLE role, 'AI technologist', short skill tags Python / Automation / Prototyping. Trail is the progress meter, no separate generic progress bar. No sun glare.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "08-first-role-skills",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "08_aerial-rover-starts-downtrail.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Same locked overhead forest composition, exact trail and pond positions, only one small rover slightly farther DOWN trail than previous screen. Right ivory UI shows '01 / SAMPLE EXPERIENCE', heading 'Building useful AI', one concise sentence 'Small tools. Clear outcomes.', crisp tags 'Python', 'LLMs', 'Automation'. Three understated expandable skill rows. Blue active marker links visually to the rover position without drawing across entire forest.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "09-second-role-data",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "08_aerial-rover-starts-downtrail.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Same fixed aerial forest camera and same trail pond, single rover at upper-middle bend traveling down. Experience UI right shows '02 / SAMPLE EXPERIENCE', heading 'Connecting data to decisions', sample Data Engineer role, neatly aligned tags SQL / Pipelines / Machine Learning, small visual pipeline illustration inside one ivory card. Forest remains dominant on left. Pink tiny accent and cobalt active category. No invented results.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "10-education-milestone",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "08_aerial-rover-starts-downtrail.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Same locked aerial forest view. Single rover now at middle-lower bend descending along winding trail. Right UI shows '03 / SAMPLE EDUCATION', large 'Learn. Test. Build.', an ivory education record with 'Sample course / Data engineering' and placeholder dates 'YEAR \u2014 YEAR', three simple learning topics, one subtle blue circular active marker. Readable short text, calm editorial layout.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "11-skills-summary",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "08_aerial-rover-starts-downtrail.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Forest journey final milestone: SAME aerial trail left and pond right, single rover near lower trail clearly facing downward. Right ivory panel heading 'A toolkit for curious problems', compact grouped tags AI / Software / Data / Creative; each group three useful short skill labels. No proficiency percentages. Small 'NEXT: CREATIVE WORK' blue button and tiny pink burst. Keep forest visible with no corner sun or added robot.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "12-forest-to-clouds",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "08_aerial-rover-starts-downtrail.png",
+        "miro-story-ref-1.png",
+        "miro-story-ref-2.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Elegant boundary transition from forest journey into creative portfolio. Lower-left forest and winding trail dissolve into soft cloud layer; no extra rover, one tiny rover at lower trail edge only. Upper and right open into celestial blue-grey cloud sky with warm diffuse golden edges and a subtle classical Renaissance hand silhouette. Short centered 'Ideas become worlds.' ivory condensed heading. UI chrome restrained; no gallery grid until next stage. Show a single coherent transition scene.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "13-creative-portfolio-hero",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-1.png",
+        "miro-story-ref-2.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Creative portfolio arrival, follow reference celestial composition: classical Renaissance figures reaching toward one another across luminous clouds on opposing left/right sides, abundant sky breathing room in center. Heading 'CREATIVE WORK' and subheading 'Ideas / Code / AI / Worlds'. Lower third is ivory angular framed gallery interface with cobalt active All tab, categories AI & Generative / Software / 3D & Environments / Data / Interactive. No rover in this gallery stage, no invented full-length biographies.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "14-creative-gallery-grid",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-2.png",
+        "miro-story-ref-1.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Creative gallery browsing screen strongly matching ivory framed gallery reference. Upper25percent celestial Renaissance cloud art with condensed 'Build what's next.'; lower75percent 3-column2-row sharply structured ivory angular outlined project cards with tiny mono category numbers and cobalt circular arrows. Showcase sample artwork: floating ancient autumn tree island, cinematic character portrait, neon cyberpunk street, data visualization, whimsical interactive robot artwork (only one robot artwork thumbnail), medical pipeline diagram. Each card clearly marked SAMPLE PROJECT. No actual metrics.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "15-creative-category-filter",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-2.png",
+        "miro-story-ref-1.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Same creative gallery design, now category AI & Generative selected as cobalt pill. Four large refined project cards in2x2 grid, cream angular outlines with dark navy offset edges. Artworks include cinematic character portrait, surreal botanical architecture, an abstract generative sculpture, dreamlike floating orchard cloud world. Short SAMPLE PROJECT labels, category tags and blue arrow. Clouds/classical sculpture header preserved. Lots of balanced whitespace, no rover.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "16-project-detail",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-2.png",
+        "miro-story-ref-1.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Project-detail website viewport consistent with cream angular blue-pink system. Small 'BACK TO WORK' arrow top-left; left60percent one stunning floating autumn tree island among clouds artwork, right40percent cream editorial project narrative 'Worlds from ideas', 'SAMPLE PROJECT', short Scope / Process / Tools sections with concise labels, blue 'VIEW EXPERIMENT' CTA. Header tiny Alex Shvachko and Work active. No invented achievement metrics. This is one project focus page, not gallery.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "17-about-personal-artifacts",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-2.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: About section after creative portfolio: warm ivory background and dark navy condensed 'A few things I keep coming back to.' Personal artifacts organized like a curated studio table, not generic biography: notebook sketch of a forest path, small printed floating-tree artwork, blue sticky note 'Learn / Build / Repeat', camera photograph and a tiny white rover model (exactly one rover). Right concise 'ABOUT ALEX' paragraph 'Curiosity connects the work.' with small 'SAMPLE LAYOUT' label. Pink tape and cobalt fine details, meaningful generous whitespace.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "18-contact-transition",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-2.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Late-page transition toward contact. Celestial cloud image recedes into upper third, rest ivory canvas with angular dark ink edge. Enormous condensed heading 'What could we build together?' on left and one subtle pink burst. Right simple conversation starters 'AI tools', 'Creative systems', 'Useful experiments' as clean outlined chips; blue 'START A CONVERSATION' button. No form clutter or invented availability. Minimal persistent header and tiny next-section arrow.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "19-final-contact-page",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-2.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Final contact viewport following Miro reference's white angular interface and Build what's next art direction. Top40percent celestial Renaissance reaching figures amid clouds framed with clean edges, bottom ivory page large condensed 'Build what's next.' to left. Right one generous cobalt button 'SAY HELLO' with arrow, text 'alex.shvachko.wrk@gmail.com', small GitHub / LinkedIn links. Pink accent burst, tiny monospace 'IDEAS \u2192 VISUALS \u2192 IMPACT'. No fake form, no metrics, no rover, calm legible closing.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    },
+    {
+      "name": "20-final-quiet-footer",
+      "model": "xai/grok-imagine-image-2.0",
+      "reference_files": [
+        "miro-story-ref-2.png",
+        "miro-story-ref-0.png"
+      ],
+      "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Last scroll screen, quiet closing after full journey. Predominantly ivory canvas, top narrow celestial cloud strip consistent with preceding page. Large dark navy condensed 'Keep exploring.' anchored left with a single cobalt 'BACK TO TOP' button; email alex.shvachko.wrk@gmail.com centered right alongside GitHub / LinkedIn links. Fine bottom rule, small Alex Shvachko wordmark, tiny pink burst and mono 'EXPLORE / LEARN / BUILD / REPEAT'. No giant dashboard grid, no rover, no generic bio. Clear final page and generous whitespace.",
+      "settings": {
+        "quality": "medium",
+        "resolution": "2k",
+        "aspect_ratio": "16:9"
+      },
+      "state": "rejected",
+      "http_status": 403,
+      "error": "{\"detail\":\"not_enough_credits\"}"
+    }
+  ]
+}

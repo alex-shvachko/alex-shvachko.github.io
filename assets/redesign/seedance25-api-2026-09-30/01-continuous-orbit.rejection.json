@@ -1,0 +1,4 @@
+{
+  "http_status": 403,
+  "error": "{\"detail\":\"not_enough_credits\"}"
+}

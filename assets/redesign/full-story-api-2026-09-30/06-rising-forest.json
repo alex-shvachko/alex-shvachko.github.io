@@ -1,0 +1,17 @@
+{
+  "name": "06-rising-forest",
+  "model": "xai/grok-imagine-image-2.0",
+  "reference_files": [
+    "08_aerial-rover-starts-downtrail.png",
+    "miro-story-ref-0.png"
+  ],
+  "prompt": "Create one polished 16:9 desktop website SCREEN DESIGN CONCEPT, edge-to-edge screenshot with no browser chrome, not a collage of multiple screens. This is one ordered moment in Alex Shvachko's continuous scroll portfolio. Preserve reference art direction: forest-green #073d2b, ivory #f6f3e9, cobalt #0055ff, tiny hot-pink graphic bursts, dark navy ink, condensed oversized expressive headings and small monospace navigation. Precise readable short English labels, generous hierarchy and margins, exquisite sharp details, coherent high-end agency finish. Sample employment and education labels must say SAMPLE; do not invent real degrees, employers, awards or metrics. The interface is an explanatory still concept; UI belongs to the separate website layer, never to the generated background video. Rover is always the same white four-wheel rugged robot with a white roof, black sensors and two blue eye rings. Whenever a rover is visible show EXACTLY ONE rover, no second robot, no reflections suggesting another rover. Forest lighting is diffuse natural light, no sun disk or bright corner flare. Do not add captions describing the prompt, watermarks, illegible paragraphs, extra unrelated screens or generic SaaS dashboards. Render the requested single stage, not the whole story at once. \n\nSPECIFIC FRAME: Transition late: forest now surrounds one rover, elevated oblique camera revealing its white roof and front blue eyes while camera pulls upward. Realistic moss rocks young trees; last narrow ivory clearing disappears behind it. Thin trail starts emerging toward upper-left of composition. Tiny 'JOURNEY' navigation and small right-side text 'From curiosity to craft.' integrate with the forest, no cuts implied.",
+  "settings": {
+    "quality": "medium",
+    "resolution": "2k",
+    "aspect_ratio": "16:9"
+  },
+  "state": "rejected",
+  "http_status": 403,
+  "error": "{\"detail\":\"not_enough_credits\"}"
+}
