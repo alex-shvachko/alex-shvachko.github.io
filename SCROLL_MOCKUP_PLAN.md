@@ -1,5 +1,11 @@
 # Rover scroll portfolio mockup
 
+## Homepage reference update — September 30
+
+Homepage design follows the image in Miro's ChatGPT Space, Screen 1 - Home: https://miro.com/app/board/uXjVHnk0h-g=/?moveToWidget=3458764685147206844 . Condensed Anton headline, electric-blue italic playful, pink accent, blue Explore my work CTA and five topic labels are live HTML. The existing clean rover footage stays underneath and the entire hero UI fades with the opening chapter. Anton is stored locally with its OFL license. Desktop and 390px mobile inspected; no horizontal overflow, and CTA navigation into the forest still works. Screenshot: assets/motion/miro-home-desktop.png.
+
+Space listing still returns Access forbidden, but direct board search and canvas/image reading now work. No Miro board content was modified for this homepage request.
+
 The homepage is a static GitHub Pages mockup. Experience, education and project copy is explicitly sample content, pending replacement with approved portfolio content.
 
 The clean single-take video remains free of baked-in UI. HTML contains the navigation, headings, milestones and contact link. One sticky scene maps the entire journey's scroll position to video time, including reverse scrolling. On phones the full landscape frame stays visible above the content so the trail is not cropped away. No autoplay or looping.
