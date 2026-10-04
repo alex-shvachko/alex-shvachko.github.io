@@ -1,0 +1,31 @@
+{
+  "desktop": [
+    {
+      "contactTop": 547,
+      "direction": "up",
+      "gap": 0,
+      "loopPaused": true,
+      "opacity": "1",
+      "time": 2.958333,
+      "y": 11846
+    },
+    {
+      "contactTop": 1336,
+      "direction": "up",
+      "gap": 0,
+      "loopPaused": true,
+      "opacity": "0",
+      "time": 0,
+      "y": 11057
+    },
+    {
+      "contactTop": 547,
+      "direction": "down",
+      "gap": 0,
+      "loopPaused": true,
+      "opacity": "1",
+      "time": 2.958333,
+      "y": 11846
+    }
+  ]
+}

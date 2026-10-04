@@ -1,0 +1,22 @@
+.opening .scroll-link span,.build-link svg,.project-arrow svg,.contact-arrow,.contact-go svg,.contact-message>svg{transition:transform .18s cubic-bezier(.16,1,.3,1)}
+.project-filters button,.project-sort select,#motion-toggle{transition:background-color .12s,color .12s}
+#progress,#journey-count,#project-results{font-variant-numeric:tabular-nums}
+html{scroll-padding-top:0}
+.journey-live .journey-card:focus-within{opacity:1;transform:none;clip-path:polygon(6% 0,94% 0,100% 12%,100% 86%,94% 100%,6% 100%,0 86%,0 12%)}
+.journey-live .journey-card:focus-within h3{clip-path:none}
+@media(prefers-reduced-motion:no-preference){
+  body:not(.motion-reduced) .opening .scroll-link:is(:hover,:focus-visible) span{transform:translateX(4px)}
+  body:not(.motion-reduced) .build-link:is(:hover,:focus-visible) svg{transform:translate(2px,-2px)}
+  body:not(.motion-reduced) .project-tile summary:is(:hover,:focus-visible) .project-arrow svg{transform:translateX(3px)}
+  body:not(.motion-reduced) .project-tile details[open] summary:is(:hover,:focus-visible) .project-arrow svg{transform:rotate(90deg) translateX(3px)}
+  body:not(.motion-reduced) #contact a:is(:hover,:focus-visible) :is(.contact-arrow,.contact-go svg),body:not(.motion-reduced) .contact-message:is(:hover,:focus-visible)>svg{transform:translateX(3px)}
+  body:not(.motion-reduced) .project-filters button:active{transform:translateY(1px)}
+}
+.motion-reduced .opening .scroll-link{transition:none}
+.motion-reduced .opening .scroll-link:hover{transform:rotate(-.7deg)}
+.motion-reduced .chapter-go:hover{transform:none}
+.motion-reduced .journey-card h3{transition:none}
+.motion-reduced .project-image img{transition:none}
+.motion-reduced .project-tile:hover .project-image img{transform:none}
+.motion-reduced .project-arrow svg{transition:none}
+@media(prefers-reduced-motion:reduce){.project-arrow svg{transition:none}.chapter-go:hover{transform:none}}

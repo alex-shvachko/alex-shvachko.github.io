@@ -1,0 +1,551 @@
+[
+  {
+    "label": "optimized-contact-entry",
+    "journeyCount": "05 / 05",
+    "overflow": false,
+    "scroll": 13508,
+    "transitions": [
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "0",
+        "top": -3545
+      },
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "0",
+        "top": -1115
+      }
+    ],
+    "videos": [
+      {
+        "duration": 7.75,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/Part1Final-scroll.mp4",
+        "time": 0.00057
+      },
+      {
+        "duration": 8.541667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/journey-scroll.mp4",
+        "time": 8.5
+      },
+      {
+        "duration": null,
+        "paused": true,
+        "ready": 0,
+        "src": "assets/motion/projects-transition-scroll.mp4",
+        "time": 0
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-transition-scroll.mp4",
+        "time": 0
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-sky-scroll.mp4",
+        "time": 2.583333
+      }
+    ],
+    "viewport": [
+      2560,
+      1215
+    ]
+  },
+  {
+    "label": "optimized-transition-reverse",
+    "journeyCount": "05 / 05",
+    "overflow": false,
+    "scroll": 12718,
+    "transitions": [
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "0",
+        "top": -2755
+      },
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "1",
+        "top": -325
+      }
+    ],
+    "videos": [
+      {
+        "duration": 7.75,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/Part1Final-scroll.mp4",
+        "time": 0.00057
+      },
+      {
+        "duration": 8.541667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/journey-scroll.mp4",
+        "time": 8.5
+      },
+      {
+        "duration": null,
+        "paused": true,
+        "ready": 0,
+        "src": "assets/motion/projects-transition-scroll.mp4",
+        "time": 0
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-transition-scroll.mp4",
+        "time": 3.25
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-sky-scroll.mp4",
+        "time": 2.583333
+      }
+    ],
+    "viewport": [
+      2560,
+      1215
+    ]
+  },
+  {
+    "label": "optimized-transition-forward",
+    "journeyCount": "05 / 05",
+    "overflow": false,
+    "scroll": 13204,
+    "transitions": [
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "0",
+        "top": -3241
+      },
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "1",
+        "top": -811
+      }
+    ],
+    "videos": [
+      {
+        "duration": 7.75,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/Part1Final-scroll.mp4",
+        "time": 0.00057
+      },
+      {
+        "duration": 8.541667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/journey-scroll.mp4",
+        "time": 8.5
+      },
+      {
+        "duration": null,
+        "paused": true,
+        "ready": 0,
+        "src": "assets/motion/projects-transition-scroll.mp4",
+        "time": 0
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-transition-scroll.mp4",
+        "time": 4.291666
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-sky-scroll.mp4",
+        "time": 2.583333
+      }
+    ],
+    "viewport": [
+      2560,
+      1215
+    ]
+  },
+  {
+    "label": "optimized-first-transition",
+    "journeyCount": "05 / 05",
+    "overflow": false,
+    "scroll": 10167,
+    "transitions": [
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "1",
+        "top": -204
+      },
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "0",
+        "top": 2226
+      }
+    ],
+    "videos": [
+      {
+        "duration": 7.75,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/Part1Final-scroll.mp4",
+        "time": 0.00057
+      },
+      {
+        "duration": 8.541667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/journey-scroll.mp4",
+        "time": 8.5
+      },
+      {
+        "duration": null,
+        "paused": true,
+        "ready": 0,
+        "src": "assets/motion/projects-transition-scroll.mp4",
+        "time": 0
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-transition-scroll.mp4",
+        "time": 4.291666
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-sky-scroll.mp4",
+        "time": 2.583333
+      }
+    ],
+    "viewport": [
+      2560,
+      1215
+    ]
+  },
+  {
+    "label": "optimized-first-transition-settled",
+    "journeyCount": "05 / 05",
+    "overflow": false,
+    "scroll": 10167,
+    "transitions": [
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "1",
+        "top": -204
+      },
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "0",
+        "top": 2226
+      }
+    ],
+    "videos": [
+      {
+        "duration": 7.75,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/Part1Final-scroll.mp4",
+        "time": 0.00057
+      },
+      {
+        "duration": 8.541667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/journey-scroll.mp4",
+        "time": 8.5
+      },
+      {
+        "duration": 5,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/projects-transition-scroll.mp4",
+        "time": 2.875
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-transition-scroll.mp4",
+        "time": 4.291666
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-sky-scroll.mp4",
+        "time": 2.583333
+      }
+    ],
+    "viewport": [
+      2560,
+      1215
+    ]
+  },
+  {
+    "label": "optimized-first-transition-reverse",
+    "journeyCount": "05 / 05",
+    "overflow": false,
+    "scroll": 9559,
+    "transitions": [
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "1",
+        "top": 404
+      },
+      {
+        "height": 1215,
+        "hidden": false,
+        "opacity": "0",
+        "top": 2834
+      }
+    ],
+    "videos": [
+      {
+        "duration": 7.75,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/Part1Final-scroll.mp4",
+        "time": 0.00057
+      },
+      {
+        "duration": 8.541667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/journey-scroll.mp4",
+        "time": 8.5
+      },
+      {
+        "duration": 5,
+        "paused": true,
+        "ready": 1,
+        "src": "assets/motion/projects-transition-scroll.mp4",
+        "time": 1.666666
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-transition-scroll.mp4",
+        "time": 4.291666
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-sky-scroll.mp4",
+        "time": 2.583333
+      }
+    ],
+    "viewport": [
+      2560,
+      1215
+    ]
+  },
+  {
+    "label": "optimized-mobile-contact",
+    "journeyCount": "05 / 05",
+    "overflow": false,
+    "scroll": 7457,
+    "transitions": [
+      {
+        "height": 844,
+        "hidden": false,
+        "opacity": "0",
+        "top": -4052.46875
+      },
+      {
+        "height": 844,
+        "hidden": false,
+        "opacity": "0.7411",
+        "top": -743.921875
+      }
+    ],
+    "videos": [
+      {
+        "duration": 7.75,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/Part1Final-scroll.mp4",
+        "time": 0.00057
+      },
+      {
+        "duration": 8.541667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/journey-scroll.mp4",
+        "time": 8.5
+      },
+      {
+        "duration": 5,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/projects-transition-scroll.mp4",
+        "time": 1.666666
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-transition-scroll.mp4",
+        "time": 4.833333
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-sky-scroll.mp4",
+        "time": 2.583333
+      }
+    ],
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  {
+    "label": "optimized-mobile-sky-forward",
+    "journeyCount": "05 / 05",
+    "overflow": false,
+    "scroll": 8048,
+    "transitions": [
+      {
+        "height": 844,
+        "hidden": false,
+        "opacity": "0",
+        "top": -4643.46875
+      },
+      {
+        "height": 844,
+        "hidden": false,
+        "opacity": "0",
+        "top": -1334.921875
+      }
+    ],
+    "videos": [
+      {
+        "duration": 7.75,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/Part1Final-scroll.mp4",
+        "time": 0.00057
+      },
+      {
+        "duration": 8.541667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/journey-scroll.mp4",
+        "time": 8.5
+      },
+      {
+        "duration": 5,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/projects-transition-scroll.mp4",
+        "time": 1.666666
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-transition-scroll.mp4",
+        "time": 4.833333
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-sky-scroll.mp4",
+        "time": 2.875
+      }
+    ],
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  {
+    "label": "optimized-mobile-sky-reverse",
+    "journeyCount": "05 / 05",
+    "overflow": false,
+    "scroll": 7710,
+    "transitions": [
+      {
+        "height": 844,
+        "hidden": false,
+        "opacity": "0",
+        "top": -4305.46875
+      },
+      {
+        "height": 844,
+        "hidden": false,
+        "opacity": "0",
+        "top": -996.921875
+      }
+    ],
+    "videos": [
+      {
+        "duration": 7.75,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/Part1Final-scroll.mp4",
+        "time": 0.00057
+      },
+      {
+        "duration": 8.541667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/journey-scroll.mp4",
+        "time": 8.5
+      },
+      {
+        "duration": 5,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/projects-transition-scroll.mp4",
+        "time": 1.666666
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 4,
+        "src": "assets/motion/contact-transition-scroll.mp4",
+        "time": 4.833333
+      },
+      {
+        "duration": 5.166667,
+        "paused": true,
+        "ready": 1,
+        "src": "assets/motion/contact-sky-scroll.mp4",
+        "time": 2.166666
+      }
+    ],
+    "viewport": [
+      390,
+      844
+    ]
+  }
+]

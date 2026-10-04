@@ -1,0 +1,58 @@
+[
+  {
+    "source": "assets/motion/projects-background-4k.png",
+    "optimized": "assets/motion/projects-background-4k.webp",
+    "beforeBytes": 8578557,
+    "afterBytes": 5155332,
+    "decodedRgba": "identical"
+  },
+  {
+    "source": "assets/motion/extracted-frames/2ndscene-draft-first-frame.png",
+    "optimized": "assets/motion/extracted-frames/2ndscene-draft-first-frame.webp",
+    "beforeBytes": 1581858,
+    "afterBytes": 1083694,
+    "decodedRgba": "identical"
+  },
+  {
+    "source": "assets/img/robot-postman-oak.png",
+    "optimized": "assets/img/robot-postman-oak.webp",
+    "beforeBytes": 303499,
+    "afterBytes": 188364,
+    "decodedRgba": "identical"
+  },
+  {
+    "source": "assets/img/final_disney.png",
+    "optimized": "assets/img/final_disney.webp",
+    "beforeBytes": 2688086,
+    "afterBytes": 2121316,
+    "decodedRgba": "identical"
+  },
+  {
+    "source": "assets/img/automations.png",
+    "optimized": "assets/img/automations.webp",
+    "beforeBytes": 3309616,
+    "afterBytes": 1295678,
+    "decodedRgba": "identical"
+  },
+  {
+    "source": "assets/img/my_results.png",
+    "optimized": "assets/img/my_results.webp",
+    "beforeBytes": 146729,
+    "afterBytes": 54424,
+    "decodedRgba": "identical"
+  },
+  {
+    "source": "assets/img/robot-atom.png",
+    "optimized": "assets/img/robot-atom.webp",
+    "beforeBytes": 194449,
+    "afterBytes": 84598,
+    "decodedRgba": "identical"
+  },
+  {
+    "source": "assets/img/rag_Screen.png",
+    "optimized": "assets/img/rag_Screen.webp",
+    "beforeBytes": 119699,
+    "afterBytes": 51520,
+    "decodedRgba": "identical"
+  }
+]

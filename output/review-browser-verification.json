@@ -1,0 +1,48 @@
+{
+  "contactDesktopFinal": {
+    "body": "motion-ready",
+    "gap": 0,
+    "opacity": "2.01396e-06",
+    "paused": false,
+    "ready": 4,
+    "time": 0.119848,
+    "top": 0.1875,
+    "y": 12964
+  },
+  "contactMobileFinal": {
+    "opacity": "7.9309e-07",
+    "overflow": -15,
+    "paused": false,
+    "time": 1.581385,
+    "top": 0.078125,
+    "videoHeight": 844
+  },
+  "mobileReverseFinal": {
+    "opacity": "1",
+    "skyPaused": true,
+    "time": 2.541666,
+    "top": 422.078125,
+    "y": 6291
+  },
+  "mobileForwardFinal": {
+    "opacity": "1",
+    "time": 2.541666,
+    "top": 422.078125,
+    "y": 6291
+  },
+  "reverseDesktop": {
+    "opacity": "1",
+    "skyPaused": true,
+    "time": 3.125,
+    "top": 547.1875,
+    "y": 12417
+  },
+  "reverseMobile": {
+    "opacity": "1",
+    "paused": true,
+    "time": 0.25,
+    "top": 665.078125,
+    "y": 6048
+  },
+  "evidence": "Chrome desktop and emulated 390x844 viewport; keyboard and native wheel; no physical touch or FPS measurement"
+}
