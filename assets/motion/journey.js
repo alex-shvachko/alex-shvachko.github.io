@@ -22,13 +22,13 @@
   }
   const toggle = document.querySelector('#motion-toggle');
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
-  const mobile = matchMedia('(max-width:700px)');
+  const mobile = matchMedia('(max-width:1100px)');
   const groups = [
-    ['Python', 'Algorithms', 'SQL', 'Mathematics', 'Computer Science', 'Problem Solving'],
-    ['TypeScript', 'React', 'Next.js', 'Node.js', 'Git', 'CI/CD'],
-    ['AI & LLMs', 'Computer Vision', 'Generative AI', 'PyTorch', 'Research', 'Prompt Engineering'],
-    ['Data Analysis', 'Machine Learning', 'Data Visualization', 'Pandas', 'Cloud (AWS)', 'Docker'],
-    ['3D & WebGL', 'Blender', 'Three.js', 'Creative Tech', 'UI/UX', 'Animation']
+    ['Claude Code', 'Codex', 'LoRA Training', 'Orchestration', 'Multimodal AI', 'Automation'],
+    ['Security', 'Data Engineering', 'Deep Learning', 'AI Safety', 'LLM Fine-tuning', 'Databases'],
+    ['Pattern Mining', 'SQL Server', 'Data Warehouse', 'Time Series', 'SLURM', 'MapReduce'],
+    ['AI Education', 'Communication', 'Presentations', 'Networking', 'Leadership', 'Management'],
+    ['Coding Education', 'Development Basics', 'Human Connection', 'Mathematics', 'Computer Science', 'Python']
   ];
   // Five longitude sectors cover the whole sphere, including its rear hemisphere.
   const tags = groups.flatMap((labels, group) => labels.map((label, row) => {

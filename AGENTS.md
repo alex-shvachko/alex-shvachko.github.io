@@ -27,3 +27,22 @@ $requestHeaders = @{ Authorization = "Key $env:HF_API_KEY" }
 For the official Python SDK, its documented credential environment is `HF_KEY` (complete key:secret). Set it from `HF_API_KEY` in the local process if using that SDK. Environment files are not loaded automatically by PowerShell or by the static site.
 
 Before committing, run `git check-ignore .env` and verify `.env` is absent from `git ls-files`. Commit only the instructions, ignore rules and empty example.
+
+## Shared portfolio development guidance
+
+AGENTS.md and CLAUDE.md share the same instructions. Work in this repository for
+Git and preview commands. Keep the current portfolio implementation as the base;
+older unique pages, assets, design skills and graph reports have been preserved.
+Use the current README and preview scripts for the current site's architecture
+and commands. Do not apply the old monochrome style or old file layout over the
+current motion design merely because a preserved legacy document describes it.
+
+Custom design skills imported from the earlier portfolio remain under .claude/
+and .agents/. Check their relevance and current compatibility before design work.
+The older Git history is retained at
+refs/archive/consolidation-2026-10-10/website-redesign. Its original working tree,
+including uncommitted files, is preserved under
+E:\Backups\ProjectConsolidation-2026-10-10\WebsiteRedesign.
+Existing graphify reports describe the older site; verify them against current
+code before treating them as current architecture. Use a knowledge graph only
+when the current task needs it.

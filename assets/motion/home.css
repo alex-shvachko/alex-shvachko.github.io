@@ -21,3 +21,4 @@ body:not(.motion-ready) .story>.scene{position:absolute;top:0;left:0;width:100%;
 
 .scene{background-image:url("first-scene-poster.jpg")}
 .scene-caption{opacity:var(--opening-ui-opacity,1)}
+.opening .intro{max-width:34ch;white-space:normal;font-size:clamp(.875rem,.65rem + .75vw,1.25rem)}

@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Personal Python Coaching — Alex Shvachko</title>
+  <link rel="icon" type="image/jpeg" href="../../assets/img/logo.jpg">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script defer src="../../assets/js/particles-config.js"></script>
+  <style>
+    :root{
+      --surface: rgba(255,255,255,0.96);
+      --surface-strong: rgba(255,255,255,0.98);
+      --ink: #0f172a;
+      --accent: #0f172a;
+    }
+    body{
+      margin:0;
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:#ffffff;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    #particles-js { position: fixed; width: 100%; height: 100%; background: #ffffff; z-index: -1; pointer-events: none; }
+    
+    header{
+      padding: clamp(18px, 4vw, 32px) 0;
+    }
+    .coaching-main{
+      width:min(100%, 1120px);
+      margin:0 auto clamp(80px, 12vw, 140px);
+      padding:0 clamp(20px, 6vw, 40px);
+      display:grid;
+      gap: clamp(56px, 10vw, 88px);
+    }
+    .hero{
+      padding: clamp(20px, 6vw, 36px) 0;
+      text-align:center;
+      display:grid;
+      gap: clamp(20px, 4vw, 28px);
+    }
+    .hero h1{
+      margin:0;
+      font-family: var(--font-heading);
+      font-size: clamp(44px, 7vw, 68px);
+      letter-spacing: -0.6px;
+    }
+    .hero p{
+      margin:0 auto;
+      max-width: 780px;
+      font-size: clamp(18px, 2.4vw, 22px);
+      color: rgba(15,23,42,0.75);
+      line-height:1.7;
+    }
+    .hero .pricing{
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px;
+      justify-content:center;
+      font-weight:600;
+      letter-spacing:0.04em;
+    }
+    .hero .pricing span{
+      padding:12px 20px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,0.14);
+      background: rgba(255,255,255,0.85);
+      font-size:0.95rem;
+    }
+    .section-card{
+      padding: clamp(24px, 5vw, 40px) 0;
+      display:grid;
+      gap: clamp(18px, 4vw, 26px);
+      border-bottom:1px solid rgba(15,23,42,0.08);
+    }
+    .section-card h2{
+      margin:0;
+      font-family: var(--font-heading);
+      font-size: clamp(26px, 4vw, 36px);
+    }
+    .section-grid{
+      display:grid;
+      gap: clamp(18px, 3vw, 24px);
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+    .pill-card{
+      padding: 20px;
+      border-radius: 20px;
+      border:1px solid rgba(15,23,42,0.1);
+      background: rgba(255,255,255,0.85);
+      display:grid;
+      gap: 12px;
+    }
+    .pill-card h3{
+      margin:0;
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      letter-spacing:0.08em;
+      text-transform: uppercase;
+      color: rgba(15,23,42,0.7);
+    }
+    .pill-card p,
+    .pill-card ul{
+      margin:0;
+      font-size:0.98rem;
+      color: rgba(15,23,42,0.74);
+      line-height:1.65;
+    }
+    .bullets{
+      list-style:none;
+      padding:0;
+      margin:0;
+      display:grid;
+      gap:12px;
+    }
+    .bullets li{
+      position:relative;
+      padding-left:20px;
+    }
+    .bullets li::before{
+      content:'•';
+      position:absolute;
+      left:0;
+      color: rgba(15,23,42,0.65);
+    }
+    .cta{
+      text-align:center;
+      display:grid;
+      gap:18px;
+    }
+    .cta p{
+      margin:0 auto;
+      max-width: 620px;
+      color: rgba(15,23,42,0.72);
+      line-height:1.7;
+    }
+    .cta a{
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      padding:14px 28px;
+      border-radius: 999px;
+      border:1px solid rgba(15,23,42,0.18);
+      background: var(--ink);
+      color:#fff;
+      text-decoration:none;
+      font-weight:600;
+      letter-spacing:0.06em;
+      text-transform:uppercase;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .cta a:hover{
+      transform: translateY(-3px);
+      box-shadow:0 18px 36px rgba(15,23,42,0.22);
+    }
+    footer{
+      text-align:center;
+      padding: clamp(32px, 6vw, 48px) 0;
+      color: rgba(15,23,42,0.5);
+      font-size:0.8rem;
+    }
+    @media (max-width: 640px){
+      .hero h1{
+        font-size: clamp(36px, 10vw, 48px);
+      }
+      .hero .pricing span{
+        width:100%;
+        justify-content:center;
+      }
+      .section-card{
+        border-radius: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="particles-js"></div>
+
+  <header>
+    <nav class="nav" style="display:flex; justify-content:center; width:100%;">
+      <div class="links" style="justify-content:center;">
+        <a class="pill" href="../../">Home</a>
+        <a class="pill" href="../../projects/">Projects</a>
+        <a class="pill active" href="../">Services</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="coaching-main">
+    <section class="hero">
+      <h1>Personal Python Coaching</h1>
+      <p>I am Alex Shvachko, an experienced Python instructor who has taught the language at a professional level for years. This student-priced sprint delivers personalised lessons aligned to your goals and condenses the full first-year academic syllabus into 15 focused hours so you can pass university exams with confidence.</p>
+      <div class="pricing">
+        <span>120 ILS / hour</span>
+        <span>15-hour intensive · Exam-grade coverage</span>
+        <span>Bonus: Guided entry into practical AI workflows</span>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2>Why learn with me</h2>
+      <div class="section-grid">
+        <article class="pill-card">
+          <h3>University-focused</h3>
+          <p>Former Data Science Instructor at Cyber Education Center: mentored 40+ learners, cut dropout by 20%, and specialise in translating academic syllabi into exam-ready drills.</p>
+        </article>
+        <article class="pill-card">
+          <h3>Exam pass rate</h3>
+          <p>3+ years of private tutoring with dozens of students from BGU, Sami Shamoon, and Technion clearing midterms, finals, and lab checkpoints on the first attempt.</p>
+        </article>
+        <article class="pill-card">
+          <h3>Industry credibility</h3>
+          <p>Hands-on experience building pipelines that process 1B+ rows, integrating Python with C#, SQL Server, Docker, GitHub Actions, and cloud tooling—so your answers align with real-world expectations as well as academic grading.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2>How the coaching runs</h2>
+      <div class="section-grid">
+        <article class="pill-card">
+          <h3>Diagnostic kickoff</h3>
+          <p>We map your curriculum, upcoming exam windows, and weak spots. The lesson plan aligns topic-by-topic with the rubric, so no hour is spent outside the grading scope.</p>
+        </article>
+        <article class="pill-card">
+          <h3>Hands-on sessions</h3>
+          <p>Timed problem solving, live debugging, and past exam walkthroughs. Every concept ends with an assessment-style question you solve under gentle pressure.</p>
+        </article>
+        <article class="pill-card">
+          <h3>Between-session support</h3>
+          <p>Annotated solutions, cheat sheets, and curated practice exams let you rehearse independently—complete with grading rubrics so you know what earns full credit.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card cta">
+      <h2>Ready to compress your learning curve?</h2>
+      <p>Tell me which exam you are targeting and when. I will reply with a tailored outline and an exact breakdown of how we cover the full syllabus in 15 focused hours.</p>
+      <a href="../../#contact-info">Book an exam prep call</a>
+    </section>
+  </main>
+
+  <footer>
+    c 2025 Alex Shvachko.
+  </footer>
+</body>
+</html>
+
+
