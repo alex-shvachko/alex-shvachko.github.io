@@ -39,7 +39,7 @@
     render();
   }));
   sort.addEventListener('change', render);
-  tiles.forEach(tile => tile.querySelector('details').addEventListener('toggle', event => {
+  tiles.forEach(tile => tile.querySelector('details')?.addEventListener('toggle', event => {
     if (event.target.open) tile.querySelector('.project-description').animate([{ opacity: .35 }, { opacity: 1 }], { duration: reduced() ? 100 : 180, easing: 'ease-out' });
   }));
   preference.addEventListener('change', cancelMotion);
