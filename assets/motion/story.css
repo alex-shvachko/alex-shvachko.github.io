@@ -1,0 +1,43 @@
+/* One continuous film pinned behind the whole page (portfolio.js maps scroll to film time). */
+body{background:#0a1712}
+.scene,.motion-ready .scene{position:fixed;inset:0;z-index:0;height:100svh;min-height:0;background:#e9e9e7 url('film/film-poster.jpg') center/cover no-repeat}
+.scene video,.motion-ready .scene video{position:absolute;inset:0;top:0;width:100%;height:100%;object-fit:cover}
+.film-scrim{position:absolute;inset:0;background:#06121a;opacity:var(--scrim,0);pointer-events:none}
+.shade,.motion-ready .shade{display:block;opacity:var(--home-ui,1)}
+.scene-caption{opacity:var(--home-ui,1)}
+main>section,main>footer{position:relative;z-index:1}
+.motion-ready .chapters{margin-top:0}
+.opening{will-change:opacity,transform}
+
+/* 01 Home: the film opens on a white studio, so the hero UI is dark. */
+body>header,.opening .intro,.scene-caption,.opening h1{color:#071331}
+.shade,.motion-ready .shade{background:linear-gradient(90deg,#f4f4f2b8,#f4f4f266 38%,transparent 58%)}
+#motion-toggle{background:#071331;border-color:#071331;color:#fff}
+
+/* 02 Journey: transparent stage over the film; its UI fades and drifts in and out. */
+.journey,.journey-stage{background:transparent}
+.journey-stage::before{background:linear-gradient(180deg,#081c1840,transparent 30%,transparent 70%,#081c1866);opacity:var(--journey-ui,1)}
+/* The card wrapper only fades: a translate on it would become the cards' containing block. */
+.journey-stage>*{opacity:var(--journey-ui,1)}
+.journey-stage>:not(.journey-cards),.journey-card{translate:0 var(--journey-shift,0px)}
+
+/* 03 Projects and 04 About: transparent over the film. */
+.projects-screen,#contact{background:transparent}
+.projects-screen::before{background:none}
+.projects-intro{background:#0d243380;backdrop-filter:blur(3px)}
+
+/* Section blocks rise in as they enter the viewport and settle back out as they leave. */
+.motion-ready .reveal{opacity:0;translate:0 34px;scale:.985;transition:opacity .7s cubic-bezier(.16,1,.3,1) var(--reveal-delay,0ms),translate .9s cubic-bezier(.16,1,.3,1) var(--reveal-delay,0ms),scale .9s cubic-bezier(.16,1,.3,1) var(--reveal-delay,0ms)}
+.motion-ready .reveal.in-view{opacity:1;translate:0 0;scale:1}
+
+/* Phones: full-bleed film; keep the rover in shot on the opening frames. */
+@media(max-width:700px){
+  .scene video,.motion-ready .scene video{object-position:68% center}
+  .scene,.motion-ready .scene{background-position:68% center}
+  /* Copy sits on a frosted card at the bottom; the rover and its topic labels stay in view above. */
+  .opening,.motion-ready .opening{display:flex;flex-direction:column;justify-content:flex-end;height:100svh;min-height:0;padding:0 5vw 9svh}
+  .hero-copy{padding:22px 20px;background:#f4f4f2d9;backdrop-filter:blur(6px);box-shadow:0 10px 40px #07133126}
+  .opening h1,.motion-ready .opening h1{font-size:clamp(48px,14vw,72px);margin-bottom:14px}
+  .opening .intro{font-size:13px;margin-bottom:18px}
+  .hero-topics{top:16svh;height:38svh}
+}

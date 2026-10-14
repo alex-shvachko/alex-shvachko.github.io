@@ -2,24 +2,7 @@
   const section = document.querySelector('.journey');
   const cards = [...section.querySelectorAll('.journey-card')];
   const sphere = section.querySelector('.tag-sphere');
-  const video = section.querySelector('#journey-video');
-  const source = video.querySelector('source');
-  const homeVideo = document.querySelector('#rover');
-  let loaded = false, warm = false, lastTime = 0;
-  function loadVideo() {
-    if (loaded || reduced || !warm || section.getBoundingClientRect().top >= innerHeight * 2) return;
-    // Wait for the opening's scroll geometry before preloading the next scene.
-    if (scrollY < innerHeight * .1 && homeVideo.readyState < 2 && !homeVideo.error) return;
-    loaded = true;
-    source.src = source.dataset.src;
-    video.preload = 'auto';
-    video.load();
-  }
-  let targetTime = 0;
-  function seekVideo() {
-    if (!visible || document.hidden || reduced || video.seeking || video.readyState < 1) return;
-    if (Math.abs(video.currentTime - targetTime) > .035) video.currentTime = targetTime;
-  }
+  let lastTime = 0;
   const toggle = document.querySelector('#motion-toggle');
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
   const mobile = matchMedia('(max-width:1100px)');
@@ -66,12 +49,7 @@
     const p = mobile.matches
       ? clamp((innerHeight * .4 - rect.top) / (section.offsetHeight - innerHeight * .4), 0, 1)
       : clamp(-rect.top / (section.offsetHeight - innerHeight), 0, 1);
-    if (!reduced && Number.isFinite(video.duration)) {
-      targetTime = p * Math.max(0, video.duration - 1 / 24);
-      seekVideo();
-    }
-    const videoProgress = !reduced && Number.isFinite(video.duration) ? video.currentTime / video.duration : p;
-    const next = Math.min(4, Math.floor(videoProgress * 5));
+    const next = Math.min(4, Math.floor(p * 5));
     if (next !== active) {
       active = next;
       cards.forEach((card, i) => { card.classList.toggle('revealed', reduced || i <= active); card.classList.toggle('active', i === active); });
@@ -85,13 +63,12 @@
     paint();
     if (!reduced && rect.top < innerHeight && rect.bottom > 0 && Math.abs(desiredRotation - rotation) > .001) schedule();
   }
-  function schedule() { loadVideo(); if (visible && !frame) frame = requestAnimationFrame(update); }
+  function schedule() { if (visible && !frame) frame = requestAnimationFrame(update); }
   function configure() {
     reduced = preference.matches || toggle.getAttribute('aria-pressed') === 'true';
     section.classList.toggle('journey-live', !reduced);
     section.classList.toggle('journey-reduced', reduced);
     if (reduced) offset = 0;
-    loadVideo();
     active = -1; schedule();
   }
   cards.forEach((card, i) => card.querySelector('button').addEventListener('click', () => {
@@ -110,11 +87,6 @@
   sphere.addEventListener('pointerup', () => { drag = null; offset = 0; schedule(); });
   sphere.addEventListener('pointercancel', () => { drag = null; offset = 0; schedule(); });
   sphere.addEventListener('lostpointercapture', () => { drag = null; offset = 0; schedule(); });
-  video.addEventListener('loadeddata', schedule);
-  video.addEventListener('seeked', () => { seekVideo(); schedule(); });
-  video.addEventListener('canplay', seekVideo);
-  homeVideo.addEventListener('loadeddata', loadVideo);
-  new IntersectionObserver(([entry]) => { warm = entry.isIntersecting; loadVideo(); }, { rootMargin: '100% 0px' }).observe(section);
   new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; lastTime = 0; schedule(); }).observe(section);
   addEventListener('scroll', schedule, { passive: true });
   addEventListener('resize', schedule);
