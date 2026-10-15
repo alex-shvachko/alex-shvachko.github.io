@@ -4,10 +4,9 @@
   const tiles = [...grid.querySelectorAll('.project-tile')];
   const filters = [...section.querySelectorAll('[data-filter]')];
   const sort = section.querySelector('#project-sort');
-  const toggle = document.querySelector('#motion-toggle');
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
   let category = 'All';
-  const reduced = () => preference.matches || toggle.getAttribute('aria-pressed') === 'true';
+  const reduced = () => preference.matches;
   function cancelMotion() { tiles.forEach(tile => tile.getAnimations({ subtree: true }).forEach(animation => animation.cancel())); }
   function render() {
     cancelMotion();
@@ -43,14 +42,13 @@
     if (event.target.open) tile.querySelector('.project-description').animate([{ opacity: .35 }, { opacity: 1 }], { duration: reduced() ? 100 : 180, easing: 'ease-out' });
   }));
   preference.addEventListener('change', cancelMotion);
-  toggle.addEventListener('click', cancelMotion);
   document.addEventListener('visibilitychange', () => { if (document.hidden) cancelMotion(); });
   let scheduled = false;
   let previousProgress = -1;
   let previousReduced;
   function updateEntry() {
     scheduled = false;
-    const reduced = preference.matches || toggle.getAttribute('aria-pressed') === 'true';
+    const reduced = preference.matches;
     const progress = reduced ? 1 : Math.min(1, Math.max(0, (innerHeight - section.getBoundingClientRect().top) / (innerHeight * .5)));
     if (progress === previousProgress && reduced === previousReduced) return;
     previousProgress = progress;
@@ -66,6 +64,5 @@
   addEventListener('scroll', scheduleEntry, { passive: true });
   addEventListener('resize', scheduleEntry);
   preference.addEventListener('change', scheduleEntry);
-  toggle.addEventListener('click', scheduleEntry);
   scheduleEntry();
 })();

@@ -3,7 +3,6 @@
   const cards = [...section.querySelectorAll('.journey-card')];
   const sphere = section.querySelector('.tag-sphere');
   let lastTime = 0;
-  const toggle = document.querySelector('#motion-toggle');
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
   const mobile = matchMedia('(max-width:1100px)');
   const groups = [
@@ -65,7 +64,7 @@
   }
   function schedule() { if (visible && !frame) frame = requestAnimationFrame(update); }
   function configure() {
-    reduced = preference.matches || toggle.getAttribute('aria-pressed') === 'true';
+    reduced = preference.matches;
     section.classList.toggle('journey-live', !reduced);
     section.classList.toggle('journey-reduced', reduced);
     if (reduced) offset = 0;
@@ -92,6 +91,5 @@
   addEventListener('resize', schedule);
   document.addEventListener('visibilitychange', () => { lastTime = 0; schedule(); });
   preference.addEventListener('change', configure);
-  toggle.addEventListener('click', configure);
   configure();
 })();

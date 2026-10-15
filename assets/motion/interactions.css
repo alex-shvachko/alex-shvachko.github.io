@@ -1,5 +1,5 @@
 .opening .scroll-link span,.project-arrow svg,.contact-arrow,.contact-go svg,.contact-message>svg{transition:transform .18s cubic-bezier(.16,1,.3,1)}
-.project-filters button,.project-sort select,#motion-toggle{transition:background-color .12s,color .12s}
+.project-filters button,.project-sort select{transition:background-color .12s,color .12s}
 #progress,#journey-count,#project-results{font-variant-numeric:tabular-nums}
 html{scroll-padding-top:0}
 .journey-live .journey-card:focus-within{opacity:1;transform:none;clip-path:polygon(6% 0,94% 0,100% 12%,100% 86%,94% 100%,6% 100%,0 86%,0 12%)}

@@ -6,32 +6,39 @@
   const scene = document.querySelector('.scene');
   const opening = document.querySelector('.opening');
   const counter = document.querySelector('#progress');
-  const header = document.querySelector('body > header');
   const journeyStage = document.querySelector('.journey-stage');
-  const toggle = document.querySelector('#motion-toggle');
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
-  // Film time where Home, Journey, Projects and About begin, then the film's end.
-  const CUTS = [0, 8, 18, 24, 30];
+  const FILM_END = 30;
+  // The God and Adam frame the film holds on while the projects are browsed.
+  const HOLD = 23.2;
   // Overlay strength over film time: none on the white studio, deeper over busy footage.
-  const SCRIM = [[0, 0], [6.5, 0], [9, .22], [17, .22], [19, .36], [23, .36], [25, .12], [30, .18]];
+  const SCRIM = [[0, 0], [6.5, 0], [9, .22], [17, .22], [19, .3], [HOLD, .3], [25, .12], [30, .18]];
   const frameDuration = 1 / 24;
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const smooth = value => value * value * (3 - 2 * value);
-  let enabled = false, manualReduce = false, raf = 0, shown = 0, last = 0, entrance = [];
+  let enabled = false, raf = 0, shown = 0, last = 0, entrance = [];
 
-  function boundaries() {
-    const top = selector => document.querySelector(selector).getBoundingClientRect().top + scrollY;
-    const end = Math.max(0, document.documentElement.scrollHeight - innerHeight);
-    const contact = Math.max(top('#projects'), end - document.querySelector('#contact').offsetHeight);
-    return [0, top('#experience'), top('#projects'), contact, end];
+  // Scroll position -> film time keys. Home plays the studio and forest, the pinned Journey
+  // plays the aerial path, God and Adam form as Projects rises and then hold while the grid
+  // is browsed, and the sky opens into space through the gap before About.
+  function keys() {
+    const projects = document.querySelector('#projects');
+    const top = element => element.getBoundingClientRect().top + scrollY;
+    const vh = innerHeight;
+    const start = top(projects), end = Math.max(0, document.documentElement.scrollHeight - vh);
+    const list = [[0, 0], [top(document.querySelector('#experience')), 8], [start - vh, 17.5],
+      [start - vh * .15, HOLD], [start + projects.offsetHeight - vh * .55, HOLD + .3], [end, FILM_END]];
+    for (let i = 1; i < list.length; i++) list[i][0] = Math.max(list[i][0], list[i - 1][0]);
+    return list;
   }
   function filmTime() {
-    const b = boundaries();
-    const y = clamp(scrollY, 0, b[4]);
-    let i = 0;
-    while (i < 3 && y >= b[i + 1]) i++;
-    const span = b[i + 1] - b[i];
-    return CUTS[i] + (span > 0 ? clamp((y - b[i]) / span, 0, 1) : 1) * (CUTS[i + 1] - CUTS[i]);
+    const list = keys();
+    const y = clamp(scrollY, 0, list[list.length - 1][0]);
+    for (let i = 1; i < list.length; i++) {
+      const [y0, t0] = list[i - 1], [y1, t1] = list[i];
+      if (y <= y1) return y1 > y0 ? t0 + (t1 - t0) * (y - y0) / (y1 - y0) : t1;
+    }
+    return FILM_END;
   }
   function scrimAt(t) {
     for (let i = 1; i < SCRIM.length; i++) {
@@ -46,12 +53,12 @@
     opening.style.opacity = String(smooth(home));
     opening.style.transform = `translateY(${(1 - home) * -40}px)`;
     opening.inert = home === 0;
-    header.style.opacity = String(smooth(home));
     scene.style.setProperty('--home-ui', String(smooth(home)));
-    counter.textContent = `${String(Math.round(t / CUTS[4] * 100)).padStart(2, '0')} / 100`;
+    counter.textContent = `${String(Math.round(t / FILM_END * 100)).padStart(2, '0')} / 100`;
     // Journey UI arrives with the stage and leaves before the stage scrolls away.
     const rect = journeyStage.parentElement.getBoundingClientRect();
-    const arrive = clamp((innerHeight * .85 - rect.top) / (innerHeight * .6), 0, 1);
+    // Arrives as the camera lifts into the aerial shot rather than over the forest floor.
+    const arrive = clamp((innerHeight * .35 - rect.top) / (innerHeight * .55), 0, 1);
     const leave = clamp((rect.bottom - innerHeight * .35) / (innerHeight * .5), 0, 1);
     const journey = smooth(Math.min(arrive, leave));
     journeyStage.style.setProperty('--journey-ui', String(journey));
@@ -77,16 +84,14 @@
     if (!raf) raf = requestAnimationFrame(frame);
   }
   function configure() {
-    const reduced = preference.matches || manualReduce;
+    const reduced = preference.matches;
     document.body.classList.toggle('motion-reduced', reduced);
     if (reduced) { entrance.forEach(animation => animation.cancel()); entrance = []; }
     enabled = Number.isFinite(video.duration) && !reduced && !video.error;
     document.body.classList.toggle('motion-ready', enabled);
-    toggle.setAttribute('aria-pressed', String(reduced));
-    toggle.textContent = reduced ? 'Motion reduced' : 'Reduce motion';
     if (!enabled) {
       video.pause();
-      [opening, header].forEach(element => { element.style.opacity = ''; element.style.transform = ''; });
+      opening.style.opacity = ''; opening.style.transform = '';
       opening.inert = false;
       scene.style.removeProperty('--home-ui');
       scene.style.removeProperty('--scrim');
@@ -109,7 +114,6 @@
   video.addEventListener('error', configure);
   source.addEventListener('error', configure);
   preference.addEventListener('change', configure);
-  toggle.addEventListener('click', () => { manualReduce = !manualReduce; configure(); });
   addEventListener('scroll', schedule, { passive: true });
   addEventListener('resize', schedule);
   document.addEventListener('visibilitychange', () => {
@@ -119,20 +123,37 @@
   configure();
 
   // Reveal blocks of the later sections as they scroll into view, and hide them again on the way out.
-  const reveal = new IntersectionObserver(entries => entries.forEach(entry =>
-    entry.target.classList.toggle('in-view', entry.isIntersecting)), { rootMargin: '0px 0px -8% 0px', threshold: .08 });
-  document.querySelectorAll('.projects-intro, .projects-controls, .project-tile, .projects-bottom, .contact-panel > section, .contact-bottom')
-    .forEach((element, i) => { element.classList.add('reveal'); element.style.setProperty('--reveal-delay', `${(i % 3) * 70}ms`); reveal.observe(element); });
+  // Headings wait until the film has settled behind them; tiles cascade in reading order.
+  const toggleView = entries => entries.forEach(entry => entry.target.classList.toggle('in-view', entry.isIntersecting));
+  const late = new IntersectionObserver(toggleView, { rootMargin: '0px 0px -28% 0px', threshold: 0 });
+  const early = new IntersectionObserver(toggleView, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
+  document.querySelectorAll('.projects-intro, .projects-controls, .contact-panel > section, .contact-bottom').forEach((element, i) => {
+    element.classList.add('reveal'); element.style.setProperty('--reveal-delay', `${(i % 3) * 110}ms`); late.observe(element);
+  });
+  document.querySelectorAll('.project-tile, .projects-bottom').forEach((element, i) => {
+    element.classList.add('reveal'); element.style.setProperty('--reveal-delay', `${(i % 3) * 90}ms`); early.observe(element);
+  });
 
   if (!preference.matches && scrollY < innerHeight * .1) {
     const ease = 'cubic-bezier(.16,1,.3,1)';
+    // Headline rises out of a slot, the spark snaps on, then the copy and caption settle in.
+    // The topic callouts follow from connectors.js once the headline has landed.
+    const rise = (element, delay) => element.animate([
+      { opacity: 0, translate: '0 26px', filter: 'blur(8px)' },
+      { opacity: 1, translate: '0 0', filter: 'blur(0)' }
+    ], { duration: 900, delay, easing: ease, fill: 'backwards' });
     entrance = [
       opening.querySelector('h1').animate([
-        { opacity: .25, clipPath: 'inset(0 0 25% 0)' },
-        { opacity: 1, clipPath: 'inset(0)' }
-      ], { duration: 650, easing: ease }),
-      ...[opening.querySelector('.intro'), opening.querySelector('.scroll-link'), opening.querySelector('.hero-topics')].map((element, i) =>
-        element.animate([{ opacity: .35 }, { opacity: 1 }], { duration: 350, delay: 100 + i * 65, easing: ease }))
+        { clipPath: 'inset(100% -10% -10% -10%)', translate: '0 48px' },
+        { clipPath: 'inset(-10% -10% -10% -10%)', translate: '0 0' }
+      ], { duration: 1100, easing: ease, fill: 'backwards' }),
+      opening.querySelector('.spark').animate([
+        { opacity: 0, scale: '0' },
+        { opacity: 1, scale: '1' }
+      ], { duration: 650, delay: 700, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'backwards' }),
+      rise(opening.querySelector('.intro'), 320),
+      rise(opening.querySelector('.scroll-link'), 450),
+      rise(scene.querySelector('.scene-caption'), 900)
     ];
   }
 })();
