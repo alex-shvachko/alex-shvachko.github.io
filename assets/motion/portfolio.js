@@ -104,8 +104,10 @@
     video.play().then(() => { video.pause(); schedule(); }).catch(schedule);
     schedule();
   }
-  // Smaller screens get the lighter 720p cut.
-  source.src = matchMedia('(max-width: 900px)').matches ? source.dataset.srcSmall : source.dataset.src;
+  // Smaller screens get the lighter 720p cut; 4K-class displays get the 2160p cut unless data is saved.
+  const devicePixels = Math.max(screen.width, screen.height) * devicePixelRatio;
+  source.src = matchMedia('(max-width: 900px)').matches ? source.dataset.srcSmall
+    : devicePixels >= 2560 && !navigator.connection?.saveData ? source.dataset.srcLarge : source.dataset.src;
   video.load();
   video.addEventListener('loadedmetadata', configure);
   video.addEventListener('seeked', schedule);
