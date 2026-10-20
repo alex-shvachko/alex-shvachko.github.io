@@ -22,11 +22,9 @@
 
 .card-meta{padding-right:30px;gap:8px}.card-meta i{width:24px;flex-shrink:0}.card-meta span{white-space:nowrap}
 
-/* Timeline: two aligned card columns joined to one spine (connectors.js draws it from layout). */
+/* Each card reaches out to the trail in the film and stops on it (connectors.js tracks the trail). */
 .journey-links{overflow:visible}
 .journey-links path{fill:none;stroke-linecap:round}
-.journey-links .spine{stroke:#f7f8e466;stroke-width:2;stroke-dasharray:2 7}
-.journey-links .spine-progress{stroke:#f7f8e4;stroke-width:2.5;transition:stroke-dashoffset 1.1s cubic-bezier(.16,1,.3,1)}
 .journey-links .link{stroke:#f7f8e4;stroke-width:2;stroke-dashoffset:var(--length,0);transition:stroke-dashoffset .7s cubic-bezier(.16,1,.3,1) .15s}
 .journey-links .link.on{stroke-dashoffset:0}
 .journey-links circle{fill:#0759ff;stroke:#fff;stroke-width:3;transform-box:fill-box;transform-origin:center;transform:scale(0);transition:transform .55s cubic-bezier(.34,1.56,.64,1),fill .3s}
@@ -38,3 +36,21 @@
 @media(min-width:1101px) and (max-height:760px){.journey-card:nth-child(1){top:10%}.journey-card:nth-child(2){top:25%}.journey-card:nth-child(3){top:40%}.journey-card:nth-child(4){top:55%}.journey-card:nth-child(5){top:70%}}
 @media(max-width:1100px){.journey-links{display:none}.journey-live .journey-card:not(.revealed){filter:none}.journey-card.active{transform:none}}
 @media(prefers-reduced-motion:reduce){.journey-links *{transition:none!important}.journey-card.active{transform:none}}
+
+/* Stacked (phone and tablet) layout: no skill globe; the full skills list follows the cards. */
+@media(max-width:1100px){
+  .skills-orbit{order:1;width:auto;height:auto;margin:30px 0 0;background:none;border:0;border-radius:0;box-shadow:none}
+  .sphere-rim,.tag-sphere,.sphere-caption,.skills-orbit>.journey-spark{display:none}
+  .skills-directory{position:static;pointer-events:auto}
+  .skills-directory summary{position:static;transform:none;margin:0 auto}
+  .skills-list{position:static;margin-top:16px;overflow:visible}
+  .journey-footer{order:2;position:relative;left:auto;right:auto;bottom:auto;margin-top:30px}
+}
+@media(min-width:701px) and (max-width:1100px){
+  .journey-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .journey-card,.journey-card:nth-child(n){width:auto}
+}
+@media(max-width:1100px){
+  .skills-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px 28px}
+  .skills-group+.skills-group{margin-top:0;padding-top:0;border-top:0}
+}

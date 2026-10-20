@@ -41,3 +41,12 @@ main>section,main>footer{position:relative;z-index:1}
   .opening h1,.motion-ready .opening h1{font-size:clamp(48px,14vw,72px);margin-bottom:14px}
   .opening .intro{font-size:13px;margin-bottom:18px}
 }
+
+/* Landscape phones: the hero has to fit a short screen beside the rover. */
+@media(orientation:landscape) and (max-height:500px){
+  .opening,.motion-ready .opening{padding:10svh 5vw 0}
+  .opening h1,.motion-ready .opening h1{font-size:clamp(40px,15svh,72px);margin-bottom:12px}
+  .opening .intro{margin-bottom:14px}
+  .opening .scroll-link{min-width:250px;padding:13px 22px;font-size:11px}
+  .scene-caption{bottom:14px}
+}

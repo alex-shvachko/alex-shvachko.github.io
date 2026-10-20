@@ -129,10 +129,10 @@
   const toggleView = entries => entries.forEach(entry => entry.target.classList.toggle('in-view', entry.isIntersecting));
   const late = new IntersectionObserver(toggleView, { rootMargin: '0px 0px -28% 0px', threshold: 0 });
   const early = new IntersectionObserver(toggleView, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
-  document.querySelectorAll('.projects-intro, .projects-controls, .contact-panel > section, .contact-bottom').forEach((element, i) => {
+  document.querySelectorAll('.projects-intro, .projects-controls, .contact-panel > section').forEach((element, i) => {
     element.classList.add('reveal'); element.style.setProperty('--reveal-delay', `${(i % 3) * 110}ms`); late.observe(element);
   });
-  document.querySelectorAll('.project-tile, .projects-bottom').forEach((element, i) => {
+  document.querySelectorAll('.project-tile, .projects-bottom, .contact-bottom').forEach((element, i) => {
     element.classList.add('reveal'); element.style.setProperty('--reveal-delay', `${(i % 3) * 90}ms`); early.observe(element);
   });
 

@@ -30,12 +30,16 @@
   });
   let introStart = 0, heroFrame = 0;
 
-  // Maps a film-frame point to the scene, following object-fit: cover and object-position.
-  function framePoint(x, y) {
+  // How the film frame sits in the scene, following object-fit: cover and object-position.
+  function cover() {
     const width = scene.clientWidth, height = scene.clientHeight;
     const scale = Math.max(width / FRAME_W, height / FRAME_H);
     const [px = .5, py = .5] = getComputedStyle(video).objectPosition.split(' ').map(value => parseFloat(value) / 100).map(value => Number.isFinite(value) ? value : .5);
-    return [(width - FRAME_W * scale) * px + x * scale, (height - FRAME_H * scale) * py + y * scale];
+    return { scale, ox: (width - FRAME_W * scale) * px, oy: (height - FRAME_H * scale) * py };
+  }
+  function framePoint(x, y) {
+    const { scale, ox, oy } = cover();
+    return [ox + x * scale, oy + y * scale];
   }
   function layoutHero() {
     const width = topics.clientWidth, height = topics.clientHeight, margin = 14;
@@ -99,66 +103,68 @@
     heroFrame = requestAnimationFrame(heroTick);
   }
 
-  // 02 Journey: each card is tied to a dot on one spine; the spine fills up to the active card.
+  // 02 Journey: each card reaches out to the dirt trail in the aerial shot and stops where it
+  // touches it. The trail moves with the film, so links follow the frame actually shown.
   const stage = document.querySelector('.journey-stage');
   const journeySvg = stage.querySelector('.journey-links');
   const cards = [...stage.querySelectorAll('.journey-card')];
   const wide = matchMedia('(min-width:1101px)');
-  const spine = create('path', { class: 'spine' });
-  const progress = create('path', { class: 'spine-progress' });
-  journeySvg.append(spine, progress);
   const links = cards.map(card => {
     const link = create('path', { class: 'link' });
     const dot = create('circle', { r: 7 });
     journeySvg.append(link, dot);
-    return { card, link, dot, y: 0 };
+    return { card, link, dot };
   });
-  let spineTop = 0, spineLength = 0;
-  function layoutJourney() {
-    if (!wide.matches) return;
-    const width = stage.clientWidth, height = stage.clientHeight;
-    journeySvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    const centre = card => card.offsetLeft + card.offsetWidth / 2;
-    const left = links.filter(({ card }) => centre(card) < width * .35), right = links.filter(item => !left.includes(item));
-    if (!width || !left.length || !right.length) return;
-    const leftEdge = Math.max(...left.map(({ card }) => card.offsetLeft + card.offsetWidth));
-    const rightEdge = Math.min(...right.map(({ card }) => card.offsetLeft));
-    const x = (leftEdge + rightEdge) / 2;
-    links.forEach(item => {
-      const { card } = item;
-      item.y = card.offsetTop + card.offsetHeight / 2;
-      const edge = left.includes(item) ? card.offsetLeft + card.offsetWidth : card.offsetLeft;
-      item.link.setAttribute('d', `M${edge} ${item.y}H${x}`);
-      const length = Math.abs(x - edge);
-      item.link.style.strokeDasharray = `${length} ${length}`;
-      item.link.style.setProperty('--length', String(length));
-      item.dot.setAttribute('cx', x); item.dot.setAttribute('cy', item.y);
-    });
-    spineTop = links[0].y;
-    spineLength = links[links.length - 1].y - spineTop;
-    [spine, progress].forEach(path => path.setAttribute('d', `M${x} ${spineTop}V${spineTop + spineLength}`));
-    progress.style.strokeDasharray = `${spineLength} ${spineLength}`;
-    paintJourney();
+  // Trail edges per film time and frame band, tracked offline by tools/trail-track.py.
+  let trail = null;
+  fetch('assets/motion/film/trail.json').then(response => response.ok ? response.json() : null).then(data => { trail = data; paintJourney(); }).catch(() => {});
+  // [left, right] trail edge in frame pixels at film time t and frame row y; null where untracked.
+  function trailAt(t, y) {
+    const { start, step, band, frames } = trail;
+    const last = frames[0].length / 2 - 1;
+    const f = (t - start) / step, i = Math.floor(f);
+    const row = clamp(y / band - .5, 0, last), j = Math.floor(row);
+    const sample = (frame, b) => frames[frame] && frames[frame][b * 2] >= 0 ? [frames[frame][b * 2], frames[frame][b * 2 + 1]] : null;
+    const mix = (a, b, k) => a && b ? [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k] : null;
+    const at = frame => mix(sample(frame, j), sample(frame, Math.min(j + 1, last)), row - j);
+    return mix(at(i), at(i + 1), f - i);
   }
   function paintJourney() {
-    let reached = -1;
-    links.forEach((item, i) => {
-      const revealed = item.card.classList.contains('revealed');
-      if (revealed) reached = i;
-      item.link.classList.toggle('on', revealed);
-      item.dot.classList.toggle('on', revealed);
-      item.dot.classList.toggle('active', item.card.classList.contains('active'));
+    const width = stage.clientWidth, height = stage.clientHeight;
+    if (!wide.matches || !width) return;
+    journeySvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const box = stage.getBoundingClientRect();
+    // The links layer drifts with the cards while the stage UI arrives and leaves.
+    const shift = parseFloat(stage.style.getPropertyValue('--journey-shift')) || 0;
+    const { scale, ox, oy } = cover();
+    links.forEach(({ card, link, dot }) => {
+      const y = card.offsetTop + card.offsetHeight / 2;
+      const left = card.offsetLeft, right = left + card.offsetWidth;
+      const edges = trail && trailAt(video.currentTime, (y + box.top + shift - oy) / scale);
+      const [l, r] = edges ? edges.map(x => ox + x * scale - box.left) : [0, 0];
+      // A card whose trail runs underneath it already touches it, so it gets no link.
+      const reachable = Boolean(edges) && (r < left || l > right);
+      if (reachable) {
+        const from = r < left ? left : right, to = r < left ? r : l, length = Math.abs(to - from);
+        link.setAttribute('d', `M${from.toFixed(1)} ${y}H${to.toFixed(1)}`);
+        link.style.strokeDasharray = `${length} ${length}`;
+        link.style.setProperty('--length', String(length));
+        dot.setAttribute('cx', to.toFixed(1)); dot.setAttribute('cy', y);
+      }
+      const on = reachable && card.classList.contains('revealed');
+      link.classList.toggle('on', on);
+      dot.classList.toggle('on', on);
+      dot.classList.toggle('active', on && card.classList.contains('active'));
     });
-    const filled = reached < 0 ? 0 : links[reached].y - spineTop;
-    progress.style.strokeDashoffset = String(spineLength - filled);
   }
   new MutationObserver(paintJourney).observe(stage.querySelector('.journey-cards'), { subtree: true, attributes: true, attributeFilter: ['class'] });
+  video.addEventListener('seeked', paintJourney);
 
-  function layout() { layoutHero(); layoutJourney(); }
+  function layout() { layoutHero(); paintJourney(); }
   let scrollFrame = 0;
-  addEventListener('scroll', () => { if (!scrollFrame) scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; paintHero(); }); }, { passive: true });
+  addEventListener('scroll', () => { if (!scrollFrame) scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; paintHero(); paintJourney(); }); }, { passive: true });
   new ResizeObserver(layout).observe(document.documentElement);
-  new ResizeObserver(layoutJourney).observe(stage);
+  new ResizeObserver(paintJourney).observe(stage);
   wide.addEventListener('change', layout);
   preference.addEventListener('change', () => { layout(); startHero(); });
   document.fonts.ready.then(layout);
