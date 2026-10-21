@@ -16,7 +16,6 @@
       : (Number(a.dataset.order) - Number(b.dataset.order)) * (sort.value === 'reverse' ? -1 : 1));
     ordered.forEach(tile => { tile.hidden = category !== 'All' && tile.dataset.category !== category; grid.append(tile); });
     const count = tiles.filter(tile => !tile.hidden).length;
-    section.querySelector('#project-results').textContent = `${String(count).padStart(2, '0')} EXPLORATIONS / MOCK SHOWCASE`;
     const positions = tiles.filter(tile => !tile.hidden).map(tile => [tile, tile.getBoundingClientRect()]);
     positions.forEach(([tile, rect]) => {
       if (rect.bottom <= 0 || rect.top >= innerHeight) return;

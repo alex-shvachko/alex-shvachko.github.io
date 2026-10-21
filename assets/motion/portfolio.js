@@ -5,7 +5,6 @@
   const source = video.querySelector('source');
   const scene = document.querySelector('.scene');
   const opening = document.querySelector('.opening');
-  const counter = document.querySelector('#progress');
   const journeyStage = document.querySelector('.journey-stage');
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
   const FILM_END = 30;
@@ -25,7 +24,9 @@
     const projects = document.querySelector('#projects');
     const top = element => element.getBoundingClientRect().top + scrollY;
     const vh = innerHeight;
-    const start = top(projects), end = Math.max(0, document.documentElement.scrollHeight - vh);
+    // The film reaches its last frame as the final screen first appears and holds there, so
+    // scrolling around on that screen never steps through the tail's near-identical frames.
+    const start = top(projects), end = Math.max(0, Math.min(top(document.querySelector('#contact')) - vh, document.documentElement.scrollHeight - vh));
     const list = [[0, 0], [top(document.querySelector('#experience')), 8], [start - vh, 17.5],
       [start - vh * .15, HOLD], [start + projects.offsetHeight - vh * .55, HOLD + .3], [end, FILM_END]];
     for (let i = 1; i < list.length; i++) list[i][0] = Math.max(list[i][0], list[i - 1][0]);
@@ -54,7 +55,6 @@
     opening.style.transform = `translateY(${(1 - home) * -40}px)`;
     opening.inert = home === 0;
     scene.style.setProperty('--home-ui', String(smooth(home)));
-    counter.textContent = `${String(Math.round(t / FILM_END * 100)).padStart(2, '0')} / 100`;
     // Journey UI arrives with the stage and leaves before the stage scrolls away.
     const rect = journeyStage.parentElement.getBoundingClientRect();
     // Arrives as the camera lifts into the aerial shot rather than over the forest floor.
@@ -97,7 +97,6 @@
       scene.style.removeProperty('--scrim');
       journeyStage.style.removeProperty('--journey-ui');
       journeyStage.style.removeProperty('--journey-shift');
-      counter.textContent = 'EXPLORE AT YOUR PACE';
       return;
     }
     shown = filmTime();
@@ -154,8 +153,7 @@
         { opacity: 1, scale: '1' }
       ], { duration: 650, delay: 700, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'backwards' }),
       rise(opening.querySelector('.intro'), 320),
-      rise(opening.querySelector('.scroll-link'), 450),
-      rise(scene.querySelector('.scene-caption'), 900)
+      rise(opening.querySelector('.scroll-link'), 450)
     ];
   }
 })();

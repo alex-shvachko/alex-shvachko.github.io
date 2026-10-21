@@ -53,7 +53,6 @@
       active = next;
       cards.forEach((card, i) => { card.classList.toggle('revealed', reduced || i <= active); card.classList.toggle('active', i === active); });
       section.querySelector('#sphere-chapter').textContent = cards[active].querySelector('h3').textContent.toUpperCase();
-      section.querySelector('#journey-count').textContent = `0${active + 1} / 05`;
       desiredRotation = -active * Math.PI * 2 / 5;
     }
     if (!reduced) {
@@ -76,7 +75,6 @@
       active = i; cards.forEach((item, n) => item.classList.toggle('active', n === i));
       desiredRotation = -i * Math.PI * 2 / 5;
       section.querySelector('#sphere-chapter').textContent = card.querySelector('h3').textContent.toUpperCase();
-      section.querySelector('#journey-count').textContent = `0${i + 1} / 05`;
       if (reduced) paint();
       else { rotation = desiredRotation; paint(); }
     }
