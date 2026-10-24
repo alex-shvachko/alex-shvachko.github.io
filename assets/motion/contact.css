@@ -61,3 +61,18 @@
 #contact .contact-sky-loop{position:absolute;inset:0;z-index:0;overflow:clip;pointer-events:none}
 #contact .contact-sky-loop video{position:sticky;top:0;display:block;width:100%;height:100svh;object-fit:cover}
 #contact .contact-panel,#contact .contact-bottom{position:relative;z-index:1}
+
+#contact .contact-panel{text-align:center}
+#contact h2.contact-label,#contact .contact-links-heading{justify-content:center}
+#contact .contact-label:after{display:none}
+#contact .contact-opportunities>.contact-label:first-child{padding-left:0}
+#contact .opportunity,#contact .contact-location{justify-content:center}
+
+#contact strong{font-size:18px}
+#contact small,#contact .contact-location{font-size:16px}
+#contact .contact-row small{font-size:17px}
+#contact .contact-about p{font-size:18px}
+#contact h2.contact-label{font-size:14px}
+@media(min-width:1600px){#contact strong{font-size:22px}#contact small,#contact .contact-location{font-size:19px}#contact .contact-row small{font-size:21px}#contact .contact-about p{font-size:22px}#contact h2.contact-label{font-size:16px}}
+@media(max-width:1100px){#contact strong{font-size:16px}#contact small,#contact .contact-location{font-size:14px}#contact .contact-row small{font-size:14px}#contact .contact-about p{font-size:16px}#contact h2.contact-label,#contact .contact-about .contact-label{font-size:12px}}
+@media(max-width:800px){#contact strong{font-size:18px}#contact small,#contact .contact-location{font-size:15px}#contact .contact-row small{font-size:16px}#contact .contact-about p{font-size:18px}#contact h2.contact-label,#contact .contact-about .contact-label{font-size:13px}}
