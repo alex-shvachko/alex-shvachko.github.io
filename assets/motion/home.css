@@ -15,7 +15,7 @@
 /* Topic pins: connectors.js places dots, leaders and labels on the rover in pixels. */
 .hero-topics{position:absolute;inset:0;pointer-events:none}
 .hero-topics svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.hero-topics path{fill:none;stroke:var(--hl-edge);stroke-width:1;stroke-linecap:round}
+.hero-topics path{fill:none;stroke:var(--hl-edge);stroke-width:var(--hl-w);stroke-linecap:round}
 .topic-dot{fill:var(--ink);stroke:var(--paper);stroke-width:1.5;transform-box:fill-box;transform-origin:center}
 .topic-pulse{fill:none;stroke:var(--ink);stroke-width:1;transform-box:fill-box;transform-origin:center;animation:topic-pulse 2.4s var(--ease-expo) 2}
 .topic-pulse.off{animation:none;opacity:0}

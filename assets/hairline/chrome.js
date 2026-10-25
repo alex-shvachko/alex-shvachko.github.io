@@ -1,5 +1,5 @@
 (() => {
-  // The top bar: the theme switch, the four stages with a marker that slides to the one in
+  // The top bar: the theme switch (light unless the visitor chose dark), the four stages with a marker that slides to the one in
   // view, and the bar's own presence (clear over the hero, a frosted strip after it).
   const root = document.documentElement;
   const bar = document.querySelector('.topbar');

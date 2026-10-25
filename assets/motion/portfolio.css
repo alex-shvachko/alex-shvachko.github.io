@@ -15,9 +15,10 @@
   --card:0 0 0 1px rgb(0 0 0/.06),0 1px 2px -1px rgb(0 0 0/.06),0 2px 4px 0 rgb(0 0 0/.04);
   --lift:0 1px 2px rgb(0 0 0/.03),0 10px 28px -16px rgb(0 0 0/.16);
   --lift-lg:0 1px 2px rgb(0 0 0/.03),0 2px 6px rgb(0 0 0/.03),0 32px 64px -34px rgb(0 0 0/.26);
-  /* the line world's palette, shared with the hairline figures */
-  --hl-plate:var(--paper);--hl-hi:#232327;--hl-edge:#a4a4ac;--hl-mid:#c3c3c9;--hl-lo:#e0e0e4;
-  --hairline-plate:var(--hl-plate);--hairline-hi:var(--hl-hi);--hairline-edge:var(--hl-edge);--hairline-mid:var(--hl-mid);--hairline-lo:var(--hl-lo);
+  /* the line world's palette, shared with the hairline figures: set darker and a touch heavier than
+     hairline's own so the drawing reads at a glance */
+  --hl-plate:var(--paper);--hl-hi:#141416;--hl-edge:#6b6b74;--hl-mid:#9d9da6;--hl-lo:#d8d8dd;--hl-w:1.2;
+  --hairline-stroke:var(--hl-w);--hairline-plate:var(--hl-plate);--hairline-hi:var(--hl-hi);--hairline-edge:var(--hl-edge);--hairline-mid:var(--hl-mid);--hairline-lo:var(--hl-lo);
   --sans:Geist,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
   --serif:'Instrument Serif',Georgia,serif;
@@ -28,18 +29,6 @@
   --spring:linear(0,.057,.18,.32,.454,.572,.67,.749,.811,.859,.896,.923,.944,.959,.97,.979,.985,.989,.992,.994,.996,.997,.998,.999,1);
   --topbar:56px;--gutter:clamp(18px,4.5vw,64px);
 }
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){
-  color-scheme:dark;
-  --paper:#08090a;--stone:#121315;--plate:#0e0f11;--plate-2:#141518;
-  --ink:#ededef;--ink-2:#c4c6cc;--muted:#83858d;--faint:#5b5d64;
-  --line:rgb(255 255 255/.08);--line-2:rgb(255 255 255/.15);
-  --accent:#4d8dff;--accent-2:#7aa9ff;--accent-soft:rgb(77 141 255/.16);--on-accent:#04070d;
-  --scrim:rgb(8 9 10/.72);
-  --card:0 0 0 1px rgb(255 255 255/.07),0 1px 2px -1px rgb(0 0 0/.6),0 2px 4px 0 rgb(0 0 0/.4);
-  --lift:0 1px 2px rgb(0 0 0/.5),0 10px 28px -16px rgb(0 0 0/.9);
-  --lift-lg:0 1px 2px rgb(0 0 0/.5),0 2px 6px rgb(0 0 0/.4),0 32px 64px -34px rgb(0 0 0/.95);
-  --hl-hi:#d0d6e0;--hl-edge:#5b5d64;--hl-mid:#3e3e44;--hl-lo:#29292d;
-}}
 :root[data-theme=dark]{
   color-scheme:dark;
   --paper:#08090a;--stone:#121315;--plate:#0e0f11;--plate-2:#141518;
@@ -50,7 +39,7 @@
   --card:0 0 0 1px rgb(255 255 255/.07),0 1px 2px -1px rgb(0 0 0/.6),0 2px 4px 0 rgb(0 0 0/.4);
   --lift:0 1px 2px rgb(0 0 0/.5),0 10px 28px -16px rgb(0 0 0/.9);
   --lift-lg:0 1px 2px rgb(0 0 0/.5),0 2px 6px rgb(0 0 0/.4),0 32px 64px -34px rgb(0 0 0/.95);
-  --hl-hi:#d0d6e0;--hl-edge:#5b5d64;--hl-mid:#3e3e44;--hl-lo:#29292d;
+  --hl-hi:#f4f4f6;--hl-edge:#a3a3ad;--hl-mid:#6c6c75;--hl-lo:#38383f;
 }
 
 *{box-sizing:border-box}
@@ -74,7 +63,7 @@ html{scrollbar-color:var(--line-2) transparent;scrollbar-width:thin}
 /* The line world: one fixed drawing behind every section (world.js draws and steers it). */
 .world{position:fixed;inset:0;z-index:0;pointer-events:none;contain:strict}
 .world svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.world :where(path,polygon,ellipse,line,circle){fill:var(--hl-plate);stroke:var(--hl-mid);stroke-width:.9;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;transition:stroke .26s cubic-bezier(.5,0,.1,1),fill .26s cubic-bezier(.5,0,.1,1)}
+.world :where(path,polygon,ellipse,line,circle){fill:var(--hl-plate);stroke:var(--hl-mid);stroke-width:var(--hl-w);vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;transition:stroke .26s cubic-bezier(.5,0,.1,1),fill .26s cubic-bezier(.5,0,.1,1)}
 .world :where(.nf){fill:none}
 .world :where(.fo){stroke:none}
 .world :where(.sil){stroke:var(--hl-edge)}
@@ -86,7 +75,7 @@ html{scrollbar-color:var(--line-2) transparent;scrollbar-width:thin}
 .world :where(.dot.off){fill:var(--hl-lo)}
 .world :where(.accent){stroke:var(--accent)}
 .world :where(.dot.accent){fill:var(--accent);stroke:none}
-.world .grid{fill:none;stroke:var(--hl-lo)}
+.world .grid{fill:none;stroke:var(--hl-lo);stroke-width:1}
 .world .stars circle{fill:var(--hl-edge);stroke:none}
 .world .stars circle.b{fill:var(--hl-hi)}
 .world .stars .tw{animation:twinkle var(--tw-d,5s) ease-in-out var(--tw-dl,0s) 1;animation-play-state:paused}

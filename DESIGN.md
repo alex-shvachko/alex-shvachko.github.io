@@ -10,21 +10,21 @@ colors:
   muted: "#696972"
   faint: "#a1a1aa"
   accent: "#0759ff"
-  line-hi: "#232327"
-  line-edge: "#a4a4ac"
-  line-mid: "#c3c3c9"
-  line-lo: "#e0e0e4"
+  line-hi: "#141416"
+  line-edge: "#6b6b74"
+  line-mid: "#9d9da6"
+  line-lo: "#d8d8dd"
   paper-dark: "#08090a"
   stone-dark: "#121315"
   plate-dark: "#0e0f11"
   ink-dark: "#ededef"
   ink-2-dark: "#c4c6cc"
-  muted-dark: "#90929b"
+  muted-dark: "#83858d"
   accent-dark: "#4d8dff"
-  line-hi-dark: "#d0d6e0"
-  line-edge-dark: "#5b5d64"
-  line-mid-dark: "#3e3e44"
-  line-lo-dark: "#29292d"
+  line-hi-dark: "#f4f4f6"
+  line-edge-dark: "#a3a3ad"
+  line-mid-dark: "#6c6c75"
+  line-lo-dark: "#38383f"
 typography:
   display:
     fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
@@ -107,11 +107,11 @@ components:
 
 ## Overview
 
-The site is a personal card drawn in the language of [hairline](https://github.com/lucasmarkes/hairline): isometric line drawings built from rounded solids, drawn as one silhouette plus one dim crease, that answer the pointer. One fixed SVG world (`assets/hairline/world.js`, on the hairline kernel) sits behind all four stages and replaces the old scroll-scrubbed film. Scroll steers its camera through four places: the **studio** (a rover on a plinth, Home), the **path** (an aerial trail with a marker beside each Journey card), the **archive** (the world quiets behind Projects) and the **signal** (the floor falls away into stars above Contact, where a hairline dish follows the pointer). Light and dark follow the visitor's system until the switch in the top bar is used; the choice is remembered.
+The site is a personal card drawn in the language of [hairline](https://github.com/lucasmarkes/hairline): isometric line drawings built from rounded solids, drawn as one silhouette plus one dim crease, that answer the pointer. One fixed SVG world (`assets/hairline/world.js`, on the hairline kernel) sits behind all four stages and replaces the old scroll-scrubbed film. Scroll steers its camera through four places: the **studio** (a rover on a plinth, Home), the **path** (an aerial trail with a marker beside each Journey card), the **archive** (the world quiets behind Projects) and the **signal** (the floor falls away into stars above Contact, where a hairline dish follows the pointer). The site opens in light for every visitor; the switch in the top bar turns it dark, and that choice is remembered.
 
 ## Colors
 
-Restrained: chroma-free greys plus one accent. `paper` is the ground; `plate` is every card, tile and panel; `stone` is the recessed surface (segmented bars, icon wells, hover rows). The line world uses its own four strokes, the hairline palette: `line-hi` (the only bright stroke), `line-edge` (silhouettes), `line-mid` (creases and plates), `line-lo` (the floor grid). Plates in the world are filled with `paper`, so a nearer solid hides a farther one.
+Restrained: chroma-free greys plus one accent. `paper` is the ground; `plate` is every card, tile and panel; `stone` is the recessed surface (segmented bars, icon wells, hover rows). The line world uses its own four strokes, after the hairline palette but set darker (lighter in dark mode) and drawn at 1.2px so the drawing reads at a glance: `line-hi` (the only bright stroke), `line-edge` (silhouettes, leaders, links), `line-mid` (creases and plates), `line-lo` (the floor grid and the globe's far side). The two hairline package figures take the same palette and weight. Plates in the world are filled with `paper`, so a nearer solid hides a farther one.
 
 Electric blue (`accent`) marks only the live point: the rover's pupils, the active Journey marker and card number, the current stage number in the top bar, the location pin and text selection. Every dark value has a counterpart (`*-dark`); the switch swaps the whole set at once.
 
