@@ -1,5 +1,6 @@
 (() => {
-  // Leader lines are drawn in pixels from live layout, so labels, lines and dots always meet.
+  // Leader lines are drawn in pixels from live layout and from the line world's own camera,
+  // so labels, lines and dots always meet the part of the drawing they name.
   const NS = 'http://www.w3.org/2000/svg';
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -11,58 +12,79 @@
     Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
     return element;
   };
+  const World = window.World;
+  if (!World) return;
 
-  // 01 Home: topic labels pinned to parts of the rover in the film's first frame (1920x1080).
-  const FRAME_W = 1920, FRAME_H = 1080;
-  const scene = document.querySelector('.scene');
-  const video = document.querySelector('#rover');
+  // 01 Home: topic labels pinned to parts of the rover (head, lidar, antenna, eye, wheel).
+  const opening = document.querySelector('.opening');
   const topics = document.querySelector('.hero-topics');
   const copy = document.querySelector('.hero-copy');
   const heroSvg = topics.querySelector('svg');
   const items = [...topics.querySelectorAll('.topic')].map(label => {
-    const [ax, ay] = label.dataset.anchor.split(',').map(Number);
-    const [lx, ly] = label.dataset.label.split(',').map(Number);
+    const [dx, dy] = label.dataset.offset.split(',').map(Number);
     const path = create('path');
-    const pulse = create('circle', { class: 'topic-pulse', r: 5 });
-    const dot = create('circle', { class: 'topic-dot', r: 5 });
+    const pulse = create('circle', { class: 'topic-pulse', r: 4 });
+    const dot = create('circle', { class: 'topic-dot', r: 3.5 });
     heroSvg.append(path, pulse, dot);
-    return { label, path, pulse, dot, ax, ay, lx, ly, length: 0, intro: 0, hidden: false };
+    return { label, part: label.dataset.part, dx, dy, path, pulse, dot, length: 0, intro: 0, hidden: true, key: '' };
   });
-  let introStart = 0, heroFrame = 0;
+  let introStart = 0, heroFrame = 0, sizes = null;
 
-  // How the film frame sits in the scene, following object-fit: cover and object-position.
-  function cover() {
-    const width = scene.clientWidth, height = scene.clientHeight;
-    const scale = Math.max(width / FRAME_W, height / FRAME_H);
-    const [px = .5, py = .5] = getComputedStyle(video).objectPosition.split(' ').map(value => parseFloat(value) / 100).map(value => Number.isFinite(value) ? value : .5);
-    return { scale, ox: (width - FRAME_W * scale) * px, oy: (height - FRAME_H * scale) * py };
-  }
-  function framePoint(x, y) {
-    const { scale, ox, oy } = cover();
-    return [ox + x * scale, oy + y * scale];
+  // Sizes are read once per layout change, so the per-frame pass only writes.
+  function measure() {
+    sizes = {
+      width: topics.clientWidth, height: topics.clientHeight,
+      block: { l: copy.offsetLeft - 8, t: copy.offsetTop - 8, r: copy.offsetLeft + copy.offsetWidth + 8, b: copy.offsetTop + copy.offsetHeight + 8 },
+      ceiling: (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar')) || 56) + 6
+    };
+    items.forEach(item => { item.w = item.label.offsetWidth; item.h = item.label.offsetHeight; });
   }
   function layoutHero() {
-    const width = topics.clientWidth, height = topics.clientHeight, margin = 14;
-    if (!width || !height || !scene.clientWidth) return;
-    heroSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    const block = { l: copy.offsetLeft, t: copy.offsetTop, r: copy.offsetLeft + copy.offsetWidth, b: copy.offsetTop + copy.offsetHeight };
-    const inside = (x, y, box) => x > box.l && x < box.r && y > box.t && y < box.b;
-    items.forEach(item => {
-      const [ax, ay] = framePoint(item.ax, item.ay);
-      let [lx, ly] = framePoint(item.lx, item.ly);
-      const w = item.label.offsetWidth, h = item.label.offsetHeight;
+    if (!sizes) measure();
+    const { width, height, block, ceiling } = sizes, margin = 14;
+    if (!width || !height) return;
+    const box = opening.getBoundingClientRect();
+    const view = `0 0 ${width} ${height}`;
+    if (heroSvg.getAttribute('viewBox') !== view) heroSvg.setAttribute('viewBox', view);
+    const inside = (x, y, b) => x > b.l && x < b.r && y > b.t && y < b.b;
+    const reach = World.roverScale() * 44;
+    const placed = [];
+    const pins = items.map(item => { const p = World.anchor(item.part); return p ? [p[0] - box.left, p[1] - box.top] : [-1e4, -1e4]; });
+    items.forEach((item, index) => {
+      const point = World.anchor(item.part);
+      if (!point) { item.hidden = true; return; }
+      const ax = point[0] - box.left, ay = point[1] - box.top;
+      const { w, h } = item;
+      let lx = ax + item.dx * reach, ly = ay + item.dy * reach;
       lx = clamp(lx, margin + w / 2, width - margin - w / 2);
-      ly = clamp(ly, margin + h / 2, height - margin - h / 2);
-      const box = { l: lx - w / 2, r: lx + w / 2, t: ly - h / 2, b: ly + h / 2 };
-      // Labels never sit on the headline; on narrow screens the rover may also be cropped away.
+      ly = clamp(ly, ceiling + h / 2, height - margin - h / 2);
+      // A label that would sit on the headline steps out to the side of it instead.
+      if (ly + h / 2 > block.t && ly - h / 2 < block.b && lx - w / 2 < block.r && lx + w / 2 > block.l) {
+        if (block.r + 12 + w <= width - margin) lx = block.r + 12 + w / 2;
+        else ly = ay < block.t ? block.t - h / 2 - 6 : block.b + h / 2 + 6;
+      }
+      // Nor on a label already placed or another part's pin: step down, then up, until clear.
+      const clear = (x, y) => !placed.some(p => x - w / 2 < p.r + 6 && x + w / 2 > p.l - 6 && y - h / 2 < p.b + 4 && y + h / 2 > p.t - 4)
+        && !pins.some(([px, py], k) => k !== index && px > x - w / 2 - 6 && px < x + w / 2 + 6 && py > y - h / 2 - 6 && py < y + h / 2 + 6);
+      for (let step = 1; !clear(lx, ly) && step <= 6; step++) {
+        const down = clamp(ly + step * (h + 6), ceiling + h / 2, height - margin - h / 2), up = clamp(ly - step * (h + 6), ceiling + h / 2, height - margin - h / 2);
+        if (clear(lx, down)) { ly = down; break; }
+        if (clear(lx, up)) { ly = up; break; }
+      }
+      const b = { l: lx - w / 2, r: lx + w / 2, t: ly - h / 2, b: ly + h / 2 };
+      placed.push(b);
+      // Labels never sit on the headline, and a part that left the screen takes its label with it.
       item.hidden = ax < 0 || ax > width || ay < 0 || ay > height || inside(ax, ay, block)
-        || !(box.r < block.l || box.l > block.r || box.b < block.t || box.t > block.b);
-      item.label.style.setProperty('--x', `${lx.toFixed(1)}px`);
-      item.label.style.setProperty('--y', `${ly.toFixed(1)}px`);
+        || !(b.r < block.l || b.l > block.r || b.b < block.t || b.t > block.b);
       // The leader leaves the dot vertically and meets the label edge that faces it.
       let ex, ey;
-      if (ay >= box.t && ay <= box.b) { ex = ax < box.l ? box.l : box.r; ey = ay; }
-      else { ex = clamp(ax, box.l + w * .2, box.r - w * .2); ey = ay < box.t ? box.t : box.b; }
+      if (ay >= b.t && ay <= b.b) { ex = ax < b.l ? b.l : b.r; ey = ay; }
+      else { ex = clamp(ax, b.l + w * .2, b.r - w * .2); ey = ay < b.t ? b.t : b.b; }
+      const key = [ax, ay, lx, ly].map(v => v.toFixed(1)).join();
+      if (key === item.key) return;
+      item.key = key;
+      item.label.style.setProperty('--x', `${lx.toFixed(1)}px`);
+      item.label.style.setProperty('--y', `${ly.toFixed(1)}px`);
       item.path.setAttribute('d', `M${ax.toFixed(1)} ${ay.toFixed(1)}Q${ax.toFixed(1)} ${ey.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
       item.length = item.path.getTotalLength();
       item.path.style.strokeDasharray = `${item.length} ${item.length}`;
@@ -72,17 +94,20 @@
   }
   function paintHero() {
     const reduced = preference.matches;
+    // While the camera is still gliding back to the studio, the pins wait for it to land.
+    const landed = reduced ? 1 : clamp(1 - World.phase * 6, 0, 1);
     items.forEach((item, i) => {
-      // Topics retract one after another as the page leaves the studio shot.
-      const exit = reduced ? 1 : clamp(1 - scrollY / (innerHeight * .38) * (1 + i * .12), 0, 1);
+      // Topics retract one after another as the camera leaves the studio.
+      const exit = reduced ? 1 : Math.min(landed, clamp(1 - scrollY / (innerHeight * .38) * (1 + i * .12), 0, 1));
       const value = item.hidden ? 0 : Math.min(item.intro, exit);
       const dot = easeOut(phase(value, 0, .3)), line = easeOut(phase(value, .12, .68)), tag = easeOut(phase(value, .5, 1));
       item.dot.style.transform = `scale(${dot})`;
-      item.pulse.style.opacity = value === 1 ? '' : '0';
+      // A running CSS animation outranks inline styles, so the pulse is switched by class.
+      item.pulse.classList.toggle('off', value !== 1);
       item.path.style.strokeDashoffset = String(item.length * (1 - line));
       item.label.style.opacity = String(tag);
-      item.label.style.clipPath = tag === 1 ? '' : `inset(-6px ${(1 - tag) * 100}% -6px -6px)`;
-      item.label.style.translate = `0 ${(1 - tag) * 10}px`;
+      item.label.style.clipPath = tag === 1 ? '' : `inset(-6px ${(1 - tag) * 100}% -6px -6px round 8px)`;
+      item.label.style.translate = `0 ${(1 - tag) * 8}px`;
     });
   }
   function heroTick(now) {
@@ -90,7 +115,7 @@
     if (!introStart) introStart = now;
     let running = false;
     items.forEach((item, i) => {
-      item.intro = clamp((now - introStart - 520 - i * 120) / 1150, 0, 1);
+      item.intro = clamp((now - introStart - i * 120) / 1150, 0, 1);
       if (item.intro < 1) running = true;
     });
     paintHero();
@@ -100,71 +125,67 @@
     cancelAnimationFrame(heroFrame);
     if (preference.matches || scrollY > innerHeight * .1) { items.forEach(item => { item.intro = 1; }); paintHero(); return; }
     introStart = 0;
-    heroFrame = requestAnimationFrame(heroTick);
+    // The pins arrive once the rover has drawn itself.
+    const wait = Math.max(450, (World.introEnd || 0) - performance.now());
+    setTimeout(() => { heroFrame = requestAnimationFrame(heroTick); }, wait);
   }
 
-  // 02 Journey: each card reaches out to the dirt trail in the aerial shot and stops where it
-  // touches it. The trail moves with the film, so links follow the frame actually shown.
+  // 02 Journey: each card reaches out to the marker beside it on the trail and stops there.
   const stage = document.querySelector('.journey-stage');
   const journeySvg = stage.querySelector('.journey-links');
   const cards = [...stage.querySelectorAll('.journey-card')];
   const wide = matchMedia('(min-width:1101px)');
   const links = cards.map(card => {
     const link = create('path', { class: 'link' });
-    const dot = create('circle', { r: 7 });
+    const dot = create('circle', { r: 3.5 });
     journeySvg.append(link, dot);
-    return { card, link, dot };
+    return { card, link, dot, key: '' };
   });
-  // Trail edges per film time and frame band, tracked offline by tools/trail-track.py.
-  let trail = null;
-  fetch('assets/motion/film/trail.json').then(response => response.ok ? response.json() : null).then(data => { trail = data; paintJourney(); }).catch(() => {});
-  // [left, right] trail edge in frame pixels at film time t and frame row y; null where untracked.
-  function trailAt(t, y) {
-    const { start, step, band, frames } = trail;
-    const last = frames[0].length / 2 - 1;
-    const f = (t - start) / step, i = Math.floor(f);
-    const row = clamp(y / band - .5, 0, last), j = Math.floor(row);
-    const sample = (frame, b) => frames[frame] && frames[frame][b * 2] >= 0 ? [frames[frame][b * 2], frames[frame][b * 2 + 1]] : null;
-    const mix = (a, b, k) => a && b ? [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k] : null;
-    const at = frame => mix(sample(frame, j), sample(frame, Math.min(j + 1, last)), row - j);
-    return mix(at(i), at(i + 1), f - i);
-  }
   function paintJourney() {
     const width = stage.clientWidth, height = stage.clientHeight;
     if (!wide.matches || !width) return;
-    journeySvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const view = `0 0 ${width} ${height}`;
     const box = stage.getBoundingClientRect();
-    // The links layer drifts with the cards while the stage UI arrives and leaves.
-    const shift = parseFloat(stage.style.getPropertyValue('--journey-shift')) || 0;
-    const { scale, ox, oy } = cover();
-    links.forEach(({ card, link, dot }) => {
-      const y = card.offsetTop + card.offsetHeight / 2;
-      const left = card.offsetLeft, right = left + card.offsetWidth;
-      const edges = trail && trailAt(video.currentTime, (y + box.top + shift - oy) / scale);
-      const [l, r] = edges ? edges.map(x => ox + x * scale - box.left) : [0, 0];
-      // A card whose trail runs underneath it already touches it, so it gets no link.
-      const reachable = Boolean(edges) && (r < left || l > right);
-      if (reachable) {
-        const from = r < left ? left : right, to = r < left ? r : l, length = Math.abs(to - from);
-        link.setAttribute('d', `M${from.toFixed(1)} ${y}H${to.toFixed(1)}`);
-        link.style.strokeDasharray = `${length} ${length}`;
-        link.style.setProperty('--length', String(length));
-        dot.setAttribute('cx', to.toFixed(1)); dot.setAttribute('cy', y);
+    const rects = links.map(({ card }) => card.getBoundingClientRect());
+    if (journeySvg.getAttribute('viewBox') !== view) journeySvg.setAttribute('viewBox', view);
+    links.forEach(({ card, link, dot }, i) => {
+      const marker = World.marker(i);
+      const shown = !!marker && World.markerShown(i);
+      const on = shown && card.classList.contains('revealed');
+      if (marker) {
+        const rect = rects[i];
+        const tx = marker[0] - box.left, ty = marker[1] - box.top;
+        const leftOf = rect.right - box.left <= tx;
+        const fx = leftOf ? rect.right - box.left : rect.left - box.left, fy = rect.top - box.top + rect.height / 2;
+        const mx = (fx + tx) / 2;
+        const key = [fx, fy, tx, ty].map(v => v.toFixed(1)).join();
+        if (key !== links[i].key) {
+          links[i].key = key;
+          link.setAttribute('d', `M${fx.toFixed(1)} ${fy.toFixed(1)}C${mx.toFixed(1)} ${fy.toFixed(1)} ${mx.toFixed(1)} ${ty.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)}`);
+          const length = link.getTotalLength();
+          link.style.strokeDasharray = `${length} ${length}`;
+          link.style.setProperty('--length', String(length));
+          dot.setAttribute('cx', tx.toFixed(1)); dot.setAttribute('cy', ty.toFixed(1));
+        }
       }
-      const on = reachable && card.classList.contains('revealed');
       link.classList.toggle('on', on);
       dot.classList.toggle('on', on);
       dot.classList.toggle('active', on && card.classList.contains('active'));
     });
   }
   new MutationObserver(paintJourney).observe(stage.querySelector('.journey-cards'), { subtree: true, attributes: true, attributeFilter: ['class'] });
-  video.addEventListener('seeked', paintJourney);
 
-  function layout() { layoutHero(); paintJourney(); }
+  // The world calls back after every frame it draws; layout changes come through the observers.
+  World.onFrame(state => {
+    // Only the stage in view does any work: the hero while it is on screen, the links while
+    // the Journey stage is pinned.
+    if (scrollY < innerHeight * .6) layoutHero();
+    if (state.phi > .85 && state.phi < 2.3) paintJourney();
+  });
+  function layout() { measure(); items.forEach(item => { item.key = ''; }); links.forEach(link => { link.key = ''; }); layoutHero(); paintJourney(); }
   let scrollFrame = 0;
-  addEventListener('scroll', () => { if (!scrollFrame) scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; paintHero(); paintJourney(); }); }, { passive: true });
+  addEventListener('scroll', () => { if (!scrollFrame) scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; paintHero(); }); }, { passive: true });
   new ResizeObserver(layout).observe(document.documentElement);
-  new ResizeObserver(paintJourney).observe(stage);
   wide.addEventListener('change', layout);
   preference.addEventListener('change', () => { layout(); startHero(); });
   document.fonts.ready.then(layout);

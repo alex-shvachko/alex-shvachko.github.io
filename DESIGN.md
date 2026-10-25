@@ -1,0 +1,154 @@
+---
+name: Alex Shvachko — hairline portfolio
+description: A personal card drawn in hairline, one isometric line world that answers the pointer.
+colors:
+  paper: "#ffffff"
+  stone: "#f4f4f5"
+  plate: "#ffffff"
+  ink: "#0a0a0a"
+  ink-2: "#3f3f46"
+  muted: "#696972"
+  faint: "#a1a1aa"
+  accent: "#0759ff"
+  line-hi: "#232327"
+  line-edge: "#a4a4ac"
+  line-mid: "#c3c3c9"
+  line-lo: "#e0e0e4"
+  paper-dark: "#08090a"
+  stone-dark: "#121315"
+  plate-dark: "#0e0f11"
+  ink-dark: "#ededef"
+  ink-2-dark: "#c4c6cc"
+  muted-dark: "#90929b"
+  accent-dark: "#4d8dff"
+  line-hi-dark: "#d0d6e0"
+  line-edge-dark: "#5b5d64"
+  line-mid-dark: "#3e3e44"
+  line-lo-dark: "#29292d"
+typography:
+  display:
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(3.4rem, 7.2vw, 6rem)"
+    fontWeight: 520
+    lineHeight: 0.9
+    letterSpacing: "-0.04em"
+  display-accent:
+    fontFamily: "Instrument Serif, Georgia, serif"
+    fontSize: "1.18em"
+    fontWeight: 400
+    lineHeight: 0.84
+    letterSpacing: "-0.01em"
+  heading:
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(2.4rem, 4.1vw, 4.6rem)"
+    fontWeight: 520
+    lineHeight: 1
+    letterSpacing: "-0.04em"
+  title:
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "16px"
+    fontWeight: 560
+    lineHeight: 1.25
+    letterSpacing: "-0.015em"
+  body:
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  label:
+    fontFamily: "Geist Mono, ui-monospace, monospace"
+    fontSize: "11.5px"
+    fontWeight: 400
+    lineHeight: 1
+    letterSpacing: "0.06em"
+rounded:
+  chip: "7px"
+  control: "10px"
+  button: "12px"
+  card: "14px"
+  tile: "16px"
+  sheet: "20px"
+  panel: "22px"
+  pill: "999px"
+spacing:
+  gutter: "clamp(18px, 4.5vw, 64px)"
+  topbar: "56px"
+  grid-gap: "16px"
+components:
+  button-primary:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.button}"
+    height: "46px"
+    padding: "0 16px 0 20px"
+  card:
+    backgroundColor: "{colors.plate}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "16px 18px"
+  tile:
+    backgroundColor: "{colors.plate}"
+    rounded: "{rounded.tile}"
+  segmented:
+    backgroundColor: "{colors.stone}"
+    rounded: "{rounded.control}"
+    height: "36px"
+  tag:
+    backgroundColor: "{colors.plate}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.pill}"
+    padding: "5px 10px"
+  tag-focused:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.pill}"
+---
+
+## Overview
+
+The site is a personal card drawn in the language of [hairline](https://github.com/lucasmarkes/hairline): isometric line drawings built from rounded solids, drawn as one silhouette plus one dim crease, that answer the pointer. One fixed SVG world (`assets/hairline/world.js`, on the hairline kernel) sits behind all four stages and replaces the old scroll-scrubbed film. Scroll steers its camera through four places: the **studio** (a rover on a plinth, Home), the **path** (an aerial trail with a marker beside each Journey card), the **archive** (the world quiets behind Projects) and the **signal** (the floor falls away into stars above Contact, where a hairline dish follows the pointer). Light and dark follow the visitor's system until the switch in the top bar is used; the choice is remembered.
+
+## Colors
+
+Restrained: chroma-free greys plus one accent. `paper` is the ground; `plate` is every card, tile and panel; `stone` is the recessed surface (segmented bars, icon wells, hover rows). The line world uses its own four strokes, the hairline palette: `line-hi` (the only bright stroke), `line-edge` (silhouettes), `line-mid` (creases and plates), `line-lo` (the floor grid). Plates in the world are filled with `paper`, so a nearer solid hides a farther one.
+
+Electric blue (`accent`) marks only the live point: the rover's pupils, the active Journey marker and card number, the current stage number in the top bar, the location pin and text selection. Every dark value has a counterpart (`*-dark`); the switch swaps the whole set at once.
+
+## Typography
+
+Geist for everything readable, set tight (display tracking −0.04em, never tighter). One Instrument Serif italic word per heading carries the voice: *Shvachko*, *so far*. Geist Mono only for measurements and read-outs: dates, numbers, the stage index, labels such as `MY BACKGROUND`, and the corner read-outs (`rover · rest`, `signal · az 78 · el 31`). Numerals in those places are tabular.
+
+## Layout
+
+Four stages, unchanged in order and content: Home, Journey, Projects, Contact. A 56px top bar floats over everything; it is clear over the hero and frosts once the headline leaves, and the name docks in as it goes. Home puts the name left and the rover right (above the copy on phones). Journey pins for 540svh on wide screens with the cards in two staggered columns and the trail down the gutter between them; below 1100px it stacks. Projects is a centred 1240px column. Contact is one wide plate of three columns that collapses to two, then one.
+
+## Elevation & Depth
+
+A plate is drawn by its shadow alone: `--card` (a 1px ring plus two soft drops) and, when it should float, `--lift` or `--lift-lg` (an offset, long, soft shadow). No hard offset shadows, no glows. Blur appears only where it does a job: the frosted top bar, the project number chips over imagery, and the sheet's backdrop.
+
+## Shapes
+
+Every corner is round. Chips 7px, controls 10px, buttons 12px, cards 14px, tiles 16px, the sheet 20px, the contact panel 22px; small action buttons and globe tags are circles or pills. Icons are drawn lines at about 1.2–1.5px, round caps and joins.
+
+## Components
+
+- **Primary button**: ink plate, paper text, arrow that slides 3px on hover; presses scale to 0.97.
+- **Topic pin**: an ink dot with a soft pulse on a rover part, a hairline leader, a plate label. Placed live from the world's camera (`connectors.js`).
+- **Journey card**: plate with ring and lift; mono meta row; the active card gets an ink ring and an accent number. Unrevealed cards are clipped, blurred and dimmed until the scroll reaches them; a curved hairline link reaches the marker beside each card.
+- **Skill globe**: a plate holding a wireframe sphere (near half brighter than the far half, a dashed orbit ring) with pill tags that turn with it; the focused chapter's tags fill with ink.
+- **Segmented filter**: stone bar, a plate that slides to the pressed button.
+- **Project tile**: plate with the image inset 6px; leans up to 6° toward the pointer with a soft light following it; the arrow turns 45° on hover. Opening a tile moves its picture into the sheet with a view transition.
+- **Contact rows**: icon in a stone well, title and detail, a round go-button that fills with ink on hover.
+
+Motion: discrete changes use a long ease-out (`cubic-bezier(.32,.72,0,1)`, 450–700ms); continuous pointer input uses springs; entrances use `cubic-bezier(.16,1,.3,1)`. The one authored moment is the opening: the plinth and the rover draw themselves line by line, then the rover opens its eyes and the topic pins arrive. Every effect has a `prefers-reduced-motion` path: the world holds a still studio, nothing autoplays, and state changes stay as fades.
+
+## Do's and Don'ts
+
+- Do draw new illustration in the world's grammar: rounded solids, one silhouette and one crease, `line-hi` for at most one thing at a time.
+- Do keep blue for the single live point; use weight and ink for emphasis everywhere else.
+- Do keep every figure and the world's loop asleep when off screen or at rest.
+- Don't add fills, gradients, glows or coloured shadows to line drawings.
+- Don't put words inside drawings; names go to labels and read-outs outside them.
+- Don't use monospace as decoration; it is for measures and read-outs.
+- Don't change the four stages or their content when restyling.
