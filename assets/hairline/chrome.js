@@ -1,6 +1,6 @@
 (() => {
-  // The top bar: the theme switch (light unless the visitor chose dark), the four stages with a marker that slides to the one in
-  // view, and the bar's own presence (clear over the hero, a frosted strip after it).
+  // The top bar: the theme switch (light unless the visitor chose dark), the sound switch, and
+  // their presence (clear over the hero, frosted after it).
   const root = document.documentElement;
   const bar = document.querySelector('.topbar');
   const toggle = bar.querySelector('.theme-toggle');
@@ -39,38 +39,31 @@
   system.addEventListener('change', paint);
   paint();
 
-  // Stages: the last section whose top has crossed 45% of the viewport is the current one.
-  const nav = bar.querySelector('.topbar-nav');
-  const links = [...nav.querySelectorAll('a')];
-  const marker = nav.querySelector('.topbar-hl');
-  const sections = links.map(link => document.querySelector(link.getAttribute('href')));
-  let current = -1, frame = 0;
-  function place() {
-    const link = links[current];
-    if (!link) return;
-    marker.style.setProperty('--x', `${link.offsetLeft}px`);
-    marker.style.setProperty('--w', `${link.offsetWidth}px`);
-    marker.style.setProperty('--o', '1');
+  // Sound: off until the visitor turns it on, and the choice is kept. Whatever plays sound reads
+  // <html data-sound> and listens for 'sound:change'.
+  const sound = bar.querySelector('.sound-toggle');
+  function paintSound() {
+    const on = root.dataset.sound === 'on';
+    sound.dataset.mode = on ? 'on' : 'off';
+    sound.setAttribute('aria-label', on ? 'Turn sound off' : 'Turn sound on');
   }
+  try { root.dataset.sound = localStorage.getItem('sound') === 'on' ? 'on' : 'off'; } catch { root.dataset.sound = 'off'; }
+  sound.addEventListener('click', () => {
+    const next = root.dataset.sound === 'on' ? 'off' : 'on';
+    root.dataset.sound = next;
+    try { localStorage.setItem('sound', next); } catch {}
+    paintSound();
+    dispatchEvent(new CustomEvent('sound:change', { detail: { on: next === 'on' } }));
+  });
+  paintSound();
+
+  // The switches sit clear over the hero and frost once the headline has gone.
+  let frame = 0;
   function update() {
     frame = 0;
-    const line = innerHeight * .45;
-    let next = 0;
-    sections.forEach((section, i) => { if (section && section.getBoundingClientRect().top <= line) next = i; });
-    if (next !== current) {
-      current = next;
-      links.forEach((link, i) => { if (i === current) link.setAttribute('aria-current', 'true'); else link.removeAttribute('aria-current'); });
-      place();
-      if (!nav.hasAttribute('data-ready')) requestAnimationFrame(() => nav.setAttribute('data-ready', ''));
-    }
-    // The bar is clear over the hero and frosts once the headline has gone; the name docks in as it leaves.
     const y = scrollY, h = innerHeight;
     bar.style.setProperty('--bar-solid', Math.min(1, Math.max(0, (y - h * .2) / (h * .35))).toFixed(3));
-    bar.style.setProperty('--bar-name', Math.min(1, Math.max(0, (y - h * .3) / (h * .25))).toFixed(3));
   }
-  const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
-  addEventListener('scroll', schedule, { passive: true });
-  addEventListener('resize', () => { place(); schedule(); });
-  document.fonts?.ready.then(place);
+  addEventListener('scroll', () => { if (!frame) frame = requestAnimationFrame(update); }, { passive: true });
   update();
 })();

@@ -47,7 +47,7 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
     const g = mk('g'), bole = mk('path', { class: 'sil' }, g);
     const tiers = Array.from({ length: n }, () => ({ sil: mk('path', { class: 'sil' }, g), lines: mk('path', { class: 'nf lo' }, g) }));
     return {
-      g, x, y, r: R, h: H, low: false,
+      g, x, y, r: R, h: H, low: false, sway: true,
       draw(s, lx, ly) {
         const h = H * s, r = R * (.3 + .7 * s), st = stem * s, cH = Math.max(.1, h - st);
         const tz = st + cH * .08, ot = bend(tz, H, lx, ly);
@@ -102,7 +102,7 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
     const g = mk('g'), bole = mk('path', { class: 'sil' }, g), boughs = mk('path', { class: 'nf sil' }, g);
     const back = mk('path', { class: 'sil' }, g), crownEl = mk('path', { class: 'sil' }, g), fold = mk('path', { class: 'nf lo' }, g);
     return {
-      g, x, y, r: R, h: H, low: false,
+      g, x, y, r: R, h: H, low: false, sway: true,
       draw(s, lx, ly) {
         const t = T * s, r = R * (.25 + .75 * s), cz = t + r * .7;
         const ot = bend(t, H, lx + lean, ly - lean), foot = P(x, y, 0), top = P(x + ot[0], y + ot[1], t);
@@ -124,7 +124,7 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
     const g = mk('g'), bole = mk('path', { class: 'sil' }, g), bark = mk('path', { class: 'nf' }, g);
     const side_ = mk('path', { class: 'sil' }, g), crownEl = mk('path', { class: 'sil' }, g), fold = mk('path', { class: 'nf lo' }, g);
     return {
-      g, x, y, r: 16 * size, h: H, low: false,
+      g, x, y, r: 16 * size, h: H, low: false, sway: true,
       draw(s, lx, ly) {
         const h = H * s, ot = bend(h * .9, H, lx, ly), foot = P(x, y, 0), top = P(x + ot[0], y + ot[1], h * .9), w = 2.1 * size * (.5 + .5 * s);
         set(bole, trunk(foot, top, w));
@@ -145,11 +145,11 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
     const R = (12 + rnd() * 5) * size, ph = rnd() * TAU, ph2 = rnd() * TAU, dx = (rnd() - .5) * 8 * size;
     const g = mk('g'), back = mk('path', { class: 'sil' }, g), body = mk('path', { class: 'sil' }, g), fold = mk('path', { class: 'nf lo' }, g);
     return {
-      g, x, y, r: R * 1.2, h: R * 1.6, low: true,
+      g, x, y, r: R * 1.2, h: R * 1.6, low: true, sway: true,
       draw(s, lx, ly) {
         const r = R * (.2 + .8 * s);
-        set(back, cloud(P(x + dx - r * .55 + lx * .2, y - dx - r * .55 + ly * .2, r * .75), r * .66, 6, ph2));
-        const c = P(x + lx * .25, y + ly * .25, r * .55);
+        set(back, cloud(P(x + dx - r * .55 + lx * .4, y - dx - r * .55 + ly * .4, r * .75), r * .66, 6, ph2));
+        const c = P(x + lx * .5, y + ly * .5, r * .55);
         set(body, cloud(c, r, 8, ph, .78));
         set(fold, folds(c, r, ph, 2, .78));
       }
@@ -205,7 +205,8 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
   }
 
   // ---- placement -----------------------------------------------------------------------------
-  let items = [], grass = null, pebbles = null, stream = null;
+  let items = [], grass = null, grassAt = -1, pebbles = null, stream = null;
+  const BLADE = { k: 90, c: 6, eps: .03 };
   function nearestOnRoute(route, x, y) {
     let best = Infinity;
     for (let i = 0; i < route.pts.length; i += 2) { const p = route.pts[i]; best = Math.min(best, Math.hypot(p[0] - x, p[1] - y)); }
@@ -222,64 +223,95 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
       return best;
     };
     const inside = (sx, sy, r) => sx > r.l && sx < r.r && sy > r.t && sy < r.b;
-    const onView = ([sx, sy], m = 0) => sx > -60 - m && sx < W + 60 + m && sy > -120 - m && sy < H + 200 + m;
+    // On view when some of it shows: a foot below the top edge, a top above the bottom edge.
+    const onView = ([sx, sy], h = 0, r = 0) => sx > -40 - r && sx < W + 40 + r && sy > -40 && sy - h < H + 40;
+    // A ground point under a random spot on the screen, so the open ground fills the frame evenly.
+    const onScreen = () => toScreen.inverse(lerp(-40, W + 40, rnd()), lerp(-20, H + 100, rnd()));
 
-    // The stream crosses the trail between the second and third stops, on a plank bridge.
+    // The river crosses the trail between the second and third stops, on a wide plank bridge.
     const sMid = (route.stops[1] + route.stops[2]) / 2, mid = pointAt(sMid);
     const tx = Math.cos(mid.h), ty = Math.sin(mid.h), nx = -ty, ny = tx;
-    const centre = [];
+    // the river's half-width, as wide as the stops either side allow; the deck's half-length
+    // along the trail and half-width across it
+    const RW = clamp((route.stops[2] - route.stops[1]) * .26, 20, 46), DL = RW + 14, DW = 44;
+    const centre = [], calmAt = [];
     for (let u = -1300; u <= 1300; u += 8) {
-      const calm = smooth(clamp((Math.abs(u) - 26) / 140, 0, 1));
-      const meander = calm * (Math.sin(u * .0085 + 1.3) * 52 + Math.sin(u * .023 + .4) * 14);
+      const calm = smooth(clamp((Math.abs(u) - DW - 30) / 170, 0, 1));
+      const meander = calm * (Math.sin(u * .0085 + 1.3) * 70 + Math.sin(u * .023 + .4) * 18);
       centre.push([mid.x + nx * u + tx * meander, mid.y + ny * u + ty * meander]);
+      calmAt.push(calm);
     }
     const normalAt = i => { const a = centre[Math.max(0, i - 1)], b = centre[Math.min(centre.length - 1, i + 1)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [-(b[1] - a[1]) / l, (b[0] - a[0]) / l]; };
-    const width = i => 10 + Math.sin(i * .17) * 2.4 + Math.sin(i * .061 + 2) * 2.2;
-    const bank = side => centre.map((p, i) => { const [qx, qy] = normalAt(i), w = width(i) + Math.sin(i * .9 + side) * .7; return [p[0] + qx * w * side, p[1] + qy * w * side]; });
-    const bankA = bank(1), bankB = bank(-1);
+    const width = i => RW * (1 + calmAt[i] * (.16 * Math.sin(i * .17) + .12 * Math.sin(i * .061 + 2)));
+    const along = (side, k, jitter) => centre.map((p, i) => { const [qx, qy] = normalAt(i), w = width(i) * k + Math.sin(i * .9 + side) * jitter; return [p[0] + qx * w * side, p[1] + qy * w * side]; });
+    const bankA = along(1, 1, 1.2), bankB = along(-1, 1, 1.2);
     const streamG = mk('g', {}, water);
     mk('path', { class: 'fo', d: poly([...bankA, ...bankB.slice().reverse()].map(([x, y]) => P(x, y, 0))) }, streamG);
     mk('path', { class: 'nf sil', d: open(bankA.map(([x, y]) => P(x, y, 0))) }, streamG);
     mk('path', { class: 'nf sil', d: open(bankB.map(([x, y]) => P(x, y, 0))) }, streamG);
-    // ripples: short strokes riding the current, and a few stones breaking it
+    // the shallows: a broken second line inside each bank
+    let shallows = '';
+    [1, -1].forEach(side => {
+      let run_ = [];
+      along(side, .8, 1.6).forEach(([x, y], i) => {
+        if (Math.sin(i * .23 + side * 2) + Math.sin(i * .071) * .5 > -.1) run_.push(P(x, y, 0));
+        else { if (run_.length > 1) shallows += open(run_); run_ = []; }
+      });
+      if (run_.length > 1) shallows += open(run_);
+    });
+    // the current: short strokes riding it, and stones breaking it
     let ripples = '';
-    for (let i = 4; i < centre.length - 4; i += 2 + Math.floor(rnd() * 3)) {
-      const [qx, qy] = normalAt(i), off = (rnd() - .5) * width(i) * 1.1, len = 2 + Math.floor(rnd() * 2);
-      const pts = [];
-      for (let j = 0; j <= len; j++) { const c = centre[i + j], [rx, ry] = normalAt(i + j), bow = Math.sin(j / len * Math.PI) * .9; pts.push(P(c[0] + rx * (off + bow), c[1] + ry * (off + bow), 0)); }
-      ripples += open(pts);
-      if (rnd() < .05) { const c = centre[i]; mk('path', { class: 'sil', d: poly(disc(c[0] + qx * off * .6, c[1] + qy * off * .6, .6, 1.6 + rnd() * 1.4, 12)) }, streamG); }
+    for (let i = 4; i < centre.length - 6; i += 1 + Math.floor(rnd() * 2)) {
+      for (let r = 0, n = 1 + Math.floor(rnd() * 2); r < n; r++) {
+        const [qx, qy] = normalAt(i), off = (rnd() - .5) * width(i) * 1.4, len = 2 + Math.floor(rnd() * 3);
+        const pts = [];
+        for (let j = 0; j <= len; j++) { const c = centre[i + j], [rx, ry] = normalAt(i + j), bow = Math.sin(j / len * Math.PI) * 1.2; pts.push(P(c[0] + rx * (off + bow), c[1] + ry * (off + bow), 0)); }
+        ripples += open(pts);
+        if (rnd() < .035) { const c = centre[i]; mk('path', { class: 'sil', d: poly(disc(c[0] + qx * off * .8, c[1] + qy * off * .8, .8, 2 + rnd() * 2.6, 12)) }, streamG); }
+      }
     }
-    mk('path', { class: 'nf lo', d: ripples }, streamG);
-    const distStream = (x, y) => { let b = Infinity; for (let i = 0; i < centre.length; i += 2) b = Math.min(b, Math.hypot(centre[i][0] - x, centre[i][1] - y)); return b; };
+    mk('path', { class: 'nf lo', d: shallows + ripples }, streamG);
+    /** How far a ground point is from the nearer bank; below zero, it is in the water. */
+    const distStream = (x, y) => { let b = Infinity; for (let i = 0; i < centre.length; i += 2) b = Math.min(b, Math.hypot(centre[i][0] - x, centre[i][1] - y) - width(i)); return b; };
 
-    // The bridge: planks across the water along the trail, a rail on each side.
+    // The bridge: two beams across the water, planks laid over them along the trail, and a
+    // rail of posts each side; the near rail stands among the trees, a span at a time.
     const local = (a, b) => [mid.x + tx * a + nx * b, mid.y + ty * a + ny * b];
     const xfRing = ring => ring.map(q => { const [wx, wy] = local(q.u, q.v); return { u: wx, v: wy, nu: q.nu * tx + q.nv * nx, nv: q.nu * ty + q.nv * ny }; });
     const deck = mk('g', {}, ground), farRail = mk('g', {}, ground);
     const nearSide = (nx + ny) > 0 ? 1 : -1;
-    const rail = (side, parent) => {
-      [-14.5, 0, 14.5].forEach(a => {
-        const [r0, r1] = rings(a - 1, side * 31.5 - 1, a + 1, side * 31.5 + 1, .4, .2), pr = prism(P, front, xfRing(r0), xfRing(r1), 0, 10);
-        mk('path', { class: 'sil', d: pr.sil }, parent);
-        mk('path', { class: 'nf lo', d: pr.crease }, parent);
-      });
-      const top = [-14.5, 14.5].map(a => { const [wx, wy] = local(a, side * 31.5); return [P(wx, wy, 10), P(wx, wy, 6)]; });
-      mk('path', { class: 'nf sil', d: open([top[0][0], top[1][0]]) }, parent);
-      mk('path', { class: 'nf lo', d: open([top[0][1], top[1][1]]) }, parent);
+    const block = (a0, b0, a1, b1, z0, z1, parent) => {
+      const [r0, r1] = rings(a0, b0, a1, b1, .4, .2), pr = prism(P, front, xfRing(r0), xfRing(r1), z0, z1);
+      mk('path', { class: 'sil', d: pr.sil }, parent);
+      mk('path', { class: 'nf lo', d: pr.crease }, parent);
     };
-    rail(-nearSide, farRail);
-    for (let k = 0; k < 9; k++) {
-      const a0 = -14 + k * 3.15, [r0, r1] = rings(a0, -30.5, a0 + 2.55, 30.5, .5, .3);
-      const pr = prism(P, front, xfRing(r0), xfRing(r1), 1.4, 2.7);
-      mk('path', { class: 'sil', d: pr.sil }, deck);
-      mk('path', { class: 'nf lo', d: pr.crease }, deck);
+    const posts = [], bays = Math.round(DL * 2 / 17);
+    for (let k = 0; k <= bays; k++) posts.push(-DL + k * DL * 2 / bays);
+    const post = (a, b, parent) => block(a - 1.2, b - 1.2, a + 1.2, b + 1.2, 0, 11, parent);
+    const span = (a0, a1, b, parent) => {
+      const ends = [a0, a1].map(a => { const [wx, wy] = local(a, b); return [P(wx, wy, 11), P(wx, wy, 6.5)]; });
+      mk('path', { class: 'nf sil', d: open([ends[0][0], ends[1][0]]) }, parent);
+      mk('path', { class: 'nf lo', d: open([ends[0][1], ends[1][1]]) }, parent);
+    };
+    const farB = -nearSide * (DW + 1);
+    posts.forEach(a => post(a, farB, farRail));
+    for (let k = 0; k < bays; k++) span(posts[k], posts[k + 1], farB, farRail);
+    [-1, 1].forEach(sd => block(-DL - 5, sd * (DW - 4) - 2, DL + 5, sd * (DW - 4) + 2, 0, 1.4, deck));
+    for (let k = 0, n = Math.round(DL * 2 / 5.4); k < n; k++) {
+      const pitch = DL * 2 / n, a0 = -DL + k * pitch;
+      block(a0, -DW + (rnd() - .5) * 1.6, a0 + pitch * .8, DW + (rnd() - .5) * 1.6, 1.4, 2.7, deck);
     }
-    const nearRail = mk('g');
-    rail(nearSide, nearRail);
-    const [bxN, byN] = local(0, nearSide * 31.5);
-    items.push({ g: nearRail, x: bxN, y: byN, depth: bxN + byN + .5, still: true });
-    stream = { g: streamG, deck, farRail, nearRail };
+    const nearB = nearSide * (DW + 1), spans = [];
+    for (let k = 0; k < bays; k++) {
+      const g = mk('g');
+      post(posts[k], nearB, g);
+      if (k === bays - 1) post(posts[k + 1], nearB, g);
+      span(posts[k], posts[k + 1], nearB, g);
+      const [cx, cy] = local((posts[k] + posts[k + 1]) / 2, nearB);
+      items.push({ g, x: cx, y: cy, depth: cx + cy + .5, still: true });
+      spans.push(g);
+    }
+    stream = { parts: [streamG, deck, farRail, ...spans] };
 
     // Everything standing is checked the same way: off the trail and the bridge, out of the
     // water and the studio, clear of the markers, never over the rover's way or the heading.
@@ -290,11 +322,11 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
       if (Math.hypot(it.x, it.y) < plinth + 30 + it.r) return false;
       if (marks.some(m => Math.hypot(m[0] - it.x, m[1] - it.y) < 26 + it.r * .4)) return false;
       const bx = it.x - mid.x, by = it.y - mid.y;
-      if (Math.abs(bx * tx + by * ty) < 34 + it.r && Math.abs(bx * nx + by * ny) < 56 + it.r) return false;
-      if (distStream(it.x, it.y) < it.r * .65 + 14) return false;
+      if (Math.abs(bx * tx + by * ty) < DL + 18 + it.r && Math.abs(bx * nx + by * ny) < DW + 24 + it.r) return false;
+      if (distStream(it.x, it.y) < it.r * .65 + 4) return false;
       if (placed.some(o => Math.hypot(o.x - it.x, o.y - it.y) < (o.r + it.r) * (it.low || o.low ? .7 : gap))) return false;
       const foot = toScreen(it.x, it.y, 0), half = it.r * sc * 1.08, tall = it.h * sc * .88;
-      if (!onView(foot, it.h * sc)) return false;
+      if (!onView(foot, it.h * sc, it.r * sc)) return false;
       const box = [foot[0] - half, foot[1] - tall, foot[0] + half, foot[1] + it.r * sc * .5];
       if (pxToRoute(...box) < (it.low ? 12 : 34) * sc) return false;
       if (clear.some(c => !(box[2] < c.l || box[0] > c.r || box[3] < c.t || box[1] > c.b))) return false;
@@ -304,8 +336,8 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
     const plant = (it, start) => {
       it.depth = it.x + it.y;
       it.start = start ?? (.18 + .5 * clamp(Math.hypot(it.x, it.y) / 1300, 0, 1) + rnd() * .08);
-      it.sx = spring(0, { k: 46, c: 5.5, eps: .02 }); it.sy = spring(0, { k: 46, c: 5.5, eps: .02 });
-      it.awake = false; it.drawn = '';
+      it.sx = spring(0, { k: 60, c: 6, eps: .02 }); it.sy = spring(0, { k: 60, c: 6, eps: .02 });
+      it.awake = false; it.drawn = ''; it.grown = ''; it.foot = P(it.x, it.y, 0);
       it.g.style.display = 'none';
       placed.push(it); items.push(it);
     };
@@ -317,102 +349,185 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
     const corners = [[-120, -160], [W + 120, -160], [-120, H + 240], [W + 120, H + 240]].map(([sx, sy]) => toScreen.inverse(sx, sy));
     const X0 = Math.min(...corners.map(c => c[0])), X1 = Math.max(...corners.map(c => c[0])), Y0 = Math.min(...corners.map(c => c[1])), Y1 = Math.max(...corners.map(c => c[1]));
     const centres = [];
-    for (let gx = X0; gx < X1; gx += 190) for (let gy = Y0; gy < Y1; gy += 190) centres.push([gx + rnd() * 190, gy + rnd() * 190]);
+    for (let gx = X0; gx < X1; gx += 160) for (let gy = Y0; gy < Y1; gy += 160) centres.push([gx + rnd() * 160, gy + rnd() * 160]);
     for (let i = centres.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [centres[i], centres[j]] = [centres[j], centres[i]]; }
     const characters = [
       [['pine', 6], ['spruce', 3], ['birch', 1]],
       [['oak', 6], ['birch', 2], ['pine', 1]],
       [['spruce', 5], ['pine', 3]],
       [['birch', 5], ['oak', 2], ['pine', 1]],
-      [['pine', 3], ['oak', 3], ['spruce', 2], ['birch', 2]]
+      [['pine', 3], ['oak', 3], ['spruce', 2], ['birch', 2]],
+      [['oak', 4], ['birch', 4]],
+      [['oak', 3], ['spruce', 3], ['birch', 1]]
     ];
+    const groves = [];
     for (const [cx, cy] of centres) {
-      if (trees >= budget * .82) break;
-      if (!onView(toScreen(cx, cy, 0), 40) || nearestOnRoute(route, cx, cy) < 110 || Math.hypot(cx, cy) < plinth + 140) continue;
-      const character = characters[Math.floor(rnd() * characters.length)], radius = 85 + rnd() * 70, members = 6 + Math.floor(rnd() * 6);
-      for (let m = 0, tries = 0; m < members && tries < members * 6 && trees < budget * .82; tries++) {
+      if (trees >= budget * .72) break;
+      const [gx, gy] = toScreen(cx, cy, 0);
+      if (gx < -100 || gx > W + 100 || gy < -60 || gy > H + 180 || nearestOnRoute(route, cx, cy) < 100 || Math.hypot(cx, cy) < plinth + 130) continue;
+      const character = characters[Math.floor(rnd() * characters.length)], radius = 90 + rnd() * 80, members = 9 + Math.floor(rnd() * 8);
+      let m = 0;
+      for (let tries = 0; m < members && tries < members * 6 && trees < budget * .72; tries++) {
         const a = rnd() * TAU, d = Math.sqrt(rnd()) * radius, x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d;
-        const it = kinds[pick(character)](x, y, .78 + rnd() * .42);
-        if (!fits(it, { gap: .5, under: .55 })) continue;
+        const it = kinds[pick(character)](x, y, .74 + rnd() * .5);
+        if (!fits(it, { gap: .5, under: .3 })) continue;
         plant(it); trees++; m++;
-        if (it.r > 25 && rnd() < .14) mushrooms(it);
+        if (it.r > 25 && rnd() < .3) mushrooms(it.x, it.y, it.r * .5 + 6, it.start + .08);
+      }
+      if (m) groves.push({ cx, cy, radius, character });
+    }
+    // Each grove's edge: saplings of its own kinds stepping out into the open, and at its feet
+    // an understory of bushes, stones and the odd fallen trunk.
+    for (const { cx, cy, radius, character } of groves) {
+      for (let k = 0, n = 3 + Math.floor(rnd() * 4), tries = 0; k < n && tries < 30 && trees < budget * .86; tries++) {
+        const a = rnd() * TAU, d = radius * (.85 + rnd() * .45);
+        const it = kinds[pick(character)](cx + Math.cos(a) * d, cy + Math.sin(a) * d, .42 + rnd() * .22);
+        if (fits(it, { gap: .6, under: .5 })) { plant(it); trees++; k++; }
+      }
+      for (let k = 0, n = 3 + Math.floor(rnd() * 4), tries = 0; k < n && tries < 30; tries++) {
+        const a = rnd() * TAU, d = radius * (.4 + rnd() * .85), x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d, roll = rnd();
+        const it = roll < .55 ? bush(x, y, rnd, .8 + rnd() * .5) : roll < .85 ? rock(x, y, rnd, .7 + rnd() * .6) : roll < .93 ? log(x, y, rnd) : mushroom(x, y, rnd);
+        if (fits(it, { under: .4 })) { plant(it); k++; }
       }
     }
     // Lone trees in the clearings between the groves.
-    for (let i = 0; i < 400 && trees < budget; i++) {
-      const x = lerp(X0, X1, rnd()), y = lerp(Y0, Y1, rnd());
-      const it = kinds[pick([['pine', 4], ['oak', 3], ['birch', 2], ['spruce', 1]])](x, y, .8 + rnd() * .35);
-      if (!fits(it, { gap: .9, under: .4 })) continue;
+    for (let i = 0; i < 600 && trees < budget; i++) {
+      const [x, y] = onScreen();
+      const it = kinds[pick([['pine', 4], ['oak', 4], ['birch', 3], ['spruce', 1]])](x, y, .62 + rnd() * .5);
+      if (!fits(it, { gap: .9, under: .25 })) continue;
       plant(it); trees++;
     }
-    function mushrooms(tree) {
-      const k = 2 + Math.floor(rnd() * 2);
+    function mushrooms(x, y, ring, start) {
+      const k = 2 + Math.floor(rnd() * 3);
       for (let m = 0; m < k; m++) {
-        const a = rnd() * TAU, d = tree.r * .5 + 6 + rnd() * 6, sh = mushroom(tree.x + Math.cos(a) * d, tree.y + Math.sin(a) * d, rnd);
-        if (fits(sh)) plant(sh, tree.start + .08);
+        const a = rnd() * TAU, d = ring + rnd() * 6, sh = mushroom(x + Math.cos(a) * d, y + Math.sin(a) * d, rnd);
+        if (fits(sh)) plant(sh, start);
+      }
+    }
+    // The open ground between: thickets of two or three bushes, and boulders lying together.
+    for (let i = 0, n = 0; i < budget * 4 && n < budget * .3; i++) {
+      const [cx, cy] = onScreen(), thicket = rnd() < .55, k = 3 + Math.floor(rnd() * 2);
+      for (let j = 0; j < k; j++) {
+        const a = rnd() * TAU, d = j ? 12 + rnd() * 10 : 0, x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d;
+        const it = thicket ? bush(x, y, rnd, j ? .65 + rnd() * .3 : .9 + rnd() * .4) : rock(x, y, rnd, j ? .5 + rnd() * .4 : 1.2 + rnd() * .6);
+        if (fits(it, { under: .3 })) { plant(it); n++; }
       }
     }
     // The path's own edges: low growth, stones and young birches, now one side, now the other.
-    for (let s = route.exit + 40; s < route.len - 10; s += 22 + rnd() * 26) {
-      const p = pointAt(s), side = rnd() < .5 ? -1 : 1, off = 46 + rnd() * 34;
+    for (let s = route.exit + 40; s < route.len - 10; s += 14 + rnd() * 20) {
+      const p = pointAt(s), side = rnd() < .5 ? -1 : 1, off = 44 + rnd() * 40;
       const x = p.x - Math.sin(p.h) * off * side, y = p.y + Math.cos(p.h) * off * side, roll = rnd();
-      const it = roll < .48 ? bush(x, y, rnd, .8 + rnd() * .4) : roll < .72 ? rock(x, y, rnd, .8 + rnd() * .5) : roll < .86 ? birch(x, y, rnd, .7 + rnd() * .2) : mushroom(x, y, rnd);
+      const it = roll < .44 ? bush(x, y, rnd, .8 + rnd() * .4) : roll < .7 ? rock(x, y, rnd, .8 + rnd() * .5) : roll < .86 ? birch(x, y, rnd, .6 + rnd() * .3) : mushroom(x, y, rnd);
       if (fits(it)) plant(it);
     }
-    // Fallen logs beside the path.
-    for (let n = 0, tries = 0; n < 3 && tries < 300; tries++) {
-      const s = route.exit + rnd() * (route.len - route.exit), p = pointAt(s), side = rnd() < .5 ? -1 : 1, off = 60 + rnd() * 50;
+    // Fallen logs beside the path, some with mushrooms on the shaded side.
+    for (let n = 0, tries = 0; n < 7 && tries < 500; tries++) {
+      const s = route.exit + rnd() * (route.len - route.exit), p = pointAt(s), side = rnd() < .5 ? -1 : 1, off = 60 + rnd() * 70;
       const lg = log(p.x - Math.sin(p.h) * off * side, p.y + Math.cos(p.h) * off * side, rnd);
-      if (fits(lg)) { plant(lg); n++; }
+      if (!fits(lg)) continue;
+      plant(lg); n++;
+      if (rnd() < .6) mushrooms(lg.x, lg.y, 10, lg.start + .08);
+    }
+    // The stream's banks: stones at the water's edge and bushes leaning over it.
+    for (let i = 0, n = 0; i < 300 && n < budget * .12; i++) {
+      const j = 8 + Math.floor(rnd() * (centre.length - 16)), [qx, qy] = normalAt(j), side = rnd() < .5 ? -1 : 1, isRock = rnd() < .6;
+      const off = side * (width(j) + (isRock ? 8 : 20) + rnd() * 10), x = centre[j][0] + qx * off, y = centre[j][1] + qy * off;
+      const it = isRock ? rock(x, y, rnd, .6 + rnd() * .7) : bush(x, y, rnd, .8 + rnd() * .4);
+      if (fits(it, { under: .3 })) { plant(it); n++; }
     }
 
-    // Grass in clumps along the path, round the groves' feet and as reeds on the banks; pebbles
-    // at the path's edges. One path each, redrawn only while they grow.
-    const tufts = [];
+    // Grass in clumps along the path, over the open ground, round the feet of trees, bushes and
+    // stones, and as reeds on the banks; pebbles at the path's edges. The grass is kept in
+    // patches of one path each, so growing and the wind redraw only the patches they reach.
+    const patches = new Map();
     const tuft = (x, y, tall) => {
-      if (Math.hypot(x, y) < plinth + 20 || nearestOnRoute(route, x, y) < 12 || !onView(toScreen(x, y, 0))) return;
-      const blades = 3 + Math.floor(rnd() * 3);
-      tufts.push({ x, y, start: .25 + .5 * clamp(Math.hypot(x, y) / 1300, 0, 1), blades: Array.from({ length: blades }, () => [(rnd() - .5) * 6, (rnd() - .5) * 6, (tall ? 11 : 6) + rnd() * (tall ? 8 : 6)]) });
+      if (Math.hypot(x, y) < plinth + 20 || nearestOnRoute(route, x, y) < 12 || distStream(x, y) < 1 || !onView(toScreen(x, y, 0))) return;
+      const bx = x - mid.x, by = y - mid.y;
+      if (Math.abs(bx * tx + by * ty) < DL + 6 && Math.abs(bx * nx + by * ny) < DW + 6) return;
+      const key = `${Math.floor(x / 140)} ${Math.floor(y / 140)}`;
+      let patch = patches.get(key);
+      if (!patch) patches.set(key, patch = { tufts: [], cx: (Math.floor(x / 140) + .5) * 140, cy: (Math.floor(y / 140) + .5) * 140, lo: 9, hi: -9, awake: false, held: false });
+      const start = .25 + .5 * clamp(Math.hypot(x, y) / 1300, 0, 1), n = (tall ? 4 : 3) + Math.floor(rnd() * 4);
+      patch.lo = Math.min(patch.lo, start); patch.hi = Math.max(patch.hi, start + .28);
+      patch.tufts.push({
+        x, y, start, sx: spring(0, BLADE), sy: spring(0, BLADE), awake: false,
+        // each blade: its lean at the foot, its height and how freely it bends
+        blades: Array.from({ length: n }, () => [(rnd() - .5) * 7, (rnd() - .5) * 7, (tall ? 12 : 6) + rnd() * (tall ? 10 : 7), .6 + rnd() * .8])
+      });
     };
-    for (let i = 0; i < budget * 1.4; i++) {
-      const s = route.exit + 10 + rnd() * (route.len - route.exit - 10), p = pointAt(s), side = rnd() < .5 ? -1 : 1, off = 14 + rnd() * 50;
+    for (let i = 0; i < budget * 1.6; i++) {
+      const s = route.exit + 10 + rnd() * (route.len - route.exit - 10), p = pointAt(s), side = rnd() < .5 ? -1 : 1, off = 14 + rnd() * 60;
       const x = p.x - Math.sin(p.h) * off * side, y = p.y + Math.cos(p.h) * off * side;
-      for (let k = 0; k < 2; k++) tuft(x + (rnd() - .5) * 10, y + (rnd() - .5) * 10, false);
+      for (let k = 0, n = 2 + Math.floor(rnd() * 2); k < n; k++) tuft(x + (rnd() - .5) * 12, y + (rnd() - .5) * 12, false);
     }
-    for (let i = 0; i < budget * .9; i++) {
-      const j = Math.floor(rnd() * centre.length), [qx, qy] = normalAt(j), side = rnd() < .5 ? -1 : 1, off = side * (width(j) + 2 + rnd() * 5);
+    for (let i = 0; i < budget * 1.2; i++) {
+      const [x, y] = onScreen();
+      for (let k = 0, n = 2 + Math.floor(rnd() * 3); k < n; k++) tuft(x + (rnd() - .5) * 18, y + (rnd() - .5) * 18, false);
+    }
+    for (let i = 0; i < budget * 1.4; i++) {
+      const j = Math.floor(rnd() * centre.length), [qx, qy] = normalAt(j), side = rnd() < .5 ? -1 : 1, off = side * (width(j) + 2 + rnd() * 6);
       tuft(centre[j][0] + qx * off, centre[j][1] + qy * off, true);
     }
-    items.filter(it => !it.low && !it.still && rnd() < .5).forEach(it => { for (let k = 0; k < 3; k++) { const a = rnd() * TAU, d = it.r * .6 + rnd() * 12; tuft(it.x + Math.cos(a) * d, it.y + Math.sin(a) * d, false); } });
-    grass = { el: mk('path', { class: 'nf' }, ground), tufts, drawn: '' };
+    items.filter(it => !it.still && rnd() < .65).forEach(it => { for (let k = 0, n = it.low ? 2 : 4; k < n; k++) { const a = rnd() * TAU, d = it.r * .6 + rnd() * 12; tuft(it.x + Math.cos(a) * d, it.y + Math.sin(a) * d, false); } });
+    grass = [...patches.values()];
+    grass.forEach(p => { p.el = mk('path', { class: 'nf' }, ground); });
+    grassAt = -1;
     const stones = [];
     for (let s = route.exit + 6; s < route.len; s += 6) {
       if (rnd() < .7) continue;
-      const p = pointAt(s), side = rnd() < .5 ? -1 : 1, off = 6.4 + rnd() * 3;
-      stones.push({ s, x: p.x - Math.sin(p.h) * off * side, y: p.y + Math.cos(p.h) * off * side, r: 1 + rnd() * 1.1 });
+      const p = pointAt(s), side = rnd() < .5 ? -1 : 1, off = 6.4 + rnd() * 3, x = p.x - Math.sin(p.h) * off * side, y = p.y + Math.cos(p.h) * off * side;
+      if (Math.abs((x - mid.x) * tx + (y - mid.y) * ty) < DL + 4 && Math.abs((x - mid.x) * nx + (y - mid.y) * ny) < DW + 4) continue;
+      stones.push({ s, x, y, r: 1 + rnd() * 1.1 });
     }
     pebbles = { el: mk('path', { class: 'nf lo' }, ground), stones, drawn: -1 };
     return items;
   }
 
   // ---- motion --------------------------------------------------------------------------------
+  // The wind follows the pointer: it blows outward from where the pointer rests, and gusts the
+  // way the pointer moves, so a sweep across the forest bends it in a wave that springs back.
+  const wind = { x: 0, y: 0, vx: 0, vy: 0, on: false };
+  function windAt(x, y, R, A, V) {
+    const dx = x - wind.x, dy = y - wind.y, d = Math.hypot(dx, dy);
+    if (d >= R) return [0, 0];
+    const q = 1 - d / R, k = q * q * (3 - 2 * q), sp = Math.hypot(wind.vx, wind.vy), cap = sp > 900 ? 900 / sp : 1;
+    return [(dx / (d || 1) * A + wind.vx * cap * V) * k, (dy / (d || 1) * A + wind.vy * cap * V) * k];
+  }
+  function drawPatch(p, g) {
+    let d = '';
+    for (const t of p.tufts) {
+      const s = smooth(clamp((g - t.start) / .28, 0, 1));
+      if (s <= .01) continue;
+      const foot = P(t.x, t.y, 0), lx = t.sx.x, ly = t.sy.x;
+      for (const [bx, by, bh, flex] of t.blades) {
+        // a taller blade bends further; bent over, its tip comes down
+        const h = bh * s, wx = lx * flex * h / 10, wy = ly * flex * h / 10, z = Math.sqrt(Math.max(h * h * .12, h * h - wx * wx - wy * wy));
+        const tip = P(t.x + bx + wx, t.y + by + wy, z), ctl = P(t.x + bx * .25 + wx * .25, t.y + by * .25 + wy * .25, z * .62);
+        d += `M${f(foot[0])} ${f(foot[1])}Q${f(ctl[0])} ${f(ctl[1])} ${f(tip[0])} ${f(tip[1])}`;
+      }
+    }
+    set(p.el, d);
+  }
   /** Draws what changed; returns whether anything is still moving. */
-  function update({ phi, pointer, rover, moved, shown, reduced, dt }) {
+  function update({ phi, pointer, drift, rover, moved, shown, reduced, dt }) {
     let busy = false;
     const show = smooth(clamp((phi - .38) / .35, 0, 1));
-    if (stream) [stream.g, stream.deck, stream.farRail, stream.nearRail].forEach(g => { const v = show.toFixed(3); if (g.style.opacity !== v) g.style.opacity = v; });
+    if (stream) stream.parts.forEach(g => { const v = show.toFixed(3); if (g.style.opacity !== v) g.style.opacity = v; });
+    // the gust: how fast the pointer sweeps over the ground, smoothed
+    const ease = 1 - Math.exp(-dt * 10), step = Math.max(dt, .008);
+    wind.vx += ((drift ? drift[0] / step : 0) - wind.vx) * ease;
+    wind.vy += ((drift ? drift[1] / step : 0) - wind.vy) * ease;
+    if (Math.hypot(wind.vx, wind.vy) < 4) wind.vx = wind.vy = 0;
+    wind.on = !!pointer && !reduced;
+    if (pointer) { wind.x = pointer[0]; wind.y = pointer[1]; }
     for (const it of items) {
       if (it.still) continue;
       const s = reduced ? 0 : smooth(clamp((phi - it.start) / .3, 0, 1));
       if (s <= .001) { if (it.g.style.display !== 'none') it.g.style.display = 'none'; continue; }
       if (it.g.style.display === 'none') it.g.style.display = '';
-      if (!it.low) {
-        // a breeze from the pointer, and a stir as the rover goes by
-        let tx = 0, ty = 0;
-        if (pointer) {
-          const dx = it.x - pointer[0], dy = it.y - pointer[1], d = Math.hypot(dx, dy);
-          if (d < 150) { const k = Math.pow(1 - d / 150, 2) * 14; tx = dx / (d || 1) * k; ty = dy / (d || 1) * k; }
-        }
+      if (it.sway) {
+        // the wind, and a stir as the rover goes by
+        const [tx, ty] = wind.on ? windAt(it.x, it.y, 260, it.low ? 18 : 30, it.low ? .03 : .045) : [0, 0];
         if (rover && Math.abs(moved) > .02) {
           const dx = it.x - rover[0], dy = it.y - rover[1], d = Math.hypot(dx, dy);
           if (d < 110) { const kick = clamp(Math.abs(moved), 0, 3) * 6 * (1 - d / 110); it.sx.v += dx / (d || 1) * kick; it.sy.v += dy / (d || 1) * kick; it.awake = true; }
@@ -424,26 +539,39 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
           if (it.awake) busy = true;
         }
       }
-      const key = `${s.toFixed(3)} ${it.sx.x.toFixed(2)} ${it.sy.x.toFixed(2)}`;
-      if (key !== it.drawn) { it.drawn = key; it.draw(s, it.sx.x, it.sy.x); }
+      // Drawn full grown, and redrawn only as it leans; it grows by scaling up from its foot.
+      const key = `${it.sx.x.toFixed(2)} ${it.sy.x.toFixed(2)}`;
+      if (key !== it.drawn) { it.drawn = key; it.draw(1, it.sx.x, it.sy.x); }
+      const grown = s.toFixed(3);
+      if (grown !== it.grown) {
+        it.grown = grown;
+        if (s >= .9995) it.g.removeAttribute('transform');
+        else it.g.setAttribute('transform', `matrix(${grown} 0 0 ${grown} ${f(it.foot[0] * (1 - s))} ${f(it.foot[1] * (1 - s))})`);
+      }
       if (s < 1) busy = true;
     }
     if (grass) {
-      // the grass is grown by the journey; past that it stays as drawn
-      const g = reduced ? 0 : Math.min(phi, 1.1), key = g.toFixed(3);
-      if (key !== grass.drawn) {
-        grass.drawn = key;
-        let d = '';
-        for (const t of grass.tufts) {
-          const s = smooth(clamp((g - t.start) / .28, 0, 1));
-          if (s <= .01) continue;
-          const foot = P(t.x, t.y, 0);
-          for (const [bx, by, bh] of t.blades) {
-            const tip = P(t.x + bx, t.y + by, bh * s), ctl = P(t.x + bx * .25, t.y + by * .25, bh * s * .62);
-            d += `M${f(foot[0])} ${f(foot[1])}Q${f(ctl[0])} ${f(ctl[1])} ${f(tip[0])} ${f(tip[1])}`;
+      // the grass is grown by the journey, and past that stays as drawn until the wind finds it
+      const g = reduced ? 0 : Math.round(Math.min(phi, 1.1) * 400) / 400, g0 = grassAt;
+      grassAt = g;
+      for (const p of grass) {
+        let dirty = g !== g0 && !(Math.max(g0, g) < p.lo || Math.min(g0, g) > p.hi);
+        const near = wind.on && Math.hypot(p.cx - wind.x, p.cy - wind.y) < 190 + 100;
+        if (!reduced && (near || p.awake || p.held)) {
+          p.awake = p.held = false;
+          for (const t of p.tufts) {
+            const [wx, wy] = near ? windAt(t.x, t.y, 190, 8, .016) : [0, 0];
+            if (t.sx.t !== wx || t.sy.t !== wy) { t.sx.t = wx; t.sy.t = wy; t.awake = true; }
+            if (wx || wy) p.held = true;
+            if (!t.awake) continue;
+            const a = stepS(t.sx, dt), b = stepS(t.sy, dt);
+            t.awake = a || b;
+            if (t.awake) p.awake = true;
+            dirty = true;
           }
+          if (p.awake) busy = true;
         }
-        set(grass.el, d);
+        if (dirty) drawPatch(p, g);
       }
     }
     if (pebbles) {

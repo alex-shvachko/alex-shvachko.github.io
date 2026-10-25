@@ -1,10 +1,10 @@
 /* Shared interaction details: numerals that do not jump, and the reduced-motion fallbacks
    for the hover and press motion defined in the section sheets. */
-.card-meta,.project-number,.signal-read,.world-readout,.topbar-nav a span{font-variant-numeric:tabular-nums}
-.motion-reduced .chapter-go:active,.motion-reduced .theme-toggle:active,.motion-reduced .press:active{transform:none}
+.card-meta,.project-number,.signal-read,.world-readout{font-variant-numeric:tabular-nums}
+.motion-reduced .chapter-go:active,.motion-reduced .theme-toggle:active,.motion-reduced .sound-toggle:active,.motion-reduced .press:active{transform:none}
 .motion-reduced .project-tile{transform:none}
 .motion-reduced .project-image img,.motion-reduced .project-image video{transition:none;transform:none}
 @media(prefers-reduced-motion:reduce){
   .chapter-go svg,.project-arrow svg,.scroll-link svg,.contact-go svg{transition:none}
-  .chapter-go:active,.theme-toggle:active,.press:active{transform:none}
+  .chapter-go:active,.theme-toggle:active,.sound-toggle:active,.press:active{transform:none}
 }

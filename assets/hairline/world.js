@@ -5,7 +5,7 @@
   // answered by the rover. Geometry is projected once at unit scale and the camera is a
   // transform on top, so a zoom never redraws what did not move.
   if (!window.HL) return;
-  const { rings, circ, prism, hull, poly, open, clamp, lerp, mk, solid, put, tween, tset, tval, tdone, spring, stepS } = HL;
+  const { rings, circ, prism, hull, poly, open, run, clamp, lerp, mk, solid, put, tween, tset, tval, tdone, spring, stepS } = HL;
   const root = document.querySelector('.world');
   if (!root) return;
   const readout = document.querySelector('.world-readout b');
@@ -75,8 +75,12 @@
   // The rover, in its own frame: u forward, w to its left, z up.
   const CHASSIS = rings(-30, -17, 30, 17, 6, 1.8);
   const BUMPER = rings(29, -14, 33, 14, 1.6, .7);
-  const HEAD = rings(-11, -13, 11, 13, 5, 1.6);
-  const HEAD_AT = 14, NECK = circ(4, 28);
+  // The head pivots at its centre, HEAD_Z up, between the two arms of a yoke: it turns about z
+  // and nods about its own w axis. Its front is a screen, and the eyes live on the screen.
+  const HEAD = rings(-11, -14, 11, 14, 3.6, 1.4);
+  const HEAD_AT = 14, NECK = circ(4, 28), HEAD_Z = 42, HEAD_H = 8;
+  const SCREEN = HL.rrect(-9.4, -5.8, 9.4, 5.8, 2.6, 6);
+  const ARMS = [1, -1].map(side => rings(-2.6, side * 14.4 - .8, 2.6, side * 14.4 + .8, .8, .3));
   const LIDAR_AT = -13, LIDAR = [circ(7, 48), circ(6.1, 48)], CAP = [circ(4.6, 36), circ(3.9, 36)];
   const ANT = [-24, -11], ANT_TOP = 64;
   const WHEEL_U = [22, 0, -22], WHEEL_W = 23.5, WR = 9, WHW = 3.6, WZ = 9;
@@ -102,10 +106,13 @@
     })(),
     head: (() => {
       const g = mk('g', {}, roverG);
+      const arms = [1, -1].map(side => ({ side, ...solid(g) }));
       const neck = solid(g), box = solid(g);
       box.sil.classList.add('hi');
-      const eyes = [0, 1].map(() => ({ ring: mk('path', { class: 'sil' }, g), lens: mk('path', { class: 'nf lo' }, g), pupil: mk('path', { class: 'dot accent' }, g) }));
-      return { g, neck, box, eyes };
+      const screen = mk('path', { class: 'screen' }, g), glare = mk('path', { class: 'nf glare' }, g);
+      const eyes = [0, 1].map(() => mk('path', { class: 'eye' }, g));
+      const axle = mk('path', { class: 'sil' }, g), hub = mk('path', { class: 'nf lo' }, g);
+      return { g, arms, neck, box, screen, glare, eyes, axle, hub };
     })(),
     antenna: (() => {
       const g = mk('g', {}, roverG);
@@ -139,8 +146,41 @@
   const yaw = spring(.32, { k: 90, c: 17 });
   const lookX = spring(.4), lookZ = spring(-.15);
   const leanX = spring(0, { k: 60, c: 9 }), leanY = spring(0, { k: 60, c: 9 });
+  const pitch = spring(0, { k: 80, c: 13 });
   let lidarAngle = .6, blink = 1, blinkAt = 2.4, blinkT = -1;
   const anchors = {};
+
+  // The face: each eye is a top and a bottom edge sampled across its width, so one mood morphs
+  // into another; the blink presses both edges toward the middle.
+  const EYE_N = 15;
+  const se = (t, p) => Math.pow(Math.max(0, 1 - Math.pow(Math.abs(t), p)), 1 / p);
+  const MOODS = {
+    open: { w: 3.8, top: t => 2.9 * se(t, 2.6), bot: t => -2.9 * se(t, 2.6) },
+    wide: { w: 5, top: t => 2.6 * se(t, 2), bot: t => -2.6 * se(t, 2) },
+    squint: { w: 4.6, top: t => .8 * se(t, 2.4), bot: t => -.8 * se(t, 2.4) },
+    happy: { w: 4.8, top: t => 1.5 * (1 - t * t) - .3 + .8 * se(t, 3), bot: t => 1.5 * (1 - t * t) - .3 - .8 * se(t, 3) },
+    sleepy: { w: 4.2, top: t => Math.min(.2, 2.6 * se(t, 2.4)), bot: t => -2.6 * se(t, 2.4) }
+  };
+  const sample = (m, edge) => Array.from({ length: EYE_N }, (_, k) => m[edge](-1 + 2 * k / (EYE_N - 1)));
+  const face = [0, 1].map(() => ({ w: MOODS.open.w, top: sample(MOODS.open, 'top'), bot: sample(MOODS.open, 'bot') }));
+  let mood = 'open', moodUntil = 0, moodAt = 6, faceVer = 0, napTimer = 0;
+  /** Eases both eyes toward a mood (a wink is one glad eye); returns whether they still move. */
+  function stepFace(want, dt) {
+    const ease = reduced ? 1 : 1 - Math.exp(-dt * 16);
+    let moving = false;
+    face.forEach((e, i) => {
+      const m = MOODS[want === 'wink' ? (i ? 'open' : 'happy') : want];
+      const dw = (m.w - e.w) * ease;
+      e.w += dw;
+      if (Math.abs(dw) > 1e-3) moving = true;
+      for (let k = 0; k < EYE_N; k++) {
+        const t = -1 + 2 * k / (EYE_N - 1), a = (m.top(t) - e.top[k]) * ease, b = (m.bot(t) - e.bot[k]) * ease;
+        e.top[k] += a; e.bot[k] += b;
+        if (Math.abs(a) > 1e-3 || Math.abs(b) > 1e-3) moving = true;
+      }
+    });
+    return moving;
+  }
 
   function drawRover() {
     const { x: bx, y: by, h } = pose, c = Math.cos(h), s = Math.sin(h);
@@ -165,23 +205,44 @@
     put(el.lidar.body, prism(P, front, xf(LIDAR[0], lx, ly, 0), xf(LIDAR[1], lx, ly, 0), 29, 36));
     put(el.lidar.cap, prism(P, front, xf(CAP[0], lx, ly, 0), xf(CAP[1], lx, ly, 0), 36, 39.5));
     drawSlit(lx, ly);
-    // Head on its neck: it turns to the pointer and its eyes follow it.
+    // Head on its yoke: it turns and nods to the pointer, and its face is a screen.
     const [hx, hy] = at(HEAD_AT, 0), hh = h + yaw.x, hc = Math.cos(hh), hs = Math.sin(hh);
-    put(el.head.neck, prism(P, front, xf(NECK, hx, hy, 0), null, 29, 33));
-    put(el.head.box, prism(P, front, xf(HEAD[0], hx, hy, hh), xf(HEAD[1], hx, hy, hh), 33, 46));
-    const seen = facing(hc, hs);
-    const Lx = -hs, Ly = hc;
-    el.head.eyes.forEach((eye, i) => {
-      const wv = i ? -6 : 6, ex = hx + 11 * hc - wv * hs, ey = hy + 11 * hs + wv * hc, ez = 40;
-      eye.ring.style.display = eye.lens.style.display = eye.pupil.style.display = seen ? '' : 'none';
-      if (!seen) return;
-      set(eye.ring, 'd', poly(ring2(ex, ey, ez, Lx, Ly, 0, 0, 0, 1, 4, 26, blink)));
-      set(eye.lens, 'd', poly(ring2(ex, ey, ez, Lx, Ly, 0, 0, 0, 1, 2.7, 22, blink)));
-      const px = ex + Lx * lookX.x, py = ey + Ly * lookX.x, pz = ez + lookZ.x * blink;
-      set(eye.pupil, 'd', poly(ring2(px, py, pz, Lx, Ly, 0, 0, 0, 1, 1.45, 14, blink)));
-      // The pin meets the eye on its rim, so the pupil stays in view.
-      if (i === 0) anchors.eye = P(ex + Lx * 4, ey + Ly * 4, ez);
-    });
+    const pc = Math.cos(pitch.x), ps = Math.sin(pitch.x);
+    // a point in the head's own frame (u forward, w left, z up from the pivot), and a direction
+    const hp = (u, w, z) => { const u1 = u * pc - z * ps; return P(hx + u1 * hc - w * hs, hy + u1 * hs + w * hc, HEAD_Z + u * ps + z * pc); };
+    const hd = (u, w, z) => { const u1 = u * pc - z * ps; return [u1 * hc - w * hs, u1 * hs + w * hc, u * ps + z * pc]; };
+    const seen = ([x, y, z]) => x + y + z * .8165 > 1e-6;
+    const sideOn = facing(-hs, hc) ? 1 : -1;
+    el.head.arms.forEach((arm, i) => put(arm, prism(P, front, xf(ARMS[i][0], hx, hy, hh), xf(ARMS[i][1], hx, hy, hh), 30, HEAD_Z + 2.4)));
+    put(el.head.neck, prism(P, front, xf(NECK, hx, hy, 0), null, 29, 34));
+    const shell = [];
+    [[HEAD[1], -HEAD_H], [HEAD[0], 1.4 - HEAD_H], [HEAD[0], HEAD_H - 1.4], [HEAD[1], HEAD_H]].forEach(([ring, z]) => ring.forEach(q => shell.push(hp(q.u, q.v, z))));
+    const rim = seen(hd(0, 0, 1)) ? run(HEAD[1], q => seen(hd(q.nu, q.nv, 0))) : [];
+    put(el.head.box, { sil: poly(hull(shell)), crease: open(rim.map(q => hp(q.u, q.v, HEAD_H))) });
+    const faceOn = seen(hd(1, 0, 0));
+    [el.head.screen, el.head.glare, ...el.head.eyes].forEach(p => { p.style.display = faceOn ? '' : 'none'; });
+    const F = 11.05, lookW = lookX.x * 1.7, lookZ_ = .2 + lookZ.x * 1.3;
+    if (faceOn) {
+      set(el.head.screen, 'd', poly(SCREEN.map(q => hp(F, q.u, q.v))));
+      set(el.head.glare, 'd', open([hp(F, -8.5, 4.9), hp(F, -6.8, 3.2)]) + open([hp(F, -8.7, 2.5), hp(F, -8.3, 2.1)]));
+      el.head.eyes.forEach((eye, i) => {
+        const e = face[i], cw = (i ? -4.6 : 4.6) + lookW, top = [], bot = [];
+        for (let k = 0; k < EYE_N; k++) {
+          const t = -1 + 2 * k / (EYE_N - 1), w = cw + t * e.w / 2, mid = (e.top[k] + e.bot[k]) / 2;
+          top.push(hp(F, w, lookZ_ + mid + (e.top[k] - mid) * blink));
+          bot.push(hp(F, w, lookZ_ + mid + (e.bot[k] - mid) * blink));
+        }
+        set(eye, 'd', poly(top.concat(bot.reverse())));
+      });
+    }
+    anchors.eye = hp(F, 4.6 + lookW, lookZ_);
+    // the axle the head nods on, on the arm that faces us; the near arm paints over the head
+    const axle = [hx - sideOn * 15.3 * hs, hy + sideOn * 15.3 * hc];
+    set(el.head.axle, 'd', poly(ring2(axle[0], axle[1], HEAD_Z, hc, hs, 0, 0, 0, 1, 2.3, 18)));
+    set(el.head.hub, 'd', poly(ring2(axle[0], axle[1], HEAD_Z, hc, hs, 0, 0, 0, 1, 1, 12)));
+    const nearArm = el.head.arms.find(a => a.side === sideOn), farArm = el.head.arms.find(a => a.side !== sideOn);
+    if (el.head.g.firstChild !== farArm.g) el.head.g.insertBefore(farArm.g, el.head.g.firstChild);
+    if (nearArm.g.nextSibling !== el.head.axle) el.head.g.insertBefore(nearArm.g, el.head.axle);
     // Antenna: a mast with a ball on top that leans toward the pointer.
     const [ax0, ay0] = at(ANT[0], ANT[1]);
     put(el.antenna.base, prism(P, front, xf(circ(2.3, 18), ax0, ay0, 0), null, 29, 32));
@@ -191,7 +252,7 @@
     set(el.antenna.band, 'd', poly(ring2(band[0], band[1], band[2], 1, 0, 0, 0, 1, 0, 1.6, 14)));
     set(el.antenna.tip, 'd', poly(ring2(tip[0], tip[1], tip[2], CS, -CS, 0, 0, 0, 1, 2.3, 18)));
 
-    anchors.head = P(hx, hy, 46);
+    anchors.head = hp(0, 0, HEAD_H);
     anchors.lidar = P(lx, ly, 39.5);
     anchors.antenna = P(tip[0], tip[1], tip[2] + 2.3);
     const nearWheel = el.sides.find(sd => sd.side === nearSide).wheels.reduce((a, b) => (b.depth > a.depth ? b : a));
@@ -404,7 +465,7 @@
     const forestItems = reduced ? [] : forest.build({
       route, pointAt, marks: marksWorld, plinth: PR, toScreen, W, H, blocked,
       clear,
-      budget: wide ? 125 : narrow ? 58 : 90, seed: 20261025
+      budget: wide ? 230 : narrow ? 100 : 160, seed: 20261025
     });
     if (reduced) { waterG.replaceChildren(); groundG.replaceChildren(); }
     standing = [...forestItems, ...marks.map(m => ({ g: m.g, depth: m.x + m.y }))].sort((a, b) => a.depth - b.depth);
@@ -526,7 +587,7 @@
   addEventListener('blur', () => { pointer = null; schedule(); });
 
   // ---- the loop ----------------------------------------------------------------------------
-  let raf = 0, last = 0, part = '', settled = false, drawnPose = '', drawnTrail = '';
+  let raf = 0, last = 0, part = '', settled = false, drawnPose = '', drawnTrail = '', windFrom = null;
   const listeners = new Set();
   let requested = 0;
   function schedule() {
@@ -591,7 +652,10 @@
       if (lo !== roverSlot) { roverSlot = lo; objects.insertBefore(roverG, standing[lo] ? standing[lo].g : null); }
     }
     const ground = pointer ? unP((pointer[0] - C.ox) / C.S, (pointer[1] - C.oy) / C.S) : null;
-    if (forest.update({ phi, pointer: ground, rover: [pose.x, pose.y], moved, shown: state.routeShown * route.len, reduced, dt })) busy = true;
+    // How far the pointer itself moved over the ground, not the camera under it: the wind's gust.
+    const drift = pointer && windFrom ? unP((pointer[0] - windFrom[0]) / C.S, (pointer[1] - windFrom[1]) / C.S) : null;
+    windFrom = pointer && [pointer[0], pointer[1]];
+    if (forest.update({ phi, pointer: ground, drift, rover: [pose.x, pose.y], moved, shown: state.routeShown * route.len, reduced, dt })) busy = true;
 
     // Active chapter from the real scroll, so the marker lights with its card.
     const t = state.target;
@@ -610,10 +674,27 @@
       const reach = clamp(1 - Math.hypot(dx, dy) / (C.S * 140), 0, 1);
       leanX.t = clamp((g[0] - hx) / 60, -1, 1) * 3.5 * reach;
       leanY.t = clamp((g[1] - hy) / 60, -1, 1) * 3.5 * reach;
+      // the head nods up to a pointer above it and down to one below
+      const up = pointer[1] - (C.oy + C.S * P(hx, hy, HEAD_Z)[1]);
+      pitch.t = clamp(-up / (C.S * 110), -1, 1) * (up < 0 ? .4 : .28);
     } else {
-      yaw.t = reduced ? .32 : .32 * (1 - k); lookX.t = .45; lookZ.t = -.2; leanX.t = 0; leanY.t = 0;
+      yaw.t = reduced ? .32 : .32 * (1 - k); lookX.t = .45; lookZ.t = -.2; leanX.t = 0; leanY.t = 0; pitch.t = 0;
     }
-    for (const sp of [yaw, lookX, lookZ, leanX, leanY]) if (stepS(sp, dt)) busy = true;
+    // The face's mood: glad with the pointer on it, intent while it hurries along the trail,
+    // drowsy once nothing has happened for a while, and now and then a passing mood of its own.
+    let want = 'open';
+    if (!reduced && !intro) {
+      const top = anchors.head && [C.ox + C.S * anchors.head[0], C.oy + C.S * anchors.head[1]];
+      if (pointer && top && Math.hypot(pointer[0] - top[0], pointer[1] - top[1] - C.S * 8) < C.S * 30) want = 'happy';
+      else if (Math.abs(moved) > .8) want = 'squint';
+      else if (now - lastInput > 6000) want = 'sleepy';
+      else if (now < moodUntil) want = mood;
+    }
+    if (want === 'sleepy') pitch.t = -.22;
+    // with the pointer on its head it turns to the one looking at it
+    else if (want === 'happy') { yaw.t = clamp(wrap(Math.PI / 4 - pose.h), -.95, .95); pitch.t = .16; lookX.t = 0; lookZ.t = .2; }
+    for (const sp of [yaw, lookX, lookZ, leanX, leanY, pitch]) if (stepS(sp, dt)) busy = true;
+    if (stepFace(want, dt)) { busy = true; faceVer++; }
     if (Math.abs(moved) > 1e-3) { const kick = clamp(moved, -3, 3) * 2.5; leanX.v -= Math.cos(pose.h) * kick; leanY.v -= Math.sin(pose.h) * kick; }
 
     // Ambient life while the rover is in view: the lidar sweeps, the eyes blink now and then.
@@ -624,8 +705,16 @@
       if (!intro) blinkAt -= dt;
       if (blinkAt <= 0 && blinkT < 0) { blinkT = 0; blinkAt = 3.5 + Math.random() * 4; }
       if (blinkT >= 0) { blinkT += dt; blink = blinkT < .09 ? 1 - blinkT / .09 * .9 : blinkT < .2 ? .1 + (blinkT - .09) / .11 * .9 : 1; if (blinkT >= .2) blinkT = -1; }
+      if (!intro) moodAt -= dt;
+      if (moodAt <= 0) {
+        moodAt = 5 + Math.random() * 6;
+        mood = ['happy', 'wide', 'wink', 'squint'][Math.floor(Math.random() * 4)];
+        moodUntil = now + 1300 + Math.random() * 1200;
+      }
     }
-    const poseKey = [pose.x, pose.y, pose.h, pose.spin, yaw.x, lookX.x, lookZ.x, leanX.x, leanY.x, blink].map(v => v.toFixed(3)).join() + m;
+    // Wake once more when it is time to doze, so the face can get drowsy.
+    if (!reduced && phi < 2.7 && want !== 'sleepy') { clearTimeout(napTimer); napTimer = setTimeout(schedule, Math.max(60, 6050 - (now - lastInput))); }
+    const poseKey = [pose.x, pose.y, pose.h, pose.spin, yaw.x, lookX.x, lookZ.x, leanX.x, leanY.x, pitch.x, blink].map(v => v.toFixed(3)).join() + faceVer + m;
     const changed = poseKey !== drawnPose;
     if (changed) { drawnPose = poseKey; drawRover(); }
     else drawSlit(...slitAt);

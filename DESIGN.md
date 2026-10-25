@@ -113,7 +113,7 @@ The site is a personal card drawn in the language of [hairline](https://github.c
 
 Restrained: chroma-free greys plus one accent. `paper` is the ground; `plate` is every card, tile and panel; `stone` is the recessed surface (segmented bars, icon wells, hover rows). The line world uses its own four strokes, after the hairline palette but set darker (lighter in dark mode) and drawn at 1.2px so the drawing reads at a glance: `line-hi` (the only bright stroke), `line-edge` (silhouettes, leaders, links), `line-mid` (creases and plates), `line-lo` (the floor grid and the globe's far side). The two hairline package figures take the same palette and weight. Plates in the world are filled with `paper`, so a nearer solid hides a farther one.
 
-Electric blue (`accent`) marks only the live point: the rover's pupils, the active Journey marker and card number, the current stage number in the top bar, the location pin and text selection. Every dark value has a counterpart (`*-dark`); the switch swaps the whole set at once.
+Electric blue (`accent`) marks only the live point: the rover's eyes, the active Journey marker and card number, the location pin and text selection. Every dark value has a counterpart (`*-dark`); the switch swaps the whole set at once.
 
 ## Typography
 
@@ -121,7 +121,7 @@ Geist for everything readable, set tight (display tracking −0.04em, never tigh
 
 ## Layout
 
-Four stages, unchanged in order and content: Home, Journey, Projects, Contact. A 56px top bar floats over everything; it is clear over the hero and frosts once the headline leaves, and the name docks in as it goes. Home puts the name left and the rover right (above the copy on phones). Journey pins for 540svh on wide screens with the cards in two staggered columns and the trail down the gutter between them; below 1100px it stacks. Projects is a centred 1240px column. Contact is one wide plate of three columns that collapses to two, then one.
+Four stages, unchanged in order and content: Home, Journey, Projects, Contact. A 56px top bar floats over everything and holds only two switches, sound (off until turned on; nothing plays yet) and theme, in a pill that is clear over the hero and frosts once the headline leaves. Home puts the name left and the rover right (above the copy on phones). Journey pins for 540svh on wide screens with the cards in two staggered columns and the trail down the gutter between them; below 1100px it stacks. Projects is a centred 1240px column. Contact is one wide plate of three columns that collapses to two, then one.
 
 ## Elevation & Depth
 
@@ -133,7 +133,8 @@ Every corner is round. Chips 7px, controls 10px, buttons 12px, cards 14px, tiles
 
 ## Components
 
-- **The forest**: groves of pines and spruces (scalloped tiers with drooping tips, a ridge and two branch strokes each), broadleaf trees with cloud crowns drawn as bulging scallops, birches with bark ticks, bushes, rocks, fallen logs showing their rings, mushrooms, grass and pebbles, and a stream with ripples, stones and reeds crossed by a plank bridge. Everything is placed against the Journey camera so the rover's way and the stage's text stay clear, painted back to front with the rover slotted in by depth, grown outward from the studio as the camera rises, and swayed by the pointer and by the rover passing. The floor grid steps back to 42% over it.
+- **The forest**: groves of pines and spruces (scalloped tiers with drooping tips, a ridge and two branch strokes each), broadleaf trees with cloud crowns drawn as bulging scallops, birches with bark ticks, saplings at the groves' edges, an understory of bushes, stones and fallen logs showing their rings, thickets and boulders in the open, mushrooms, dense grass and pebbles, and a river with shallows, ripples, stones and reeds crossed by a wide plank bridge on two beams with a post rail each side. Everything is placed against the Journey camera so it fills the visible frame while the rover's way and the stage's text stay clear, painted back to front with the rover slotted in by depth, and grown outward from the studio as the camera rises (each piece scales up from its foot). The pointer is a wind: it pushes trees, bushes and grass outward and gusts them the way it sweeps, and they spring back; the rover stirs them as it passes. The floor grid steps back to 42% over it.
+- **The rover's head**: a rounded box on a yoke that turns toward the pointer and nods up and down to it. Its front is a dark screen with a glare stroke, where two accent eyes morph between moods (open, wide, intent, glad, a wink, drowsy) and blink: glad and facing you with the pointer on its head, intent while it hurries along the trail, drowsy after six idle seconds, with a passing mood of its own now and then.
 - **Primary button**: ink plate, paper text, arrow that slides 3px on hover; presses scale to 0.97.
 - **Topic pin**: an ink dot with a soft pulse on a rover part, a hairline leader, a plate label. Placed live from the world's camera (`connectors.js`).
 - **Journey card**: plate with ring and lift; mono meta row; the active card gets an ink ring and an accent number. Unrevealed cards are clipped, blurred and dimmed until the scroll reaches them; a curved hairline link reaches the marker beside each card.
