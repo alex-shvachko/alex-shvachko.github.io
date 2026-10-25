@@ -1,8 +1,10 @@
 (() => {
-  // The project archive: the tray of folders from hairline's Riffle, drawn here at full size
-  // with each project's picture on its folder. The folder under the pointer (or chosen with
-  // the arrow keys) stands up out of the tray and plays its preview; a click opens the project.
-  // It reads the projects from the tiles and follows the filter and sort (projects.js).
+  // The project archive: the tray of folders from hairline's Riffle, drawn here at full size,
+  // one tray per category standing in a row that slides to the chosen category; the first tray
+  // holds every project. Each folder wears its project's picture. In the tray in front, the
+  // folder under the pointer (or chosen with the arrow keys) stands up out of the tray and plays
+  // its preview; a click opens the project. A click on a tray at the side, or a swipe, brings that
+  // tray in front. It reads the projects from the tiles and follows the filter and sort (projects.js).
   if (!window.HL) return;
   const { Cam, proj, facing, rrect, ringAt, run, hull, poly, open, fillet, rad, clamp, tween, tset, tval, tdone, mk, register } = HL;
   const section = document.querySelector('#projects');
@@ -18,19 +20,18 @@
   };
   const reducedQuery = matchMedia('(prefers-reduced-motion: reduce)');
   const allTiles = [...section.querySelectorAll('.project-tile')];
+  const filters = [...section.querySelectorAll('.project-filters [data-filter]')];
 
   // Folders: W wide, H tall with a TW × TH tab, G apart; the picture is a 16:9 window on the face.
   const MAX = 11, W = 120, H = 70, G = 13, TW = 30, TH = 8, TABS = [10, 45, 80], TK = 1.4;
-  const REST = -12, BACK = -22, FWD = 18, LIFT = 50, STAGGER = 36;
+  const REST = -12, BACK = -22, FWD = 18, LIFT = 50, STAGGER = 36, ARRIVE = 240;
   const IMG = { u0: 8, u1: 112, v0: 6, v1: 64.5 }, BW = 160, BH = 90;
   const X0 = -6, X1 = W + 6, Y0 = -10, Y1 = (MAX - 1) * G + 10, WH = 24, WR = 8, WT = 2.6;
   // The camera turns a little further round than the world's, so the folders' faces open toward the viewer.
   const C = Cam(30, .5, 1), P = proj(C), front = facing(C);
   const LR = pts => (pts[0][0] <= pts[pts.length - 1][0] ? pts : pts.slice().reverse());
 
-  // ---- the fixed parts: frame and tray ---------------------------------------------------
-  const svg = mk('svg', { 'aria-hidden': 'true', focusable: 'false' }, stage);
-  stage.insertBefore(svg, frame);
+  // ---- the fixed parts: frame and trays --------------------------------------------------
   const pose = (y, th, lift) => {
     const s = Math.sin(rad(th)), c = Math.cos(rad(th));
     return { w: (u, v) => P(u, y + v * s, v * c + lift), wb: (u, v) => P(u, y + v * s - TK * c, v * c + TK * s + lift) };
@@ -44,26 +45,52 @@
   }
   [[X0, Y0], [X1, Y0], [X0, Y1], [X1, Y1]].forEach(([x, y]) => { grow(P(x, y, 0)); grow(P(x, y, WH)); });
   const PAD = 6, VB = [bx0 - PAD, by0 - PAD, bx1 - bx0 + PAD * 2, by1 - by0 + PAD * 2];
-  svg.setAttribute('viewBox', VB.map(v => v.toFixed(2)).join(' '));
   stage.style.setProperty('--archive-ratio', (VB[2] / VB[3]).toFixed(4));
 
+  // Every tray is drawn alike: its lines behind the folders, and its front wall over them.
   const outer = rrect(X0, Y0, X1, Y1, WR, 6), inner = rrect(X0 + WT, Y0 + WT, X1 - WT, Y1 - WT, WR - WT, 6);
-  const far = mk('g', {}, svg);
-  mk('path', { d: poly(hull(ringAt(P, outer, 0).concat(ringAt(P, outer, WH)))), class: 'sil' }, far);
-  mk('path', { d: poly(ringAt(P, inner, WH)), class: 'nf' }, far);
-  mk('path', { d: open(ringAt(P, run(inner, q => !front(q)), 2.5)), class: 'nf lo' }, far);
-  const cardsG = mk('g', {}, svg);
-  const near = mk('g', {}, svg);
-  {
+  const FAR = [
+    [poly(hull(ringAt(P, outer, 0).concat(ringAt(P, outer, WH)))), 'sil'],
+    [poly(ringAt(P, inner, WH)), 'nf'],
+    [open(ringAt(P, run(inner, q => !front(q)), 2.5)), 'nf lo']
+  ];
+  const NEAR = (() => {
     const iF = LR(ringAt(P, run(inner, front), WH)), oT = LR(ringAt(P, run(outer, front), WH)), oB = LR(ringAt(P, run(outer, front), 0));
     const hx = (X0 + X1) / 2, onFront = ring => ring.map(q => P(q.u, Y1, q.v));
-    mk('path', { d: poly([...iF, oT[oT.length - 1], ...oB.slice().reverse(), oT[0]]), class: 'fo' }, near);
-    mk('path', { d: open(oT), class: 'nf lo' }, near);
-    mk('path', { d: open(iF), class: 'nf' }, near);
-    mk('path', { d: open([oT[0], ...oB, oT[oT.length - 1]]), class: 'nf sil' }, near);
-    mk('path', { d: poly(onFront(rrect(hx - 14, 8, hx + 14, 15.5, 3.5, 5))), class: 'nf' }, near);
-    mk('path', { d: poly(onFront(rrect(hx - 12, 9.8, hx + 12, 13.7, 1.8, 5))), class: 'nf lo' }, near);
-  }
+    return [
+      [poly([...iF, oT[oT.length - 1], ...oB.slice().reverse(), oT[0]]), 'fo'],
+      [open(oT), 'nf lo'],
+      [open(iF), 'nf'],
+      [open([oT[0], ...oB, oT[oT.length - 1]]), 'nf sil'],
+      [poly(onFront(rrect(hx - 14, 8, hx + 14, 15.5, 3.5, 5))), 'nf'],
+      [poly(onFront(rrect(hx - 12, 9.8, hx + 12, 13.7, 1.8, 5))), 'nf lo']
+    ];
+  })();
+  // The tray's category and count are lettered on its front wall, either side of the handle:
+  // text x runs along the wall and text y down it.
+  const o = P(0, Y1, 0), eu = P(1, Y1, 0), ed = P(0, Y1, -1);
+  const LETTERING = `matrix(${[eu[0] - o[0], eu[1] - o[1], ed[0] - o[0], ed[1] - o[1], o[0], o[1]].map(v => v.toFixed(4)).join(' ')})`;
+
+  const track = document.createElement('div');
+  track.className = 'archive-track';
+  stage.insertBefore(track, frame);
+  const trays = filters.map((button, index) => {
+    const category = button.dataset.filter;
+    const el = document.createElement('div');
+    el.className = 'archive-tray';
+    el.style.setProperty('--i', index);
+    track.append(el);
+    const svg = mk('svg', { viewBox: VB.map(v => v.toFixed(2)).join(' '), 'aria-hidden': 'true', focusable: 'false' }, el);
+    const far = mk('g', {}, svg);
+    FAR.forEach(([d, cls]) => mk('path', { d, class: cls }, far));
+    const cardsG = mk('g', {}, svg);
+    const near = mk('g', {}, svg);
+    NEAR.forEach(([d, cls]) => mk('path', { d, class: cls }, near));
+    const label = mk('g', { transform: LETTERING, class: 'label' }, near);
+    mk('text', { x: X0 + 8, y: -10.6 }, label).textContent = category === 'All' ? 'ALL' : category.toUpperCase();
+    const count = mk('text', { x: X1 - 8, y: -10.6, 'text-anchor': 'end' }, label);
+    return { index, category, el, cardsG, count, items: [], folders: [], active: -1, slot: () => 0 };
+  });
 
   // ---- the folders ---------------------------------------------------------------------------
   const read = tile => ({
@@ -75,21 +102,22 @@
     image: tile.querySelector('img').getAttribute('src'),
     video: tile.querySelector('video')?.getAttribute('src') || null
   });
-  let items = [], folders = [], active = -1, slot = () => 0, shown = false;
+  // cur is the tray in front: the only one whose folders stand up, take input and show the preview.
+  let cur = trays.find(tray => filters[tray.index].getAttribute('aria-pressed') === 'true') || trays[0], shown = false;
   const matrix = (TL, TR, BL, w, h) => [(TR[0] - TL[0]) / w, (TR[1] - TL[1]) / w, (BL[0] - TL[0]) / h, (BL[1] - TL[1]) / h, TL[0], TL[1]];
 
-  function build(list, entering) {
-    items = list.map(read);
+  function build(tray, list, entering) {
+    const items = tray.items = list.map(read);
     const n = items.length;
     // Folders fill the tray from the front; fewer of them stand further apart.
     const gap = n > 1 ? Math.min(G * 1.9, (MAX - 1) * G / (n - 1)) : 0;
-    slot = k => (MAX - 1) * G - (n - 1 - k) * gap;
-    cardsG.replaceChildren();
+    tray.slot = k => (MAX - 1) * G - (n - 1 - k) * gap;
+    tray.cardsG.replaceChildren();
     const now = performance.now();
-    folders = items.map((item, idx) => {
+    tray.folders = items.map((item, idx) => {
       const k = n - 1 - idx, t0 = TABS[idx % 3];
       const shape = fillet([[0, 0], [W, 0], [W, H], [t0 + TW, H], [t0 + TW, H + TH], [t0, H + TH], [t0, H], [0, H]], [1.2, 1.2, 3.6, 2, 2.6, 2.6, 2, 3.6]);
-      const g = mk('g', {}, cardsG);
+      const g = mk('g', {}, tray.cardsG);
       const back = mk('path', { class: 'lo' }, g), face = mk('path', { class: 'sil' }, g);
       const image = mk('image', { width: BW, height: BH, preserveAspectRatio: 'xMidYMid slice' }, g);
       const window_ = mk('path', { class: 'nf' }, g);
@@ -102,16 +130,17 @@
       return { item, k, t0, shape, g, back, face, image, window: window_, punch, no, a, z, drawn: '' };
     });
     // Back to front in the paint order: the front folder is the first project.
-    folders.slice().sort((p, q) => p.k - q.k).forEach(f => cardsG.append(f.g));
-    if (shown) folders.forEach(f => f.image.setAttribute('href', f.item.image));
-    active = -1;
+    tray.folders.slice().sort((p, q) => p.k - q.k).forEach(f => tray.cardsG.append(f.g));
+    if (shown) tray.folders.forEach(f => f.image.setAttribute('href', f.item.image));
+    tray.count.textContent = `${String(n).padStart(2, '0')} ${n === 1 ? 'PROJECT' : 'PROJECTS'}`;
+    tray.active = -1;
   }
 
-  function draw(f, now) {
+  function draw(tray, f, now) {
     const th = tval(f.a, now), lift = tval(f.z, now), key = `${th.toFixed(3)} ${lift.toFixed(3)}`;
     if (key === f.drawn) return;
     f.drawn = key;
-    const { w, wb } = pose(slot(f.k), th, lift);
+    const { w, wb } = pose(tray.slot(f.k), th, lift);
     f.back.setAttribute('d', poly(f.shape.map(p => wb(p[0], p[1]))));
     f.face.setAttribute('d', poly(f.shape.map(p => w(p[0], p[1]))));
     const TL = w(IMG.u0, IMG.v1), TR = w(IMG.u1, IMG.v1), BL = w(IMG.u0, IMG.v0), BR = w(IMG.u1, IMG.v0);
@@ -124,14 +153,15 @@
   }
 
   // The pulled folder's preview is a real picture (and video) laid onto its face in page pixels,
-  // so it stays sharp and can play. It shows once the folder has risen clear of the others.
+  // so it stays sharp and can play. It rides in the tray in front and shows once the folder has
+  // risen clear of the others.
   let frameKey = '';
   function placeFrame(now) {
-    const f = folders[active];
+    const f = cur.folders[cur.active];
     if (!f) { frame.style.opacity = '0'; return; }
     const lift = tval(f.z, now), th = tval(f.a, now);
-    const { w } = pose(slot(f.k), th, lift);
-    const k = stage.clientWidth / VB[2];
+    const { w } = pose(cur.slot(f.k), th, lift);
+    const k = cur.el.clientWidth / VB[2];
     const px = q => [(q[0] - VB[0]) * k, (q[1] - VB[1]) * k];
     const m = matrix(px(w(IMG.u0, IMG.v1)), px(w(IMG.u1, IMG.v1)), px(w(IMG.u0, IMG.v0)), 320, 180);
     const key = m.map(v => v.toFixed(3)).join(',');
@@ -141,7 +171,7 @@
 
   const loop = register(stage, (_dt, now) => {
     let moving = false;
-    folders.forEach(f => { draw(f, now); if (!tdone(f.a, now) || !tdone(f.z, now)) moving = true; });
+    trays.forEach(tray => tray.folders.forEach(f => { draw(tray, f, now); if (!tdone(f.a, now) || !tdone(f.z, now)) moving = true; }));
     placeFrame(now);
     return moving;
   });
@@ -160,14 +190,15 @@
     frame.replaceChildren(...nodes);
   }
 
-  /** Pulls folder a (an index into items, 0 = the front one); the stagger spreads out from it. */
-  function setActive(a, announce) {
+  /** Pulls folder a of the tray in front (0 = its front folder) after wait ms; the stagger spreads out from it. */
+  function setActive(a, announce, wait = 0) {
+    const { items, folders } = cur;
     a = clamp(a, 0, items.length - 1);
-    if (a === active || !folders[a]) return;
+    if (a === cur.active || !folders[a]) return;
     const now = performance.now(), ka = folders[a].k;
-    active = a;
+    cur.active = a;
     folders.forEach(f => {
-      const delay = Math.abs(f.k - ka) * STAGGER;
+      const delay = wait + Math.abs(f.k - ka) * STAGGER;
       tset(f.a, f.k < ka ? BACK : f.k > ka ? FWD : 0, now, delay);
       tset(f.z, f.k === ka ? LIFT : 0, now, delay);
       f.face.classList.toggle('hi', f.k === ka);
@@ -185,65 +216,147 @@
     loop.wake();
   }
 
+  /** Lays a tray's folders back down as it slides out of the way. */
+  function rest(tray) {
+    const now = performance.now(), ka = tray.folders[tray.active]?.k ?? 0;
+    tray.folders.forEach(f => {
+      const delay = Math.abs(f.k - ka) * STAGGER / 2;
+      tset(f.a, REST, now, delay);
+      tset(f.z, 0, now, delay);
+      f.face.classList.remove('hi');
+      f.punch[f.no].setAttribute('class', 'dot m');
+    });
+    tray.active = -1;
+  }
+
+  /** Slides the row to a tray; the folder that was out stays out if that tray has it. */
+  function bring(tray) {
+    if (tray === cur) return;
+    const keep = cur.items[cur.active]?.tile;
+    rest(cur);
+    cur.el.classList.remove('is-front');
+    cur = tray;
+    show();
+    const again = cur.items.findIndex(item => item.tile === keep);
+    setActive(again >= 0 ? again : 0, false, ARRIVE);
+  }
+  function show() {
+    cur.el.classList.add('is-front');
+    cur.el.append(frame);
+    track.style.setProperty('--at', cur.index);
+  }
+
   function openActive() {
-    const item = items[active];
+    const item = cur.items[cur.active];
     if (item) section.dispatchEvent(new CustomEvent('archive:open', { detail: { tile: item.tile, source: frame, opener: stage } }));
   }
 
   // ---- input: the pointer picks by the folders' resting top edges, which never move ----------
   function toView(e) {
-    const r = stage.getBoundingClientRect();
+    const r = cur.el.getBoundingClientRect();
     return [VB[0] + (e.clientX - r.left) / r.width * VB[2], VB[1] + (e.clientY - r.top) / r.height * VB[3]];
   }
   function hit(q) {
-    if (!folders.length) return -1;
+    if (!cur.folders.length) return -1;
     const row = (() => { const a = P(0, 0, 0), b = P(0, 1, 0), l = Math.hypot(b[0] - a[0], b[1] - a[1]); return [(b[0] - a[0]) / l, (b[1] - a[1]) / l]; })();
     const across = (() => { const a = P(0, 0, 0), b = P(1, 0, 0), l = Math.hypot(b[0] - a[0], b[1] - a[1]); return [(b[0] - a[0]) / l, (b[1] - a[1]) / l]; })();
     let best = -1, bd = Infinity;
-    folders.forEach((f, idx) => {
-      const top = P(W / 2, slot(f.k) + H * Math.sin(rad(REST)), H * Math.cos(rad(REST)));
+    cur.folders.forEach((f, idx) => {
+      const top = P(W / 2, cur.slot(f.k) + H * Math.sin(rad(REST)), H * Math.cos(rad(REST)));
       const dx = q[0] - top[0], dy = q[1] - top[1];
       const along = Math.abs(dx * row[0] + dy * row[1]), side = Math.abs(dx * across[0] + dy * across[1]);
       if (side < W * .62 && along < bd) { bd = along; best = idx; }
     });
     return best;
   }
-  // Mouse and pen pick by hovering and open with a click; a finger picks with a tap and opens with a second tap.
-  let lastType = 'mouse';
-  stage.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.pointerType === 'pen') { const a = hit(toView(e)); if (a >= 0) setActive(a); } });
+  const trayAt = e => trays.find(tray => tray.el.contains(e.target));
+  // A tray at the side is brought in front through its filter button, so the filter, the grid
+  // and the count stay in step.
+  const choose = tray => filters[tray.index].click();
+  // Mouse and pen pick by hovering and open with a click; a finger picks with a tap, opens with a
+  // second tap, and drags the row sideways to the next tray.
+  let lastType = 'mouse', touch = null;
+  function drag(e) {
+    const dx = touch.dx = e.clientX - touch.x;
+    if (!touch.side && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(e.clientY - touch.y)) {
+      touch.side = true;
+      track.classList.add('is-dragging');
+    }
+    // Past the first or last tray the row gives only a little.
+    if (touch.side) track.style.setProperty('--drag', `${(trays[cur.index - Math.sign(dx)] ? dx : dx / 3).toFixed(1)}px`);
+  }
+  function letGo() {
+    track.classList.remove('is-dragging');
+    track.style.setProperty('--drag', '0px');
+  }
+  stage.addEventListener('pointermove', e => {
+    if (touch && e.pointerId === touch.id) { drag(e); return; }
+    if ((e.pointerType === 'mouse' || e.pointerType === 'pen') && trayAt(e) === cur) { const a = hit(toView(e)); if (a >= 0) setActive(a); }
+  });
   stage.addEventListener('pointerdown', e => {
     lastType = e.pointerType;
-    if (e.pointerType !== 'touch') return;
+    if (e.pointerType === 'touch') touch = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, side: false };
+  });
+  stage.addEventListener('pointerup', e => {
+    if (!touch || e.pointerId !== touch.id) return;
+    const { dx, side } = touch;
+    touch = null;
+    if (side) {
+      letGo();
+      const next = trays[cur.index - Math.sign(dx)];
+      if (next && Math.abs(dx) > Math.min(90, stage.clientWidth * .2)) choose(next);
+      return;
+    }
+    const tray = trayAt(e);
+    if (tray && tray !== cur) { choose(tray); return; }
     const a = hit(toView(e));
     if (a < 0) return;
-    if (a === active) openActive(); else setActive(a, true);
+    if (a === cur.active) openActive(); else setActive(a, true);
   });
-  stage.addEventListener('click', e => { if (lastType !== 'touch') { const a = hit(toView(e)); if (a >= 0) { setActive(a); openActive(); } } });
+  stage.addEventListener('pointercancel', e => {
+    if (!touch || e.pointerId !== touch.id) return;
+    if (touch.side) letGo();
+    touch = null;
+  });
+  stage.addEventListener('click', e => {
+    if (lastType === 'touch') return;
+    const tray = trayAt(e);
+    if (tray && tray !== cur) { choose(tray); return; }
+    const a = hit(toView(e));
+    if (a >= 0) { setActive(a); openActive(); }
+  });
   stage.addEventListener('keydown', e => {
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (step) { e.preventDefault(); setActive(active + step, true); }
+    if (step) { e.preventDefault(); setActive(cur.active + step, true); }
     else if (e.key === 'Home') { e.preventDefault(); setActive(0, true); }
-    else if (e.key === 'End') { e.preventDefault(); setActive(items.length - 1, true); }
+    else if (e.key === 'End') { e.preventDefault(); setActive(cur.items.length - 1, true); }
     else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openActive(); }
   });
   caption.open.addEventListener('click', openActive);
 
-  // The filter and sort rebuild the tray; the folder that was out stays out if it is still there.
-  section.addEventListener('projects:render', e => {
-    const keep = items[active]?.tile;
-    build(e.detail.tiles, true);
-    const again = items.findIndex(item => item.tile === keep);
+  // The sort refills every tray (the one in front drops its folders in again) and the filter
+  // slides the row to its category's tray.
+  function fill(tiles, entering) {
+    const keep = cur.items[cur.active]?.tile;
+    trays.forEach(tray => build(tray, tiles.filter(tile => tray.category === 'All' || tile.dataset.category === tray.category), entering && tray === cur));
+    const again = cur.items.findIndex(item => item.tile === keep);
     setActive(again >= 0 ? again : 0);
+  }
+  let order = allTiles.map(tile => tile.dataset.order).join();
+  section.addEventListener('projects:render', e => {
+    const key = e.detail.tiles.map(tile => tile.dataset.order).join();
+    if (key !== order) { order = key; fill(e.detail.tiles, true); }
+    bring(trays.find(tray => tray.category === e.detail.category) || trays[0]);
   });
   // Pictures load only once the archive comes near the viewport.
   new IntersectionObserver(([entry]) => {
     if (!entry.isIntersecting || shown) return;
     shown = true;
-    folders.forEach(f => f.image.setAttribute('href', f.item.image));
+    trays.forEach(tray => tray.folders.forEach(f => f.image.setAttribute('href', f.item.image)));
   }, { rootMargin: '400px 0px' }).observe(stage);
   new ResizeObserver(() => { frameKey = ''; loop.wake(); }).observe(stage);
-  reducedQuery.addEventListener('change', () => { const a = active; active = -1; setActive(a < 0 ? 0 : a); });
+  reducedQuery.addEventListener('change', () => { const a = cur.active; cur.active = -1; setActive(a < 0 ? 0 : a); });
 
-  build(allTiles.filter(tile => !tile.hidden), false);
-  setActive(0);
+  show();
+  fill(allTiles, false);
 })();

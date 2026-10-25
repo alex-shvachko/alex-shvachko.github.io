@@ -20,8 +20,8 @@
     ordered.forEach(tile => { tile.hidden = category !== 'All' && tile.dataset.category !== category; grid.append(tile); });
     const shown = tiles.filter(tile => !tile.hidden).length;
     results.textContent = `${shown} ${shown === 1 ? 'project' : 'projects'} shown`;
-    // The archive tray (archive.js) follows the same filter and order.
-    section.dispatchEvent(new CustomEvent('projects:render', { detail: { tiles: ordered.filter(tile => !tile.hidden) } }));
+    // The archive (archive.js) fills its trays in the same order and slides to the category's tray.
+    section.dispatchEvent(new CustomEvent('projects:render', { detail: { tiles: ordered, category } }));
     const positions = tiles.filter(tile => !tile.hidden).map(tile => [tile, tile.getBoundingClientRect()]);
     positions.forEach(([tile, rect], i) => {
       if (rect.bottom <= 0 || rect.top >= innerHeight) return;

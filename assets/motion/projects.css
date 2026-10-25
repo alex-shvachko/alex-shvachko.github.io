@@ -1,7 +1,7 @@
 /* 03 Projects: the archive. A segmented filter with a plate that slides to the choice, a
    sort, and the tiles as hairline-ringed plates that lean toward the pointer. A tile opens
    its project in a sheet; its picture travels into the sheet (projects.js). */
-.projects-screen{position:relative;min-height:100svh;padding:calc(var(--topbar) + 28px) var(--gutter) 48px;scroll-margin-top:0}
+.projects-screen{position:relative;min-height:100svh;padding:calc(var(--topbar) + 28px) var(--gutter) 48px;scroll-margin-top:0;overflow-x:clip}
 .projects-intro{display:grid;justify-items:center;max-width:760px;margin:0 auto 40px;text-align:center}
 .projects-intro h2{margin:0 0 12px;font:520 clamp(2.6rem,5vw,4.6rem)/1 var(--sans);letter-spacing:-.04em;color:var(--ink)}
 .projects-intro p{margin:0;font-size:15.5px;line-height:1.6;color:var(--muted);text-wrap:balance}
@@ -37,6 +37,14 @@
 .archive-stage{position:relative;width:min(100%,1080px,calc(76svh * var(--archive-ratio,1.2)));aspect-ratio:var(--archive-ratio,1.2);cursor:pointer;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
 .archive-stage:focus-visible{outline:1.5px solid var(--ink);outline-offset:4px;border-radius:18px}
 .archive-stage svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+/* One tray per category stands in a row; the row slides to the chosen one, and the trays to
+   either side wait dimmed until clicked or swiped to. */
+.archive-track{position:absolute;inset:0;translate:calc(var(--at,0) * -106% + var(--drag,0px)) 0;transition:translate .8s cubic-bezier(.32,.72,0,1)}
+.archive-track.is-dragging{transition:none}
+.archive-tray{position:absolute;inset:0;translate:calc(var(--i) * 106%) 0;opacity:.34;transition:opacity .5s}
+.archive-tray.is-front{opacity:1}
+@media(hover:hover){.archive-tray:not(.is-front):hover{opacity:.6}}
+.archive-stage :where(.label text){fill:var(--hl-edge);font:500 3.2px/1 var(--mono);letter-spacing:.05em}
 .archive-stage :where(path,polygon,ellipse,line,circle){fill:var(--hl-plate);stroke:var(--hl-mid);stroke-width:var(--hl-w);vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;transition:stroke .26s cubic-bezier(.5,0,.1,1),fill .26s cubic-bezier(.5,0,.1,1)}
 .archive-stage :where(.nf){fill:none}
 .archive-stage :where(.fo){stroke:none}
@@ -133,5 +141,6 @@ html.project-modal-open{overflow:hidden}
   .project-image img,.project-image video{display:block;transition:none}
   .project-image video{display:none}
   .project-tile{transition:box-shadow .2s}
+  .archive-track,.archive-tray{transition:none}
   .project-modal[open],.project-modal[open]::backdrop,.project-modal[data-closing],.project-modal[data-closing]::backdrop{animation:none}
 }
