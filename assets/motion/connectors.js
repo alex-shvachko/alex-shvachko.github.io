@@ -22,11 +22,13 @@
   const heroSvg = topics.querySelector('svg');
   const items = [...topics.querySelectorAll('.topic')].map(label => {
     const [dx, dy] = label.dataset.offset.split(',').map(Number);
-    const path = create('path');
+    // Measured as one unit long, so the line draws itself without asking layout for its length.
+    const path = create('path', { pathLength: 1 });
+    path.style.strokeDasharray = '1 1';
     const pulse = create('circle', { class: 'topic-pulse', r: 4 });
     const dot = create('circle', { class: 'topic-dot', r: 3.5 });
     heroSvg.append(path, pulse, dot);
-    return { label, part: label.dataset.part, dx, dy, path, pulse, dot, length: 0, intro: 0, hidden: true, key: '' };
+    return { label, part: label.dataset.part, dx, dy, path, pulse, dot, length: 1, intro: 0, hidden: true, key: '' };
   });
   let introStart = 0, heroFrame = 0, sizes = null;
 
@@ -86,8 +88,6 @@
       item.label.style.setProperty('--x', `${lx.toFixed(1)}px`);
       item.label.style.setProperty('--y', `${ly.toFixed(1)}px`);
       item.path.setAttribute('d', `M${ax.toFixed(1)} ${ay.toFixed(1)}Q${ax.toFixed(1)} ${ey.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
-      item.length = item.path.getTotalLength();
-      item.path.style.strokeDasharray = `${item.length} ${item.length}`;
       [item.dot, item.pulse].forEach(circle => { circle.setAttribute('cx', ax.toFixed(1)); circle.setAttribute('cy', ay.toFixed(1)); });
     });
     paintHero();
@@ -173,14 +173,31 @@
       dot.classList.toggle('active', on && card.classList.contains('active'));
     });
   }
-  new MutationObserver(paintJourney).observe(stage.querySelector('.journey-cards'), { subtree: true, attributes: true, attributeFilter: ['class'] });
+  // A card eases when it turns active or appears; its link follows it for as long as it moves.
+  let followUntil = 0, followFrame = 0, journeyKey = '';
+  function follow(now) {
+    followFrame = 0;
+    paintJourney();
+    if (now < followUntil) followFrame = requestAnimationFrame(follow);
+  }
+  new MutationObserver(() => {
+    paintJourney();
+    followUntil = performance.now() + 900;
+    if (!followFrame) followFrame = requestAnimationFrame(follow);
+  }).observe(stage.querySelector('.journey-cards'), { subtree: true, attributes: true, attributeFilter: ['class'] });
 
   // The world calls back after every frame it draws; layout changes come through the observers.
   World.onFrame(state => {
     // Only the stage in view does any work: the hero while it is on screen, the links while
-    // the Journey stage is pinned.
-    if (scrollY < innerHeight * .6) layoutHero();
-    if (state.phi > .85 && state.phi < 2.3) paintJourney();
+    // the Journey stage is pinned. The phase is checked first: reading scrollY after the world
+    // has drawn would make the browser lay the page out in the middle of the frame.
+    if (state.phi < .85) { if (scrollY < innerHeight * .6) layoutHero(); }
+    else if (state.phi < 2.3) {
+      // The links move only with the scroll, the camera, or a marker coming into view; frames
+      // where just the forest or the rover moved leave them, and the page's layout, alone.
+      const { cam } = state, key = [state.target, cam.S, cam.ox, cam.oy, state.routeShown].map(v => v.toFixed(4)).join();
+      if (key !== journeyKey) { journeyKey = key; paintJourney(); }
+    }
   });
   function layout() { measure(); items.forEach(item => { item.key = ''; }); links.forEach(link => { link.key = ''; }); layoutHero(); paintJourney(); }
   let scrollFrame = 0;

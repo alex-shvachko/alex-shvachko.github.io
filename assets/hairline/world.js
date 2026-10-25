@@ -5,7 +5,7 @@
   // answered by the rover. Geometry is projected once at unit scale and the camera is a
   // transform on top, so a zoom never redraws what did not move.
   if (!window.HL) return;
-  const { rings, circ, prism, hull, poly, open, run, seg, clamp, lerp, mk, solid, put, tween, tset, tval, tdone, spring, stepS } = HL;
+  const { rings, circ, prism, hull, poly, open, run, seg, clamp, lerp, mk, solid, tween, tset, tval, tdone, spring, stepS } = HL;
   const root = document.querySelector('.world');
   if (!root) return;
   const readout = document.querySelector('.world-readout b');
@@ -21,6 +21,10 @@
   const inOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
   const set = (el, name, value) => { if (el.getAttribute(name) !== value) el.setAttribute(name, value); };
+  // The kernel's put, writing only what changed: a path given the same d is still repainted.
+  const put = (el, sh) => { set(el.sil, 'd', sh.sil); set(el.cr, 'd', sh.crease); };
+  // A layer at nothing leaves the page, so it costs nothing to paint or composite.
+  const fadeTo = (el, v) => { el.style.opacity = v.toFixed(3); el.style.display = v > 0 ? '' : 'none'; };
   const ring2 = (cx, cy, cz, ux, uy, uz, vx, vy, vz, r, n, sv = 1) => {
     const out = [];
     for (let k = 0; k < n; k++) {
@@ -31,8 +35,12 @@
   };
 
   // ---- the drawing -------------------------------------------------------------------
-  const svg = mk('svg', { 'aria-hidden': 'true', focusable: 'false' }, root);
-  const defs = mk('defs', {}, svg);
+  // Three drawings stacked, each its own compositor layer: the stars, the floor and the scene.
+  // A tree that sways repaints only the scene, never the masked floor under it, and the
+  // layers fade as wholes on the compositor.
+  const layer = () => mk('svg', { 'aria-hidden': 'true', focusable: 'false' }, root);
+  const sky = layer(), floorSvg = layer(), svg = layer();
+  const defs = mk('defs', {}, floorSvg);
   const grad = mk('radialGradient', { id: 'world-fade-g', gradientUnits: 'userSpaceOnUse' }, defs);
   mk('stop', { offset: 0, 'stop-color': '#fff', 'stop-opacity': 1 }, grad);
   mk('stop', { offset: .5, 'stop-color': '#fff', 'stop-opacity': .6 }, grad);
@@ -40,13 +48,16 @@
   const mask = mk('mask', { id: 'world-fade', maskUnits: 'userSpaceOnUse', x: 0, y: 0 }, defs);
   const maskRect = mk('rect', { x: 0, y: 0, fill: 'url(#world-fade-g)' }, mask);
 
-  const starsG = mk('g', { class: 'stars', opacity: 0 }, svg);
-  const floor = mk('g', { mask: 'url(#world-fade)' }, svg);
+  const starsG = mk('g', { class: 'stars' }, sky);
+  const floor = mk('g', { mask: 'url(#world-fade)' }, floorSvg);
   const floorCam = mk('g', {}, floor);
   const gridCoarse = mk('path', { class: 'grid' }, floorCam);
   const gridFine = mk('path', { class: 'grid' }, floorCam);
-  const scene = mk('g', {}, svg);
-  const cam = mk('g', {}, scene);
+  // One faint speck drawn without anti-aliasing. Chrome rasterises a layer that holds many curved
+  // strokes with multisampling, which on an integrated GPU costs this scene a third of its frame;
+  // any aliased paint in the layer has it keep its ordinary anti-aliasing instead.
+  mk('rect', { class: 'speck', width: 1, height: 1, 'shape-rendering': 'crispEdges' }, svg);
+  const cam = mk('g', {}, svg);
   // Paint order: the studio plinth, the stream, the trail, what lies flat on the ground (the
   // bridge deck, grass, pebbles), then every standing thing in one group sorted by depth, the
   // trees and markers fixed and the rover slotted in among them as it goes.
@@ -137,6 +148,10 @@
   // the lugs, spokes and bolts blur into rings. Step is how far it turned since the last frame.
   const LUGS = 16, SPOKES = 5, TREAD = Array.from({ length: 48 }, (_, k) => ({ t: k / 48 * Math.PI * 2 }));
   function wheel(w, cx, cy, ax, ay, spin, step) {
+    // A wheel that has not moved (the rover holds still while its head turns) keeps its drawing.
+    const key = [cx, cy, ax, ay, spin, step].map(v => v.toFixed(4)).join();
+    if (key === w.key) return;
+    w.key = key;
     const fx = ay, fy = -ax, o = facing(ax, ay) ? 1 : -1;
     // a point on the wheel: e out along the axle toward us, X forward and Y up in its plane
     const at = (e, X, Y) => P(cx + ax * e * o + fx * X, cy + ay * e * o + fy * X, WZ + Y);
@@ -195,8 +210,10 @@
   const burns = WHEEL_U.map(() => ({ spin: 0, step: 0, w: 0, until: 0, acc: 0, marks: null }));
   // The smoke is every puff's outline and then every puff's fill over them, so only the outline
   // of the cloud they make together is left. It paints under the whole rover, wheels and all.
+  // Each puff is a pair of circles, kept and reused: the GPU draws a circle outright, where one
+  // path of many arcs would be cut into triangles again on every frame.
   const smokeG = mk('g', {}, roverG);
-  const smoke = { edge: mk('path', { class: 'puff' }, smokeG), fill: mk('path', { class: 'puff-fill' }, smokeG) };
+  const smoke = { edge: mk('g', {}, smokeG), fill: mk('g', {}, smokeG), discs: [] };
   const skidG = mk('g', {});
   cam.insertBefore(skidG, objects);
   let puffs = [], skids = [], burnI = 0, burnGlad = 0, shaken = '', bodyHit = [], nearNow = 1;
@@ -250,7 +267,7 @@
     });
     // Smoke: each puff slows and rises as it swells and shrinks again.
     const drag = Math.exp(-dt * 1.8);
-    let disc = '';
+    let n = 0;
     puffs = puffs.filter(p => {
       p.t += dt;
       const k = p.t / p.life;
@@ -258,12 +275,13 @@
       p.vx *= drag; p.vy *= drag; p.vz = p.vz * drag + 9 * dt;
       p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       const [qx, qy] = P(p.x, p.y, p.z), r = (p.r * Math.sin(Math.PI * Math.pow(k, .6))).toFixed(2);
-      disc += `M${(qx - r).toFixed(2)} ${qy.toFixed(2)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
+      const pair = smoke.discs[n] || (smoke.discs[n] = [mk('circle', { class: 'puff' }, smoke.edge), mk('circle', { class: 'puff-fill' }, smoke.fill)]);
+      pair.forEach(c => { set(c, 'cx', qx.toFixed(2)); set(c, 'cy', qy.toFixed(2)); set(c, 'r', r); c.style.display = ''; });
+      n++;
       live = true;
       return true;
     });
-    set(smoke.edge, 'd', disc);
-    set(smoke.fill, 'd', disc);
+    for (let i = n; i < smoke.discs.length; i++) smoke.discs[i].forEach(c => { c.style.display = 'none'; });
     // the body shudders over the spinning axle
     const lift = burnI ? (Math.sin(now * .09) + Math.sin(now * .157)) * .25 * burnI : 0;
     const shake = lift ? `translate(0 ${(-lift * ZF).toFixed(3)})` : '';
@@ -432,8 +450,9 @@
 
   // ---- the trail ---------------------------------------------------------------------
   const trailPlan = mk('path', { class: 'nf sil dash' }, trailG);
-  const trailL = mk('path', { class: 'nf sil' }, trailG);
-  const trailR = mk('path', { class: 'nf sil' }, trailG);
+  // The trail's two edges are drawn in pieces, so as the rover drives on only the piece it is
+  // on is redrawn, not the whole trail across the screen.
+  let edges = [];
   let route = null, marks = [];
   function spline(pts, n) {
     const out = [];
@@ -479,6 +498,15 @@
     const j = Math.min(i1 + 1, list.length - 1);
     pts.push([lerp(list[i1][0], list[j][0], f1), lerp(list[i1][1], list[j][1], f1)]);
     return open(pts);
+  }
+  function buildEdges() {
+    edges.forEach(e => e.el.remove());
+    edges = [];
+    for (const list of [route.L, route.R])
+      for (let i = 0; i < list.length - 1; i += 16) {
+        const j = Math.min(i + 16, list.length - 1);
+        edges.push({ el: mk('path', { class: 'nf sil' }, trailG), list, a: route.s[i], b: route.s[j] });
+      }
   }
   function buildMarks(markersWorld) {
     // A relayout keeps each pillar's rise where it was, so nothing collapses and regrows.
@@ -547,7 +575,7 @@
   // The drawing is sized to the fixed layer itself, which excludes a classic scrollbar, so
   // its pixels are the page's pixels; breakpoints still follow the viewport, as CSS does.
   function sizeCanvas() {
-    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    [sky, floorSvg, svg].forEach(s => s.setAttribute('viewBox', `0 0 ${W} ${H}`));
     mask.setAttribute('width', W); mask.setAttribute('height', H);
     maskRect.setAttribute('width', W); maskRect.setAttribute('height', H);
   }
@@ -597,6 +625,7 @@
     const first = trailWorld[0], fl = Math.hypot(first[0], first[1]) || 1;
     const exit = [first[0] / fl * (PR + 6), first[1] / fl * (PR + 6)];
     route = buildRoute([[0, 0], exit, ...trailWorld, end], marksWorld);
+    buildEdges();
     buildMarks(marksWorld);
 
     // The forest, placed for this layout: measured against the journey camera, it keeps the
@@ -637,6 +666,7 @@
     gridFine.setAttribute('d', gridPath(-216, -216, 216, 216, 12));
     if (starSize !== String(W)) { starSize = String(W); buildStars(); }
     drawnPose = drawnTrail = '';
+    drawn = null;
     measureKeys();
     state.roverS = roverAt(state.phi);
     hasLayout = true;
@@ -771,7 +801,7 @@
   });
 
   // ---- the loop ----------------------------------------------------------------------------
-  let raf = 0, last = 0, part = '', settled = false, drawnPose = '', drawnTrail = '', windFrom = null;
+  let raf = 0, last = 0, part = '', settled = false, drawnPose = '', drawnTrail = '', windFrom = null, camM = '', still = 0, atRest = false, strokesAtRest = false, drawn = null, drawnM = '';
   const listeners = new Set();
   let requested = 0;
   function schedule() {
@@ -796,17 +826,40 @@
     const C = camAt(phi);
     state.cam = C;
     const m = `matrix(${C.S.toFixed(4)} 0 0 ${C.S.toFixed(4)} ${C.ox.toFixed(2)} ${C.oy.toFixed(2)})`;
-    set(cam, 'transform', m); set(floorCam, 'transform', m);
+    const sKey = C.S.toFixed(4);
+    if (m !== camM) { camM = m; still = 0; } else still++;
+    atRest = still >= 2;
+    if (!atRest) busy = true;
+    // While the camera moves, the floor and the scene are redrawn only now and then: in between,
+    // the compositor carries their last raster to where the camera now is (moved, and scaled by
+    // under 1.5%, which reads as a fresh drawing). Once the camera rests they are drawn for it.
+    const D = drawn || C, kz = C.S / D.S, tx = C.ox - kz * D.ox, ty = C.oy - kz * D.oy;
+    if (!drawn || (atRest ? m !== drawnM || !strokesAtRest : Math.abs(kz - 1) > .015 || Math.hypot(tx, ty) > Math.max(W, H) * .12)) {
+      drawn = C; drawnM = m;
+      set(cam, 'transform', m); set(floorCam, 'transform', m);
+      floorSvg.style.transform = svg.style.transform = '';
+      // At rest the scene's strokes are scaled to the camera rather than held at a pixel by
+      // vector-effect, so the GPU keeps the paths that did not change from frame to frame; on
+      // the move every path is redrawn anyway, and vector-effect spares restyling them all.
+      // The switch is made only here, where everything is being redrawn regardless.
+      if (atRest !== strokesAtRest) {
+        strokesAtRest = atRest;
+        if (atRest) svg.style.setProperty('--cam-s', sKey);
+        svg.classList.toggle('at-rest', atRest);
+      }
+    } else floorSvg.style.transform = svg.style.transform = drawnM === m ? '' : `matrix(${kz.toFixed(5)},0,0,${kz.toFixed(5)},${tx.toFixed(2)},${ty.toFixed(2)})`;
     if (stepIntro(now)) busy = true;
-    set(grad, 'cx', C.fx.toFixed(1)); set(grad, 'cy', C.fy.toFixed(1)); set(grad, 'r', (C.r * (intro ? Math.max(.001, intro.grid) : 1)).toFixed(1));
-    gridFine.style.opacity = clamp((C.S - 1.7) / 1.6, 0, 1).toFixed(3);
+    // the floor's fade belongs to the drawn camera, so the compositor carries it with the grid
+    set(grad, 'cx', drawn.fx.toFixed(1)); set(grad, 'cy', drawn.fy.toFixed(1)); set(grad, 'r', (drawn.r * (intro ? Math.max(.001, intro.grid) : 1)).toFixed(1));
+    fadeTo(gridFine, clamp((C.S - 1.7) / 1.6, 0, 1));
     // Over the forest the floor steps back, so the trees carry the drawing.
     gridCoarse.style.opacity = lerp(1, .42, smooth(clamp((phi - .35) / .6, 0, 1))).toFixed(3);
     const sceneOn = reduced ? (scrollY < innerHeight * .6 ? 1 : .35) : phi < 2.55 ? 1 : phi < 3 ? lerp(1, .18, smooth((phi - 2.55) / .45)) : lerp(.18, 0, smooth(clamp(phi - 3, 0, 1)));
-    scene.style.opacity = floor.style.opacity = sceneOn.toFixed(3);
+    fadeTo(floorSvg, sceneOn); fadeTo(svg, sceneOn);
     const starsOn = reduced ? 0 : smooth(clamp((phi - 3.05) / .8, 0, 1));
-    set(starsG, 'opacity', starsOn.toFixed(3));
-    set(starsG, 'transform', `translate(0 ${(-(phi - 3) * H * .08).toFixed(1)})`);
+    fadeTo(sky, starsOn);
+    // the stars drift up as a whole layer, moved by the compositor
+    if (starsOn > 0) sky.style.transform = `translateY(${(-(phi - 3) * H * .08).toFixed(1)}px)`;
     root.toggleAttribute('data-stars', starsOn > 0);
 
     // Trail and rover.
@@ -828,8 +881,8 @@
     if (trailKey !== drawnTrail) {
       drawnTrail = trailKey;
       set(trailPlan, 'd', slice(route.C, route.exit, route.len * state.routeShown));
-      set(trailL, 'd', slice(route.L, route.exit, Math.max(route.exit, s)));
-      set(trailR, 'd', slice(route.R, route.exit, Math.max(route.exit, s)));
+      const upTo = Math.max(route.exit, s);
+      edges.forEach(e => set(e.el, 'd', slice(e.list, Math.max(route.exit, e.a), Math.min(upTo, e.b))));
     }
 
     // The rover takes its place among the standing things by depth.
@@ -839,10 +892,12 @@
       while (lo < hi) { const m = (lo + hi) >> 1; if (standing[m].depth <= d) lo = m + 1; else hi = m; }
       if (lo !== roverSlot) { roverSlot = lo; objects.insertBefore(roverG, standing[lo] ? standing[lo].g : null); }
     }
-    const ground = pointer ? unP((pointer[0] - C.ox) / C.S, (pointer[1] - C.oy) / C.S) : null;
+    // Once the world has faded behind Projects it quiets: no wind, and the rover stops looking.
+    const heard = sceneOn > .5 ? pointer : null;
+    const ground = heard ? unP((heard[0] - C.ox) / C.S, (heard[1] - C.oy) / C.S) : null;
     // How far the pointer itself moved over the ground, not the camera under it: the wind's gust.
-    const drift = pointer && windFrom ? unP((pointer[0] - windFrom[0]) / C.S, (pointer[1] - windFrom[1]) / C.S) : null;
-    windFrom = pointer && [pointer[0], pointer[1]];
+    const drift = heard && windFrom ? unP((heard[0] - windFrom[0]) / C.S, (heard[1] - windFrom[1]) / C.S) : null;
+    windFrom = heard && [heard[0], heard[1]];
     if (forest.update({ phi, pointer: ground, drift, rover: [pose.x, pose.y], moved, shown: state.routeShown * route.len, reduced, dt })) busy = true;
 
     // Active chapter from the real scroll, so the marker lights with its card.
@@ -851,7 +906,7 @@
     if (drawMarks(now, state.active)) busy = true;
 
     // The pointer: the head turns to it on the ground, the eyes find it on screen.
-    if (pointer && !reduced) {
+    if (heard && !reduced) {
       const g = unP((pointer[0] - C.ox) / C.S, (pointer[1] - C.oy) / C.S);
       const [hx, hy] = [pose.x + HEAD_AT * Math.cos(pose.h), pose.y + HEAD_AT * Math.sin(pose.h)];
       yaw.t = clamp(wrap(Math.atan2(g[1] - hy, g[0] - hx) - pose.h), -.95, .95);
@@ -876,7 +931,7 @@
     if (!reduced && !intro) {
       const top = anchors.head && [C.ox + C.S * anchors.head[0], C.oy + C.S * anchors.head[1]];
       if (burnI > .15) want = 'squint';
-      else if (pointer && top && Math.hypot(pointer[0] - top[0], pointer[1] - top[1] - C.S * 8) < C.S * 30) want = 'happy';
+      else if (heard && top && Math.hypot(pointer[0] - top[0], pointer[1] - top[1] - C.S * 8) < C.S * 30) want = 'happy';
       else if (Math.abs(moved) > .8) want = 'squint';
       else if (now < burnGlad) want = 'happy';
       else if (now - lastInput > 6000) want = 'sleepy';

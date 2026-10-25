@@ -81,6 +81,8 @@
     el.style.setProperty('--i', index);
     track.append(el);
     const svg = mk('svg', { viewBox: VB.map(v => v.toFixed(2)).join(' '), 'aria-hidden': 'true', focusable: 'false' }, el);
+    // A faint aliased speck keeps Chrome from multisampling the trays' layer (see world.js).
+    mk('rect', { class: 'speck', x: VB[0], y: VB[1], width: .4, height: .4, 'shape-rendering': 'crispEdges' }, svg);
     const far = mk('g', {}, svg);
     FAR.forEach(([d, cls]) => mk('path', { d, class: cls }, far));
     const cardsG = mk('g', {}, svg);
@@ -155,13 +157,14 @@
   // The pulled folder's preview is a real picture (and video) laid onto its face in page pixels,
   // so it stays sharp and can play. It rides in the tray in front and shows once the folder has
   // risen clear of the others.
-  let frameKey = '';
+  // The stage's width comes from its observer; reading it in the loop would lay the page out.
+  let frameKey = '', stageWidth = stage.clientWidth;
   function placeFrame(now) {
     const f = cur.folders[cur.active];
     if (!f) { frame.style.opacity = '0'; return; }
     const lift = tval(f.z, now), th = tval(f.a, now);
     const { w } = pose(cur.slot(f.k), th, lift);
-    const k = cur.el.clientWidth / VB[2];
+    const k = stageWidth / VB[2];
     const px = q => [(q[0] - VB[0]) * k, (q[1] - VB[1]) * k];
     const m = matrix(px(w(IMG.u0, IMG.v1)), px(w(IMG.u1, IMG.v1)), px(w(IMG.u0, IMG.v0)), 320, 180);
     const key = m.map(v => v.toFixed(3)).join(',');
@@ -176,18 +179,27 @@
     return moving;
   });
 
+  // Each project's picture and video are made once and kept, so passing over the folders again
+  // never reloads the picture or starts a new decoder; the video leaving pauses.
+  const previews = new Map();
   function fillFrame(item) {
-    const img = document.createElement('img');
-    img.src = item.image; img.alt = ''; img.decoding = 'async';
-    const nodes = [img];
-    if (item.video && !reducedQuery.matches) {
-      const video = document.createElement('video');
-      video.src = item.video; video.muted = true; video.loop = true; video.playsInline = true; video.preload = 'auto';
-      video.setAttribute('aria-hidden', 'true');
-      nodes.push(video);
-      video.play().catch(() => {});
+    let nodes = previews.get(item.tile);
+    if (!nodes) {
+      const img = document.createElement('img');
+      img.src = item.image; img.alt = ''; img.decoding = 'async';
+      nodes = [img];
+      if (item.video) {
+        const video = document.createElement('video');
+        video.src = item.video; video.muted = true; video.loop = true; video.playsInline = true; video.preload = 'auto';
+        video.setAttribute('aria-hidden', 'true');
+        nodes.push(video);
+      }
+      previews.set(item.tile, nodes);
     }
-    frame.replaceChildren(...nodes);
+    frame.querySelectorAll('video').forEach(video => video.pause());
+    const shown = nodes.filter(node => node.tagName === 'IMG' || !reducedQuery.matches);
+    frame.replaceChildren(...shown);
+    shown.forEach(node => { if (node.tagName === 'VIDEO') node.play().catch(() => {}); });
   }
 
   /** Pulls folder a of the tray in front (0 = its front folder) after wait ms; the stagger spreads out from it. */
@@ -348,13 +360,21 @@
     if (key !== order) { order = key; fill(e.detail.tiles, true); }
     bring(trays.find(tray => tray.category === e.detail.category) || trays[0]);
   });
+  // The pulled folder's video plays only while the archive is on screen; scrolled away, it would
+  // keep a decoder busy for nothing.
+  new IntersectionObserver(([entry]) => {
+    frame.querySelectorAll('video').forEach(video => {
+      if (!entry.isIntersecting) video.pause();
+      else if (!reducedQuery.matches && !document.documentElement.classList.contains('project-modal-open')) video.play().catch(() => {});
+    });
+  }).observe(stage);
   // Pictures load only once the archive comes near the viewport.
   new IntersectionObserver(([entry]) => {
     if (!entry.isIntersecting || shown) return;
     shown = true;
     trays.forEach(tray => tray.folders.forEach(f => f.image.setAttribute('href', f.item.image)));
   }, { rootMargin: '400px 0px' }).observe(stage);
-  new ResizeObserver(() => { frameKey = ''; loop.wake(); }).observe(stage);
+  new ResizeObserver(() => { stageWidth = stage.clientWidth; frameKey = ''; loop.wake(); }).observe(stage);
   reducedQuery.addEventListener('change', () => { const a = cur.active; cur.active = -1; setActive(a < 0 ? 0 : a); });
 
   show();

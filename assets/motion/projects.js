@@ -112,7 +112,15 @@
   }
   const canMorph = () => typeof document.startViewTransition === 'function' && !reduced();
   function fill(tile) {
-    modalMedia.replaceChildren(tile.querySelector('img').cloneNode());
+    // Tiles and folders show a small copy of the picture. The sheet opens on that copy (it is
+    // already loaded, so the picture travels in whole) and takes the full one once it decodes.
+    const picture = tile.querySelector('img').cloneNode();
+    modalMedia.replaceChildren(picture);
+    if (picture.dataset.full) {
+      const full = new Image();
+      full.src = picture.dataset.full;
+      full.decode().then(() => { if (picture.isConnected) picture.src = full.src; }, () => {});
+    }
     const video = tile.querySelector('video');
     if (video && !reduced()) {
       const clip = video.cloneNode();

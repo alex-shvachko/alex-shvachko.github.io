@@ -62,7 +62,8 @@ html{scrollbar-color:var(--line-2) transparent;scrollbar-width:thin}
 
 /* The line world: one fixed drawing behind every section (world.js draws and steers it). */
 .world{position:fixed;inset:0;z-index:0;pointer-events:none;contain:strict}
-.world svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+/* Stars, floor and scene are three stacked drawings, each its own compositor layer. */
+.world svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;transform-origin:0 0;will-change:transform,opacity}
 .world :where(path,polygon,ellipse,line,circle){fill:var(--hl-plate);stroke:var(--hl-mid);stroke-width:var(--hl-w);vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;transition:stroke .26s cubic-bezier(.5,0,.1,1),fill .26s cubic-bezier(.5,0,.1,1)}
 .world :where(.nf){fill:none}
 .world :where(.fo){stroke:none}
@@ -80,6 +81,15 @@ html{scrollbar-color:var(--line-2) transparent;scrollbar-width:thin}
 .world :where(.eye){fill:var(--accent);stroke:none}
 .world :where(.puff){stroke-width:calc(var(--hl-w) * 2)}
 .world :where(.puff-fill){stroke:none}
+/* a blade is too fine for a round tip to show, and some twenty thousand of them are drawn */
+.world :where(.grass){stroke-linecap:butt}
+/* While the camera rests, the scene's strokes are scaled to it (world.js sets --cam-s) rather
+   than held at a pixel by vector-effect, which lets the GPU keep the paths that did not change. */
+.world .at-rest :where(path,polygon,ellipse,line,circle){vector-effect:none;stroke-width:calc(var(--hl-w) / var(--cam-s,1))}
+.world .at-rest :where(.dash){stroke-dasharray:calc(1 / var(--cam-s,1)) calc(3.5 / var(--cam-s,1))}
+.world .at-rest :where(.puff){stroke-width:calc(var(--hl-w) * 2 / var(--cam-s,1))}
+.world .at-rest .growing :where(path,polygon,ellipse,line,circle){vector-effect:non-scaling-stroke;stroke-width:var(--hl-w)}
+.world .speck{fill:var(--hl-plate);fill-opacity:.01;stroke:none}
 html.over-wheel{cursor:pointer}
 .world .grid{fill:none;stroke:var(--hl-lo);stroke-width:1}
 .world .stars circle{fill:var(--hl-edge);stroke:none}

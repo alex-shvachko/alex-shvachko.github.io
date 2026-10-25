@@ -450,7 +450,7 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
       const start = .25 + .5 * clamp(Math.hypot(x, y) / 1300, 0, 1), n = (tall ? 4 : 3) + Math.floor(rnd() * 4);
       patch.lo = Math.min(patch.lo, start); patch.hi = Math.max(patch.hi, start + .28);
       patch.tufts.push({
-        x, y, start, sx: spring(0, BLADE), sy: spring(0, BLADE), awake: false,
+        x, y, start, sx: spring(0, BLADE), sy: spring(0, BLADE), awake: false, qx: 0, qy: 0, at: -1, d: '',
         // each blade: its lean at the foot, its height and how freely it bends
         blades: Array.from({ length: n }, () => [(rnd() - .5) * 7, (rnd() - .5) * 7, (tall ? 12 : 6) + rnd() * (tall ? 10 : 7), .6 + rnd() * .8])
       });
@@ -470,7 +470,7 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
     }
     items.filter(it => !it.still && rnd() < .65).forEach(it => { for (let k = 0, n = it.low ? 2 : 4; k < n; k++) { const a = rnd() * TAU, d = it.r * .6 + rnd() * 12; tuft(it.x + Math.cos(a) * d, it.y + Math.sin(a) * d, false); } });
     grass = [...patches.values()];
-    grass.forEach(p => { p.el = mk('path', { class: 'nf' }, ground); });
+    grass.forEach(p => { p.el = mk('path', { class: 'nf grass' }, ground); });
     grassAt = -1;
     const stones = [];
     for (let s = route.exit + 6; s < route.len; s += 6) {
@@ -493,18 +493,27 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
     const q = 1 - d / R, k = q * q * (3 - 2 * q), sp = Math.hypot(wind.vx, wind.vy), cap = sp > 900 ? 900 / sp : 1;
     return [(dx / (d || 1) * A + wind.vx * cap * V) * k, (dy / (d || 1) * A + wind.vy * cap * V) * k];
   }
+  // A tuft's blades, grown to s and leaning by its quantised lean (twentieths of a unit, finer
+  // than a pixel).
+  function blades(t, s) {
+    if (s <= .01) return '';
+    const foot = P(t.x, t.y, 0), lx = t.qx / 20, ly = t.qy / 20, fx = f(foot[0]), fy = f(foot[1]);
+    let d = '';
+    for (const [bx, by, bh, flex] of t.blades) {
+      // a taller blade bends further; bent over, its tip comes down
+      const h = bh * s, wx = lx * flex * h / 10, wy = ly * flex * h / 10, z = Math.sqrt(Math.max(h * h * .12, h * h - wx * wx - wy * wy));
+      const tip = P(t.x + bx + wx, t.y + by + wy, z), ctl = P(t.x + bx * .25 + wx * .25, t.y + by * .25 + wy * .25, z * .62);
+      d += `M${fx} ${fy}Q${f(ctl[0])} ${f(ctl[1])} ${f(tip[0])} ${f(tip[1])}`;
+    }
+    return d;
+  }
+  // A patch is one path; each tuft keeps its own piece of it, rebuilt only when it grew or leaned.
   function drawPatch(p, g) {
     let d = '';
     for (const t of p.tufts) {
       const s = smooth(clamp((g - t.start) / .28, 0, 1));
-      if (s <= .01) continue;
-      const foot = P(t.x, t.y, 0), lx = t.sx.x, ly = t.sy.x;
-      for (const [bx, by, bh, flex] of t.blades) {
-        // a taller blade bends further; bent over, its tip comes down
-        const h = bh * s, wx = lx * flex * h / 10, wy = ly * flex * h / 10, z = Math.sqrt(Math.max(h * h * .12, h * h - wx * wx - wy * wy));
-        const tip = P(t.x + bx + wx, t.y + by + wy, z), ctl = P(t.x + bx * .25 + wx * .25, t.y + by * .25 + wy * .25, z * .62);
-        d += `M${f(foot[0])} ${f(foot[1])}Q${f(ctl[0])} ${f(ctl[1])} ${f(tip[0])} ${f(tip[1])}`;
-      }
+      if (t.at !== s || t.dx !== t.qx || t.dy !== t.qy) { t.at = s; t.dx = t.qx; t.dy = t.qy; t.d = blades(t, s); }
+      d += t.d;
     }
     set(p.el, d);
   }
@@ -525,6 +534,7 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
       const s = reduced ? 0 : smooth(clamp((phi - it.start) / .3, 0, 1));
       if (s <= .001) { if (it.g.style.display !== 'none') it.g.style.display = 'none'; continue; }
       if (it.g.style.display === 'none') it.g.style.display = '';
+      let stepped = !it.drawn;
       if (it.sway) {
         // the wind, and a stir as the rover goes by
         const [tx, ty] = wind.on ? windAt(it.x, it.y, 260, it.low ? 18 : 30, it.low ? .03 : .045) : [0, 0];
@@ -536,15 +546,21 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
         if (it.awake && !reduced) {
           const a = stepS(it.sx, dt), b = stepS(it.sy, dt);
           it.awake = a || b;
+          stepped = true;
           if (it.awake) busy = true;
         }
       }
-      // Drawn full grown, and redrawn only as it leans; it grows by scaling up from its foot.
-      const key = `${it.sx.x.toFixed(2)} ${it.sy.x.toFixed(2)}`;
-      if (key !== it.drawn) { it.drawn = key; it.draw(1, it.sx.x, it.sy.x); }
+      // Drawn full grown, and redrawn only as it leans by a tenth of a unit or more (under a
+      // pixel at the journey's scale); it grows by scaling up from its foot.
+      if (stepped) {
+        const qx = Math.round(it.sx.x * 10), qy = Math.round(it.sy.x * 10), key = qx + ' ' + qy;
+        if (key !== it.drawn) { it.drawn = key; it.draw(1, qx / 10, qy / 10); }
+      }
       const grown = s.toFixed(3);
       if (grown !== it.grown) {
         it.grown = grown;
+        // a growing tree keeps its strokes at a pixel while it is scaled (see .at-rest)
+        it.g.classList.toggle('growing', s < .9995);
         if (s >= .9995) it.g.removeAttribute('transform');
         else it.g.setAttribute('transform', `matrix(${grown} 0 0 ${grown} ${f(it.foot[0] * (1 - s))} ${f(it.foot[1] * (1 - s))})`);
       }
@@ -567,7 +583,8 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
             const a = stepS(t.sx, dt), b = stepS(t.sy, dt);
             t.awake = a || b;
             if (t.awake) p.awake = true;
-            dirty = true;
+            const qx = Math.round(t.sx.x * 20), qy = Math.round(t.sy.x * 20);
+            if (qx !== t.qx || qy !== t.qy) { t.qx = qx; t.qy = qy; dirty = true; }
           }
           if (p.awake) busy = true;
         }

@@ -46,6 +46,7 @@
 @media(hover:hover){.archive-tray:not(.is-front):hover{opacity:.6}}
 .archive-stage :where(.label text){fill:var(--hl-edge);font:500 3.2px/1 var(--mono);letter-spacing:.05em}
 .archive-stage :where(path,polygon,ellipse,line,circle){fill:var(--hl-plate);stroke:var(--hl-mid);stroke-width:var(--hl-w);vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;transition:stroke .26s cubic-bezier(.5,0,.1,1),fill .26s cubic-bezier(.5,0,.1,1)}
+.archive-stage .speck{fill:var(--hl-plate);fill-opacity:.01;stroke:none}
 .archive-stage :where(.nf){fill:none}
 .archive-stage :where(.fo){stroke:none}
 .archive-stage :where(.sil){stroke:var(--hl-edge)}
