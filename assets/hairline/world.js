@@ -193,10 +193,10 @@
   // other two hold the rover where it stands. The tyres smoke behind and lay rubber down.
   const BURN_W = 36;
   const burns = WHEEL_U.map(() => ({ spin: 0, step: 0, w: 0, until: 0, acc: 0, marks: null }));
-  // A layer of smoke is every puff's outline and then every puff's fill over them, so only the
-  // outline of the cloud they make together is left.
-  const smokeLayer = () => { const g = mk('g', {}, roverG); return { g, edge: mk('path', { class: 'puff' }, g), fill: mk('path', { class: 'puff-fill' }, g) }; };
-  const smokeBack = smokeLayer(), smokeFront = smokeLayer();
+  // The smoke is every puff's outline and then every puff's fill over them, so only the outline
+  // of the cloud they make together is left. It paints under the whole rover, wheels and all.
+  const smokeG = mk('g', {}, roverG);
+  const smoke = { edge: mk('path', { class: 'puff' }, smokeG), fill: mk('path', { class: 'puff-fill' }, smokeG) };
   const skidG = mk('g', {});
   cam.insertBefore(skidG, objects);
   let puffs = [], skids = [], burnI = 0, burnGlad = 0, shaken = '', bodyHit = [], nearNow = 1;
@@ -248,10 +248,9 @@
       live = true;
       return true;
     });
-    // Smoke: each puff slows and rises as it swells and shrinks again. It paints behind the
-    // whole rover unless it has drifted out past the rover's nearest wheel.
-    const front = pose.x + pose.y + 22 * Math.abs(c + s) + 23.5 * Math.abs(c - s) + 4, drag = Math.exp(-dt * 1.8);
-    const disc = ['', ''];
+    // Smoke: each puff slows and rises as it swells and shrinks again.
+    const drag = Math.exp(-dt * 1.8);
+    let disc = '';
     puffs = puffs.filter(p => {
       p.t += dt;
       const k = p.t / p.life;
@@ -259,11 +258,12 @@
       p.vx *= drag; p.vy *= drag; p.vz = p.vz * drag + 9 * dt;
       p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       const [qx, qy] = P(p.x, p.y, p.z), r = (p.r * Math.sin(Math.PI * Math.pow(k, .6))).toFixed(2);
-      disc[+(p.x + p.y > front)] += `M${(qx - r).toFixed(2)} ${qy.toFixed(2)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
+      disc += `M${(qx - r).toFixed(2)} ${qy.toFixed(2)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
       live = true;
       return true;
     });
-    [smokeBack, smokeFront].forEach((layer, i) => { set(layer.edge, 'd', disc[i]); set(layer.fill, 'd', disc[i]); });
+    set(smoke.edge, 'd', disc);
+    set(smoke.fill, 'd', disc);
     // the body shudders over the spinning axle
     const lift = burnI ? (Math.sin(now * .09) + Math.sin(now * .157)) * .25 * burnI : 0;
     const shake = lift ? `translate(0 ${(-lift * ZF).toFixed(3)})` : '';
@@ -408,17 +408,17 @@
     const [wx, wy] = at(WHEEL_U[wi], nearSide * (WHEEL_W + WHW + .9));
     anchors.wheel = P(wx, wy, WZ);
 
-    // Paint order: smoke behind, far wheels, far rocker, chassis, near rocker, near wheels, the
-    // deck parts from the back, then smoke in front. Reordered only when the order changes.
+    // Paint order: the smoke, far wheels, far rocker, chassis, near rocker, near wheels, then the
+    // deck parts from the back. Reordered only when the order actually changes.
     const far = el.sides.find(sd => sd.side !== nearSide), near = el.sides.find(sd => sd.side === nearSide);
     const byDepth = list => list.slice().sort((a, b) => a.depth - b.depth);
     el.head.depth = hx + hy; el.lidar.depth = lx + ly; el.antenna.depth = ax0 + ay0;
     const bumperFront = facing(c, s);
     const order = [
-      smokeBack.g, ...byDepth(far.wheels).map(w => w.g), far.rocker,
+      smokeG, ...byDepth(far.wheels).map(w => w.g), far.rocker,
       ...(bumperFront ? [el.chassis.g, el.bumper.g] : [el.bumper.g, el.chassis.g]),
       near.rocker, ...byDepth(near.wheels).map(w => w.g),
-      ...byDepth([el.head, el.lidar, el.antenna]).map(p => p.g), smokeFront.g
+      ...byDepth([el.head, el.lidar, el.antenna]).map(p => p.g)
     ];
     if (order.some((node, i) => roverG.children[i] !== node)) roverG.append(...order);
   }
