@@ -47,11 +47,16 @@
   const gridFine = mk('path', { class: 'grid' }, floorCam);
   const scene = mk('g', {}, svg);
   const cam = mk('g', {}, scene);
+  // Paint order: the studio plinth, the stream, the trail, what lies flat on the ground (the
+  // bridge deck, grass, pebbles), then every standing thing in one group sorted by depth, the
+  // trees and markers fixed and the rover slotted in among them as it goes.
   const plinthG = mk('g', {}, cam);
+  const waterG = mk('g', {}, cam);
   const trailG = mk('g', {}, cam);
-  const backMarks = mk('g', {}, cam);
-  const roverG = mk('g', {}, cam);
-  const frontMarks = mk('g', {}, cam);
+  const groundG = mk('g', {}, cam);
+  const objects = mk('g', {}, cam);
+  const roverG = mk('g', {}, objects);
+  let standing = [], roverSlot = -1;
 
   // The plinth: a round plate with a ring of ticks round its rim and a dashed guide inside.
   const PR = 56;
@@ -267,11 +272,10 @@
     return open(pts);
   }
   function buildMarks(markersWorld) {
-    backMarks.replaceChildren(); frontMarks.replaceChildren();
     // A relayout keeps each pillar's rise where it was, so nothing collapses and regrows.
     const previous = marks;
     marks = markersWorld.map(([x, y], i) => {
-      const g = mk('g', {}, backMarks);
+      const g = mk('g');
       const pad = solid(g), pillar = solid(g);
       put(pad, prism(P, front, ...rings(x - 6, y - 6, x + 6, y + 6, 2.6, .9), 0, 1.2));
       const top = mk('ellipse', { class: 'dot accent', rx: 1.9, ry: .95 }, g);
@@ -297,13 +301,11 @@
       m.pillar.sil.classList.toggle('hi', live);
       m.top.style.display = live ? '' : 'none';
       m.g.style.opacity = state.routeShown * route.len >= route.stops[i] - 6 ? '1' : '0';
-      // A marker the rover has not reached yet stands in front of it only when it is nearer the viewer.
-      const nearer = m.x + m.y > pose.x + pose.y;
-      const want = nearer ? frontMarks : backMarks;
-      if (m.g.parentNode !== want) want.append(m.g);
     });
     return busy;
   }
+
+  const forest = window.HLForest({ P, front, facing, water: waterG, ground: groundG });
 
   // ---- floor and sky -------------------------------------------------------------------
   function gridPath(x0, y0, x1, y1, step) {
@@ -387,6 +389,27 @@
     const exit = [first[0] / fl * (PR + 6), first[1] / fl * (PR + 6)];
     route = buildRoute([[0, 0], exit, ...trailWorld, end], marksWorld);
     buildMarks(marksWorld);
+
+    // The forest, placed for this layout: measured against the journey camera, it keeps the
+    // rover's corridor and the heading clear and thins out under the cards and the globe.
+    const toScreen = (x, y, z) => { const p = P(x, y, z); return [origin[0] + Sj * p[0], origin[1] + Sj * p[1]]; };
+    toScreen.inverse = (sx, sy) => unP((sx - origin[0]) / Sj, (sy - origin[1]) / Sj);
+    toScreen.scale = Sj;
+    const box = el => el ? { l: el.offsetLeft, t: el.offsetTop, r: el.offsetLeft + el.offsetWidth, b: el.offsetTop + el.offsetHeight } : null;
+    const orbit = wide ? box(stage.querySelector('.skills-orbit')) : null;
+    const blocked = wide ? [...cards.map(box), orbit].filter(Boolean) : [];
+    // Text on the stage keeps a clear ground behind it: the heading, and the globe's caption and button.
+    const head = wide ? box(stage.querySelector('.journey-heading')) : null;
+    const clear = [head && { l: head.l - 18, t: head.t - 14, r: head.r + 40, b: head.b + 14 }, orbit && { l: orbit.l - 10, t: orbit.b + 6, r: orbit.r + 10, b: orbit.b + 140 }].filter(Boolean);
+    const forestItems = reduced ? [] : forest.build({
+      route, pointAt, marks: marksWorld, plinth: PR, toScreen, W, H, blocked,
+      clear,
+      budget: wide ? 125 : narrow ? 58 : 90, seed: 20261025
+    });
+    if (reduced) { waterG.replaceChildren(); groundG.replaceChildren(); }
+    standing = [...forestItems, ...marks.map(m => ({ g: m.g, depth: m.x + m.y }))].sort((a, b) => a.depth - b.depth);
+    objects.replaceChildren(...standing.map(o => o.g), roverG);
+    roverSlot = -1;
     const centre = toWorld([W * .5, H * .5]);
     const journey = { Fw: [centre[0], centre[1], 0], Fs: [W * .5, H * .5], S: Sj, r: Math.max(W, H) * .78 };
     const archive = { Fw: [end[0], end[1], 0], Fs: [W * .5, H * .62], S: Sj * .92, r: Math.max(W, H) * .7 };
@@ -532,6 +555,8 @@
     if (stepIntro(now)) busy = true;
     set(grad, 'cx', C.fx.toFixed(1)); set(grad, 'cy', C.fy.toFixed(1)); set(grad, 'r', (C.r * (intro ? Math.max(.001, intro.grid) : 1)).toFixed(1));
     gridFine.style.opacity = clamp((C.S - 1.7) / 1.6, 0, 1).toFixed(3);
+    // Over the forest the floor steps back, so the trees carry the drawing.
+    gridCoarse.style.opacity = lerp(1, .42, smooth(clamp((phi - .35) / .6, 0, 1))).toFixed(3);
     const sceneOn = reduced ? (scrollY < innerHeight * .6 ? 1 : .35) : phi < 2.55 ? 1 : phi < 3 ? lerp(1, .18, smooth((phi - 2.55) / .45)) : lerp(.18, 0, smooth(clamp(phi - 3, 0, 1)));
     scene.style.opacity = floor.style.opacity = sceneOn.toFixed(3);
     const starsOn = reduced ? 0 : smooth(clamp((phi - 3.05) / .8, 0, 1));
@@ -557,6 +582,16 @@
       set(trailL, 'd', slice(route.L, route.exit, Math.max(route.exit, s)));
       set(trailR, 'd', slice(route.R, route.exit, Math.max(route.exit, s)));
     }
+
+    // The rover takes its place among the standing things by depth.
+    {
+      const d = pose.x + pose.y;
+      let lo = 0, hi = standing.length;
+      while (lo < hi) { const m = (lo + hi) >> 1; if (standing[m].depth <= d) lo = m + 1; else hi = m; }
+      if (lo !== roverSlot) { roverSlot = lo; objects.insertBefore(roverG, standing[lo] ? standing[lo].g : null); }
+    }
+    const ground = pointer ? unP((pointer[0] - C.ox) / C.S, (pointer[1] - C.oy) / C.S) : null;
+    if (forest.update({ phi, pointer: ground, rover: [pose.x, pose.y], moved, shown: state.routeShown * route.len, reduced, dt })) busy = true;
 
     // Active chapter from the real scroll, so the marker lights with its card.
     const t = state.target;

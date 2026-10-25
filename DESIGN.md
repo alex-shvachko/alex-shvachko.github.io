@@ -107,7 +107,7 @@ components:
 
 ## Overview
 
-The site is a personal card drawn in the language of [hairline](https://github.com/lucasmarkes/hairline): isometric line drawings built from rounded solids, drawn as one silhouette plus one dim crease, that answer the pointer. One fixed SVG world (`assets/hairline/world.js`, on the hairline kernel) sits behind all four stages and replaces the old scroll-scrubbed film. Scroll steers its camera through four places: the **studio** (a rover on a plinth, Home), the **path** (an aerial trail with a marker beside each Journey card), the **archive** (the world quiets behind Projects) and the **signal** (the floor falls away into stars above Contact, where a hairline dish follows the pointer). The site opens in light for every visitor; the switch in the top bar turns it dark, and that choice is remembered.
+The site is a personal card drawn in the language of [hairline](https://github.com/lucasmarkes/hairline): isometric line drawings built from rounded solids, drawn as one silhouette plus one dim crease, that answer the pointer. One fixed SVG world (`assets/hairline/world.js`, on the hairline kernel) sits behind all four stages and replaces the old scroll-scrubbed film. Scroll steers its camera through four places: the **studio** (a rover on a plinth, Home), the **path** (an aerial trail through a hand-drawn line forest, `assets/hairline/forest.js`, with a marker beside each Journey card), the **archive** (the world quiets behind Projects) and the **signal** (the floor falls away into stars above Contact, where a hairline dish follows the pointer). The site opens in light for every visitor; the switch in the top bar turns it dark, and that choice is remembered.
 
 ## Colors
 
@@ -133,6 +133,7 @@ Every corner is round. Chips 7px, controls 10px, buttons 12px, cards 14px, tiles
 
 ## Components
 
+- **The forest**: groves of pines and spruces (scalloped tiers with drooping tips, a ridge and two branch strokes each), broadleaf trees with cloud crowns drawn as bulging scallops, birches with bark ticks, bushes, rocks, fallen logs showing their rings, mushrooms, grass and pebbles, and a stream with ripples, stones and reeds crossed by a plank bridge. Everything is placed against the Journey camera so the rover's way and the stage's text stay clear, painted back to front with the rover slotted in by depth, grown outward from the studio as the camera rises, and swayed by the pointer and by the rover passing. The floor grid steps back to 42% over it.
 - **Primary button**: ink plate, paper text, arrow that slides 3px on hover; presses scale to 0.97.
 - **Topic pin**: an ink dot with a soft pulse on a rover part, a hairline leader, a plate label. Placed live from the world's camera (`connectors.js`).
 - **Journey card**: plate with ring and lift; mono meta row; the active card gets an ink ring and an accent number. Unrevealed cards are clipped, blurred and dimmed until the scroll reaches them; a curved hairline link reaches the marker beside each card.
