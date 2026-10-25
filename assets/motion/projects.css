@@ -3,8 +3,6 @@
    its project in a sheet; its picture travels into the sheet (projects.js). */
 .projects-screen{position:relative;min-height:100svh;padding:calc(var(--topbar) + 28px) var(--gutter) 48px;scroll-margin-top:0}
 .projects-intro{display:grid;justify-items:center;max-width:760px;margin:0 auto 40px;text-align:center}
-/* Figure hosts keep their 5:4 box before they mount, so the page never shifts under the scroll. */
-.projects-figure{width:min(250px,62vw);aspect-ratio:5/4;margin:0 auto -4px}
 .projects-intro h2{margin:0 0 12px;font:520 clamp(2.6rem,5vw,4.6rem)/1 var(--sans);letter-spacing:-.04em;color:var(--ink)}
 .projects-intro p{margin:0;font-size:15.5px;line-height:1.6;color:var(--muted);text-wrap:balance}
 
@@ -22,6 +20,43 @@
 .project-sort select{height:36px;padding:0 32px 0 12px;border:0;border-radius:10px;background:var(--plate);box-shadow:var(--card);color:var(--ink);font:500 13px/1 var(--sans);letter-spacing:normal;cursor:pointer;-webkit-appearance:none;appearance:none}
 .project-sort::after{content:'';position:absolute;right:14px;top:50%;width:6px;height:6px;margin-top:-5px;border-right:1.3px solid var(--ink);border-bottom:1.3px solid var(--ink);rotate:45deg;pointer-events:none}
 .project-sort select:focus-visible{outline-offset:2px;border-radius:10px}
+
+/* View switch: the archive tray or the grid of tiles. */
+.project-views{display:flex;gap:2px;padding-left:10px;border-left:1px solid var(--line-2)}
+.project-views button{display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:10px;background:none;color:var(--muted);cursor:pointer;transition:color .2s,background-color .2s,box-shadow .2s}
+.project-views button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.project-views button[aria-pressed=true]{background:var(--plate);color:var(--ink);box-shadow:var(--card)}
+@media(hover:hover){.project-views button:hover{color:var(--ink)}}
+.project-views button:focus-visible{outline-offset:-2px;border-radius:10px}
+.projects-screen[data-view=archive] .projects-grid{display:none}
+.projects-screen:not([data-view=archive]) .archive{display:none}
+
+/* The archive: the tray of folders, centred and large; each folder wears its project's picture,
+   the one that is out plays its preview, and the caption names it (archive.js). */
+.archive{display:grid;justify-items:center;max-width:1240px;margin:4px auto 0}
+.archive-stage{position:relative;width:min(100%,1080px,calc(76svh * var(--archive-ratio,1.2)));aspect-ratio:var(--archive-ratio,1.2);cursor:pointer;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
+.archive-stage:focus-visible{outline:1.5px solid var(--ink);outline-offset:4px;border-radius:18px}
+.archive-stage svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.archive-stage :where(path,polygon,ellipse,line,circle){fill:var(--hl-plate);stroke:var(--hl-mid);stroke-width:var(--hl-w);vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;transition:stroke .26s cubic-bezier(.5,0,.1,1),fill .26s cubic-bezier(.5,0,.1,1)}
+.archive-stage :where(.nf){fill:none}
+.archive-stage :where(.fo){stroke:none}
+.archive-stage :where(.sil){stroke:var(--hl-edge)}
+.archive-stage :where(.hi){stroke:var(--hl-hi)}
+.archive-stage :where(.lo){stroke:var(--hl-lo)}
+.archive-stage :where(.dot){stroke:none;fill:var(--hl-hi)}
+.archive-stage :where(.dot.m){fill:var(--hl-edge)}
+.archive-stage :where(.dot.off){fill:var(--hl-lo)}
+.archive-preview{position:absolute;left:0;top:0;width:320px;height:180px;overflow:hidden;transform-origin:0 0;opacity:0;pointer-events:none;background:var(--stone)}
+.archive-preview img,.archive-preview video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.archive-caption{display:grid;justify-items:center;gap:2px;max-width:640px;margin-top:4px;text-align:center}
+.archive-meta{display:flex;align-items:center;gap:10px;margin:0;font:400 11.5px/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+.archive-meta i{width:18px;height:1px;background:var(--line-2)}
+.archive-title{margin:8px 0 0;font:560 clamp(1.45rem,1rem + 1.2vw,2.1rem)/1.15 var(--sans);letter-spacing:-.03em;color:var(--ink);text-wrap:balance}
+.archive-sub{margin:0 0 16px;font-size:15px;line-height:1.5;color:var(--muted)}
+.archive-open{display:inline-flex;align-items:center;gap:10px;height:40px;padding:0 14px 0 16px;border:0;border-radius:11px;background:var(--ink);color:var(--paper);font:500 14px/1 var(--sans);cursor:pointer;box-shadow:var(--lift);transition:background-color .2s,transform .16s var(--ease-out)}
+.archive-open svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s var(--ease-out)}
+@media(hover:hover){.archive-open:hover{background:color-mix(in srgb,var(--ink) 84%,var(--paper))}.archive-open:hover svg{transform:translateX(3px)}}
+.archive-open:focus-visible{outline-offset:3px;border-radius:11px}
 
 .projects-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;max-width:1240px;margin:0 auto}
 .project-tile{position:relative;display:flex;flex-direction:column;flex:0 0 calc((100% - 32px) / 3);min-width:0;border-radius:16px;background:var(--plate);box-shadow:var(--card),var(--lift);transform:perspective(1100px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(var(--lift-y,0px));transition:transform .6s var(--ease-out),box-shadow .4s var(--ease-out)}
@@ -60,6 +95,8 @@
   .project-filters{justify-content:center}
   .project-sort{justify-content:space-between;padding:8px 2px 2px 8px;border-left:0;border-top:1px solid var(--line-2)}
   .project-sort select{flex:1;max-width:220px}
+  .project-views{justify-content:center;padding:8px 0 2px;border-left:0;border-top:1px solid var(--line-2)}
+  .archive-stage{width:100%}
 }
 
 /* The project sheet. */

@@ -1,12 +1,10 @@
-// Mounts the two hairline package figures when they come near the viewport: the tray of
-// cards over Projects and the signal dish over Contact. A figure's caption goes to the
-// read-out beside it when there is one.
-import { dish, riffle } from './figures.js';
+// Mounts the hairline package figure when it comes near the viewport: the signal dish over
+// Contact. Its caption goes to the read-out beside it.
+import { dish } from './figures.js';
 
-const figures = { dish, riffle };
+const figures = { dish };
 const options = {
-  dish: { intensity: .7, label: 'A satellite dish on a gimbal that turns to follow your pointer.' },
-  riffle: { intensity: .55 }
+  dish: { intensity: .7, label: 'A satellite dish on a gimbal that turns to follow your pointer.' }
 };
 
 document.querySelectorAll('[data-figure]').forEach(host => {

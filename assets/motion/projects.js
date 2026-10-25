@@ -20,6 +20,8 @@
     ordered.forEach(tile => { tile.hidden = category !== 'All' && tile.dataset.category !== category; grid.append(tile); });
     const shown = tiles.filter(tile => !tile.hidden).length;
     results.textContent = `${shown} ${shown === 1 ? 'project' : 'projects'} shown`;
+    // The archive tray (archive.js) follows the same filter and order.
+    section.dispatchEvent(new CustomEvent('projects:render', { detail: { tiles: ordered.filter(tile => !tile.hidden) } }));
     const positions = tiles.filter(tile => !tile.hidden).map(tile => [tile, tile.getBoundingClientRect()]);
     positions.forEach(([tile, rect], i) => {
       if (rect.bottom <= 0 || rect.top >= innerHeight) return;
@@ -35,6 +37,15 @@
       }
     });
   }
+
+  // Two views of the same projects: the archive tray (the default) and the grid of tiles.
+  const views = [...section.querySelectorAll('[data-view]')];
+  function setView(view) {
+    section.dataset.view = view;
+    views.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
+  }
+  views.forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
+  setView('archive');
 
   // The filter's plate slides to the pressed button.
   const plate = document.createElement('i');
@@ -93,10 +104,11 @@
   // The sheet. Where view transitions exist, the tile's picture travels into the sheet and back.
   const modal = section.querySelector('.project-modal');
   const modalMedia = modal.querySelector('.project-modal-media');
-  let opener = null, openTile = null, closing = false, morph = null;
-  // The tiles' loops rest behind the sheet.
+  let opener = null, openTile = null, openSource = null, closing = false, morph = null;
+  const rendered = element => !!element && element.getClientRects().length > 0;
+  // The tiles' and the archive's loops rest behind the sheet.
   function pauseTiles(paused) {
-    tiles.forEach(tile => { const video = tile.querySelector('video'); if (!video) return; if (paused) video.pause(); else if (!reduced()) video.play().catch(() => {}); });
+    section.querySelectorAll('.project-tile video, .archive-preview video').forEach(video => { if (paused) video.pause(); else if (!reduced()) video.play().catch(() => {}); });
   }
   const canMorph = () => typeof document.startViewTransition === 'function' && !reduced();
   function fill(tile) {
@@ -115,13 +127,16 @@
     modal.querySelector('.project-modal-sub').textContent = tile.querySelector('.project-meta p').textContent;
     modal.querySelector('.project-modal-text').textContent = tile.querySelector('.project-description').textContent;
   }
-  function openProject(tile) {
-    opener = tile.querySelector('.project-open');
+  // Opened from a tile, the tile's picture travels into the sheet; opened from the archive, the
+  // pulled folder's preview does.
+  function openProject(tile, from = {}) {
+    opener = from.opener || tile.querySelector('.project-open');
     openTile = tile;
+    const source = rendered(from.source) ? from.source : tile.querySelector('.project-image');
+    openSource = source;
     fill(tile);
     const show = () => { document.documentElement.classList.add('project-modal-open'); modal.showModal(); pauseTiles(true); };
-    if (!canMorph()) { modal.removeAttribute('data-vt'); show(); return; }
-    const source = tile.querySelector('.project-image');
+    if (!canMorph() || !rendered(source)) { modal.removeAttribute('data-vt'); show(); return; }
     source.style.viewTransitionName = 'project-media';
     modal.setAttribute('data-vt', '');
     const transition = morph = document.startViewTransition(() => {
@@ -134,7 +149,7 @@
   }
   function closeProject() {
     if (!modal.open || closing) return;
-    const target = openTile && !openTile.hidden ? openTile.querySelector('.project-image') : null;
+    const target = openTile && !openTile.hidden && rendered(openSource) ? openSource : null;
     const finish = () => { closing = false; modal.removeAttribute('data-closing'); modal.close(); };
     if (canMorph() && target) {
       closing = true;
@@ -153,6 +168,7 @@
     setTimeout(finish, 220);
   }
   tiles.forEach(tile => tile.querySelector('.project-open').addEventListener('click', () => openProject(tile)));
+  section.addEventListener('archive:open', event => openProject(event.detail.tile, event.detail));
   modal.querySelector('.project-modal-close').addEventListener('click', closeProject);
   modal.addEventListener('cancel', event => { event.preventDefault(); closeProject(); });
   modal.addEventListener('click', event => {
@@ -164,7 +180,7 @@
     modalMedia.replaceChildren();
     document.documentElement.classList.remove('project-modal-open');
     opener?.focus({ preventScroll: true });
-    openTile = null;
+    openTile = null; openSource = null;
   });
   preference.addEventListener('change', cancelMotion);
   document.addEventListener('visibilitychange', () => { if (document.hidden) cancelMotion(); });

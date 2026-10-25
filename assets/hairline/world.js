@@ -532,7 +532,7 @@
     if (stepIntro(now)) busy = true;
     set(grad, 'cx', C.fx.toFixed(1)); set(grad, 'cy', C.fy.toFixed(1)); set(grad, 'r', (C.r * (intro ? Math.max(.001, intro.grid) : 1)).toFixed(1));
     gridFine.style.opacity = clamp((C.S - 1.7) / 1.6, 0, 1).toFixed(3);
-    const sceneOn = reduced ? (scrollY < innerHeight * .6 ? 1 : .35) : phi < 2.55 ? 1 : phi < 3 ? lerp(1, .32, smooth((phi - 2.55) / .45)) : lerp(.32, 0, smooth(clamp(phi - 3, 0, 1)));
+    const sceneOn = reduced ? (scrollY < innerHeight * .6 ? 1 : .35) : phi < 2.55 ? 1 : phi < 3 ? lerp(1, .18, smooth((phi - 2.55) / .45)) : lerp(.18, 0, smooth(clamp(phi - 3, 0, 1)));
     scene.style.opacity = floor.style.opacity = sceneOn.toFixed(3);
     const starsOn = reduced ? 0 : smooth(clamp((phi - 3.05) / .8, 0, 1));
     set(starsG, 'opacity', starsOn.toFixed(3));
