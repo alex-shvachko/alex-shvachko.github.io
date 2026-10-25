@@ -5,7 +5,7 @@
   // answered by the rover. Geometry is projected once at unit scale and the camera is a
   // transform on top, so a zoom never redraws what did not move.
   if (!window.HL) return;
-  const { rings, circ, prism, hull, poly, open, run, clamp, lerp, mk, solid, put, tween, tset, tval, tdone, spring, stepS } = HL;
+  const { rings, circ, prism, hull, poly, open, run, seg, clamp, lerp, mk, solid, put, tween, tset, tval, tdone, spring, stepS } = HL;
   const root = document.querySelector('.world');
   if (!root) return;
   const readout = document.querySelector('.world-readout b');
@@ -75,12 +75,19 @@
   // The rover, in its own frame: u forward, w to its left, z up.
   const CHASSIS = rings(-30, -17, 30, 17, 6, 1.8);
   const BUMPER = rings(29, -14, 33, 14, 1.6, .7);
-  // The head pivots at its centre, HEAD_Z up, between the two arms of a yoke: it turns about z
-  // and nods about its own w axis. Its front is a screen, and the eyes live on the screen.
+  // The head pivots at its centre, HEAD_Z up, between the two arms of a yoke. The yoke stands
+  // on a turntable that turns about z; the head nods about its own w axis on the arms' pivots.
+  // Its front is a screen, and the eyes live on the screen.
   const HEAD = rings(-11, -14, 11, 14, 3.6, 1.4);
-  const HEAD_AT = 14, NECK = circ(4, 28), HEAD_Z = 42, HEAD_H = 8;
+  const HEAD_AT = 13, HEAD_Z = 42, HEAD_H = 8;
   const SCREEN = HL.rrect(-9.4, -5.8, 9.4, 5.8, 2.6, 6);
-  const ARMS = [1, -1].map(side => rings(-2.6, side * 14.4 - .8, 2.6, side * 14.4 + .8, .8, .3));
+  const TABLE = [circ(16.4, 72), circ(15.2, 72)], TABLE_TOP = 31.4, ARM_W = [14.3, 15.7];
+  // An arm is a plate in the head's u-z plane, wide where it stands and round over the pivot;
+  // each corner keeps the outward normal of the plate's edge there.
+  const ARM = [
+    { u: -3.8, z: TABLE_TOP, nu: -.7, nz: -.7 }, { u: 3.8, z: TABLE_TOP, nu: .7, nz: -.7 },
+    ...Array.from({ length: 9 }, (_, k) => { const a = k / 8 * Math.PI; return { u: 3.2 * Math.cos(a), z: HEAD_Z + 3.2 * Math.sin(a), nu: Math.cos(a), nz: Math.sin(a) }; })
+  ];
   const LIDAR_AT = -13, LIDAR = [circ(7, 48), circ(6.1, 48)], CAP = [circ(4.6, 36), circ(3.9, 36)];
   const ANT = [-24, -11], ANT_TOP = 64;
   const WHEEL_U = [22, 0, -22], WHEEL_W = 23.5, WR = 9, WHW = 3.6, WZ = 9;
@@ -97,7 +104,11 @@
       rocker: mk('path', { class: 'nf sil' }, roverG),
       wheels: WHEEL_U.map(() => {
         const g = mk('g', {}, roverG);
-        return { g, tire: mk('path', { class: 'sil' }, g), face: mk('path', { class: 'nf' }, g), rim: mk('path', { class: 'nf lo' }, g), spokes: mk('path', { class: 'nf lo' }, g), hub: mk('path', { class: 'sil' }, g) };
+        return {
+          g, tire: mk('path', { class: 'sil' }, g), tread: mk('path', { class: 'nf' }, g), face: mk('path', { class: 'nf' }, g),
+          rim: mk('path', { class: 'nf lo' }, g), spokes: mk('path', { class: 'nf' }, g), hub: mk('path', { class: 'sil' }, g),
+          cap: mk('path', { class: 'nf lo' }, g), bolts: mk('path', { class: 'dot m' }, g)
+        };
       })
     })),
     lidar: (() => {
@@ -106,13 +117,14 @@
     })(),
     head: (() => {
       const g = mk('g', {}, roverG);
+      const table = solid(g), notches = mk('path', { class: 'nf' }, g);
       const arms = [1, -1].map(side => ({ side, ...solid(g) }));
-      const neck = solid(g), box = solid(g);
+      const box = solid(g);
       box.sil.classList.add('hi');
       const screen = mk('path', { class: 'screen' }, g), glare = mk('path', { class: 'nf glare' }, g);
       const eyes = [0, 1].map(() => mk('path', { class: 'eye' }, g));
-      const axle = mk('path', { class: 'sil' }, g), hub = mk('path', { class: 'nf lo' }, g);
-      return { g, arms, neck, box, screen, glare, eyes, axle, hub };
+      const pivot = mk('path', { class: 'sil' }, g), hub = mk('path', { class: 'nf' }, g);
+      return { g, table, notches, arms, box, screen, glare, eyes, pivot, hub };
     })(),
     antenna: (() => {
       const g = mk('g', {}, roverG);
@@ -120,35 +132,147 @@
     })()
   };
 
-  function wheel(w, cx, cy, ax, ay, spin) {
-    const fx = ay, fy = -ax, N = 30;
-    const A = ring2(cx - WHW * ax, cy - WHW * ay, WZ, fx, fy, 0, 0, 0, 1, WR, N);
-    const B = ring2(cx + WHW * ax, cy + WHW * ay, WZ, fx, fy, 0, 0, 0, 1, WR, N);
-    // The cap whose outward normal faces the camera is the one we see.
-    const nearB = facing(ax, ay);
-    const ncx = cx + (nearB ? WHW : -WHW) * ax, ncy = cy + (nearB ? WHW : -WHW) * ay;
-    set(w.tire, 'd', poly(hull(A.concat(B))));
-    set(w.face, 'd', poly(nearB ? B : A));
-    set(w.rim, 'd', poly(ring2(ncx, ncy, WZ, fx, fy, 0, 0, 0, 1, WR * .7, 24)));
-    set(w.hub, 'd', poly(ring2(ncx, ncy, WZ, fx, fy, 0, 0, 0, 1, WR * .28, 14)));
+  // A wheel: a lugged tyre round a dished rim of five spokes, the hub standing proud with its
+  // bolts. All of it turns with the spin; turned further in a frame than the eye can follow,
+  // the lugs, spokes and bolts blur into rings. Step is how far it turned since the last frame.
+  const LUGS = 16, SPOKES = 5, TREAD = Array.from({ length: 48 }, (_, k) => ({ t: k / 48 * Math.PI * 2 }));
+  function wheel(w, cx, cy, ax, ay, spin, step) {
+    const fx = ay, fy = -ax, o = facing(ax, ay) ? 1 : -1;
+    // a point on the wheel: e out along the axle toward us, X forward and Y up in its plane
+    const at = (e, X, Y) => P(cx + ax * e * o + fx * X, cy + ay * e * o + fy * X, WZ + Y);
+    const pt = (e, r, t) => at(e, Math.cos(t) * r, Math.sin(t) * r);
+    const ring = (e, r, n) => Array.from({ length: n }, (_, k) => pt(e, r, k / n * Math.PI * 2));
+    const seenAt = t => (fx + fy) * Math.cos(t) + .8165 * Math.sin(t) > .12;
+    w.hit = hull(ring(-WHW, WR, 30).concat(ring(WHW, WR, 30)));
+    set(w.tire, 'd', poly(w.hit));
+    // Lugs: a chevron across the tread that runs on down the shoulder.
     let d = '';
-    for (let k = 0; k < 3; k++) {
-      const a = spin + k * Math.PI * 2 / 3, c = Math.cos(a), sn = Math.sin(a);
-      const p = P(ncx + fx * c * WR * .28, ncy + fy * c * WR * .28, WZ + sn * WR * .28);
-      const q = P(ncx + fx * c * WR * .7, ncy + fy * c * WR * .7, WZ + sn * WR * .7);
-      d += `M${p[0].toFixed(2)} ${p[1].toFixed(2)}L${q[0].toFixed(2)} ${q[1].toFixed(2)}`;
+    if (step < Math.PI / LUGS * .8) {
+      for (let k = 0; k < LUGS; k++) {
+        const t = k / LUGS * Math.PI * 2 - spin, shoulder = [pt(WHW, WR, t), pt(WHW, WR - 1.4, t)];
+        d += seenAt(t) && seenAt(t - .16) ? open([pt(-WHW * .86, WR, t), pt(0, WR, t - .16), ...shoulder]) : open(shoulder);
+      }
+    } else {
+      const arc = run(TREAD, q => seenAt(q.t));
+      for (const e of [-.45, .45]) d += open(arc.map(q => pt(e * WHW, WR, q.t)));
+      d += poly(ring(WHW, WR - 1.4, 30));
     }
-    set(w.spokes, 'd', d);
+    set(w.tread, 'd', d);
+    set(w.face, 'd', poly(ring(WHW, WR, 30)) + poly(ring(WHW, WR * .74, 26)));
+    set(w.rim, 'd', poly(ring(WHW - .7, WR * .7, 26)));
+    // Spokes: each a pair of lines from the hub out to the sunken rim, a little wider there.
+    const fast = step > Math.PI / SPOKES * .8;
+    let sp = '', bolts = '', cap = poly(ring(WHW + .9, 2.6, 16)) + poly(ring(WHW + .9, .8, 10));
+    if (!fast) {
+      for (let k = 0; k < SPOKES; k++) {
+        const a = k / SPOKES * Math.PI * 2 - spin, c = Math.cos(a), s = Math.sin(a);
+        for (const n of [-1, 1]) sp += seg(at(WHW + .2, c * 2.4 - s * n * .75, s * 2.4 + c * n * .75), at(WHW - .7, c * 6.1 - s * n * 1.05, s * 6.1 + c * n * 1.05));
+        const b = a + Math.PI / SPOKES, bx = Math.cos(b) * 1.6, by = Math.sin(b) * 1.6;
+        bolts += poly(Array.from({ length: 6 }, (_, j) => at(WHW + .9, bx + Math.cos(j * Math.PI / 3) * .38, by + Math.sin(j * Math.PI / 3) * .38)));
+      }
+    } else {
+      sp = poly(ring(WHW - .3, 4, 22)) + poly(ring(WHW - .5, 5.3, 24));
+      cap += poly(ring(WHW + .9, 1.6, 14));
+    }
+    set(w.spokes, 'd', sp);
+    set(w.hub, 'd', poly(hull(ring(WHW - .3, 2.6, 16).concat(ring(WHW + .9, 2.6, 16)))));
+    set(w.cap, 'd', cap);
+    set(w.bolts, 'd', bolts);
   }
 
   // Pose: where the rover stands and how it answers the pointer.
-  const pose = { x: 0, y: 0, h: 0, spin: 0 };
+  const pose = { x: 0, y: 0, h: 0, spin: 0, step: 0 };
   const yaw = spring(.32, { k: 90, c: 17 });
   const lookX = spring(.4), lookZ = spring(-.15);
   const leanX = spring(0, { k: 60, c: 9 }), leanY = spring(0, { k: 60, c: 9 });
   const pitch = spring(0, { k: 80, c: 13 });
   let lidarAngle = .6, blink = 1, blinkAt = 2.4, blinkT = -1;
   const anchors = {};
+
+  // Burnouts: a click on a wheel spins up its axle, that wheel and its twin across, while the
+  // other two hold the rover where it stands. The tyres smoke behind and lay rubber down.
+  const BURN_W = 36;
+  const burns = WHEEL_U.map(() => ({ spin: 0, step: 0, w: 0, until: 0, acc: 0, marks: null }));
+  // A layer of smoke is every puff's outline and then every puff's fill over them, so only the
+  // outline of the cloud they make together is left.
+  const smokeLayer = () => { const g = mk('g', {}, roverG); return { g, edge: mk('path', { class: 'puff' }, g), fill: mk('path', { class: 'puff-fill' }, g) }; };
+  const smokeBack = smokeLayer(), smokeFront = smokeLayer();
+  const skidG = mk('g', {});
+  cam.insertBefore(skidG, objects);
+  let puffs = [], skids = [], burnI = 0, burnGlad = 0, shaken = '', bodyHit = [], nearNow = 1;
+  // A puff thrown back off the tyre where it meets the ground and out from the rover's side,
+  // forward being (fx, fy) and side 1 for its left: it billows up, then shrinks away.
+  function puff(x, y, fx, fy, side) {
+    if (puffs.length > 180) return;
+    const back = 10 + Math.random() * 18, out = side * Math.random() * 10, e = side * (WHW * .5 + Math.random() * 3), j = (Math.random() - .5) * 5;
+    puffs.push({
+      x: x - fx * (WR * .7 + j) - fy * e, y: y - fy * (WR * .7 + j) + fx * e, z: 1 + Math.random() * 3,
+      vx: -fx * back - fy * out, vy: -fy * back + fx * out, vz: 4 + Math.random() * 7,
+      r: 3.5 + Math.random() * 5, t: 0, life: 1.3 + Math.random() * 1.1
+    });
+  }
+  /** Steps the burnouts, their smoke and their rubber; returns whether any of it still moves. */
+  function stepBurns(now, dt) {
+    const c = Math.cos(pose.h), s = Math.sin(pose.h);
+    let live = false;
+    burnI = 0;
+    burns.forEach((b, i) => {
+      const want = now < b.until ? BURN_W : 0;
+      b.w += (want - b.w) * (1 - Math.exp(-dt * (want ? 4 : 1.5)));
+      if (!want && b.w < .3) b.w = 0;
+      b.step = b.w * dt;
+      b.spin += b.step;
+      burnI = Math.max(burnI, b.w / BURN_W);
+      if (!b.w) { b.marks = null; return; }
+      live = true;
+      const centres = [1, -1].map(side => [pose.x + WHEEL_U[i] * c - side * WHEEL_W * s, pose.y + WHEEL_U[i] * s + side * WHEEL_W * c]);
+      if (want) {
+        b.marks = b.marks || centres.map(([x, y]) => { const m = { x, y, c, s, len: 0, end: 0, node: mk('path', { class: 'dot m' }, skidG) }; skids.push(m); return m; });
+        b.marks.forEach(m => { m.len = Math.min(22, m.len + dt * 14); m.end = b.until; });
+      }
+      if (b.w > BURN_W * .35) {
+        b.acc += dt * 42 * b.w / BURN_W;
+        for (; b.acc >= 1; b.acc--) centres.forEach(([x, y], k) => puff(x, y, c, s, k ? -1 : 1));
+      }
+    });
+    // rubber: a patch under each tyre, smeared back from where it scrubs, fading once it stops
+    skids = skids.filter(m => {
+      const f = clamp((now - m.end - 400) / 5000, 0, 1);
+      if (f >= 1) { m.node.remove(); return false; }
+      const edge = n => Array.from({ length: 7 }, (_, k) => {
+        const l = lerp(2, -m.len, k / 6), e = n * WHW * (.85 - .25 * (k / 6) ** 2) + Math.sin(k * 2.3 + n) * .25;
+        return P(m.x + m.c * l - m.s * e, m.y + m.s * l + m.c * e, 0);
+      });
+      set(m.node, 'd', poly(edge(1).concat(edge(-1).reverse())));
+      set(m.node, 'opacity', (.32 * (1 - f)).toFixed(3));
+      live = true;
+      return true;
+    });
+    // Smoke: each puff slows and rises as it swells and shrinks again. It paints behind the
+    // whole rover unless it has drifted out past the rover's nearest wheel.
+    const front = pose.x + pose.y + 22 * Math.abs(c + s) + 23.5 * Math.abs(c - s) + 4, drag = Math.exp(-dt * 1.8);
+    const disc = ['', ''];
+    puffs = puffs.filter(p => {
+      p.t += dt;
+      const k = p.t / p.life;
+      if (k >= 1) return false;
+      p.vx *= drag; p.vy *= drag; p.vz = p.vz * drag + 9 * dt;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+      const [qx, qy] = P(p.x, p.y, p.z), r = (p.r * Math.sin(Math.PI * Math.pow(k, .6))).toFixed(2);
+      disc[+(p.x + p.y > front)] += `M${(qx - r).toFixed(2)} ${qy.toFixed(2)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
+      live = true;
+      return true;
+    });
+    [smokeBack, smokeFront].forEach((layer, i) => { set(layer.edge, 'd', disc[i]); set(layer.fill, 'd', disc[i]); });
+    // the body shudders over the spinning axle
+    const lift = burnI ? (Math.sin(now * .09) + Math.sin(now * .157)) * .25 * burnI : 0;
+    const shake = lift ? `translate(0 ${(-lift * ZF).toFixed(3)})` : '';
+    if (shake !== shaken) {
+      shaken = shake;
+      [el.chassis.g, el.bumper.g, el.head.g, el.lidar.g, el.antenna.g].forEach(g => (shake ? g.setAttribute('transform', shake) : g.removeAttribute('transform')));
+    }
+    return live;
+  }
 
   // The face: each eye is a top and a bottom edge sampled across its width, so one mood morphs
   // into another; the blink presses both edges toward the middle.
@@ -189,9 +313,12 @@
     put(el.bumper, prism(P, front, xf(BUMPER[0], bx, by, h), xf(BUMPER[1], bx, by, h), 15, 25));
     const ax = -s, ay = c;
     const nearSide = facing(ax, ay) ? 1 : -1;
+    const body = xf(CHASSIS[0], bx, by, h);
+    bodyHit = hull(body.map(q => P(q.u, q.v, 14)).concat(body.map(q => P(q.u, q.v, 29))));
+    nearNow = nearSide;
     for (const side of el.sides) {
       const w0 = side.side * WHEEL_W;
-      side.wheels.forEach((w, i) => { const [cx, cy] = at(WHEEL_U[i], w0); w.depth = cx + cy; wheel(w, cx, cy, ax, ay, pose.spin); });
+      side.wheels.forEach((w, i) => { const [cx, cy] = at(WHEEL_U[i], w0); w.depth = cx + cy; wheel(w, cx, cy, ax, ay, pose.spin + burns[i].spin, pose.step + burns[i].step); });
       let d = '';
       for (let k = 0; k < ROCKER.length; k += 3) {
         const pts = ROCKER.slice(k, k + 3).map(([u, z]) => { const [px, py] = at(u, side.side * 19.4); return P(px, py, z); });
@@ -205,7 +332,8 @@
     put(el.lidar.body, prism(P, front, xf(LIDAR[0], lx, ly, 0), xf(LIDAR[1], lx, ly, 0), 29, 36));
     put(el.lidar.cap, prism(P, front, xf(CAP[0], lx, ly, 0), xf(CAP[1], lx, ly, 0), 36, 39.5));
     drawSlit(lx, ly);
-    // Head on its yoke: it turns and nods to the pointer, and its face is a screen.
+    // Head on its yoke: the table turns to the pointer and carries the arms, the head nods
+    // between them, and its face is a screen.
     const [hx, hy] = at(HEAD_AT, 0), hh = h + yaw.x, hc = Math.cos(hh), hs = Math.sin(hh);
     const pc = Math.cos(pitch.x), ps = Math.sin(pitch.x);
     // a point in the head's own frame (u forward, w left, z up from the pivot), and a direction
@@ -213,8 +341,22 @@
     const hd = (u, w, z) => { const u1 = u * pc - z * ps; return [u1 * hc - w * hs, u1 * hs + w * hc, u * ps + z * pc]; };
     const seen = ([x, y, z]) => x + y + z * .8165 > 1e-6;
     const sideOn = facing(-hs, hc) ? 1 : -1;
-    el.head.arms.forEach((arm, i) => put(arm, prism(P, front, xf(ARMS[i][0], hx, hy, hh), xf(ARMS[i][1], hx, hy, hh), 30, HEAD_Z + 2.4)));
-    put(el.head.neck, prism(P, front, xf(NECK, hx, hy, 0), null, 29, 34));
+    put(el.head.table, prism(P, front, xf(TABLE[0], hx, hy, 0), xf(TABLE[1], hx, hy, 0), 29, TABLE_TOP));
+    // notches round the table's rim turn with it; the one in front is the head's heading
+    let nd = '';
+    for (let k = 0; k < 36; k++) {
+      const a = hh + k / 36 * Math.PI * 2, nx = Math.cos(a), ny = Math.sin(a), x = hx + nx * 16.4, y = hy + ny * 16.4;
+      if (nx + ny > .25) nd += seg(P(x, y, k ? 29.8 : 29.3), P(x, y, k ? 30.9 : 31.2));
+    }
+    set(el.head.notches, 'd', nd);
+    // each arm is a plate; along the edges that turn toward us its near face leaves a crease
+    const ap = (u, w, z) => P(hx + u * hc - w * hs, hy + u * hs + w * hc, z);
+    const edge = run(ARM, q => seen([q.nu * hc, q.nu * hs, q.nz]));
+    el.head.arms.forEach(arm => {
+      const [wi, wo] = ARM_W.map(v => v * arm.side), wn = arm.side === sideOn ? wo : wi;
+      const plate = ARM.map(q => ap(q.u, wi, q.z)).concat(ARM.map(q => ap(q.u, wo, q.z)));
+      put(arm, { sil: poly(hull(plate)), crease: open(edge.map(q => ap(q.u, wn, q.z))) });
+    });
     const shell = [];
     [[HEAD[1], -HEAD_H], [HEAD[0], 1.4 - HEAD_H], [HEAD[0], HEAD_H - 1.4], [HEAD[1], HEAD_H]].forEach(([ring, z]) => ring.forEach(q => shell.push(hp(q.u, q.v, z))));
     const rim = seen(hd(0, 0, 1)) ? run(HEAD[1], q => seen(hd(q.nu, q.nv, 0))) : [];
@@ -236,13 +378,19 @@
       });
     }
     anchors.eye = hp(F, 4.6 + lookW, lookZ_);
-    // the axle the head nods on, on the arm that faces us; the near arm paints over the head
-    const axle = [hx - sideOn * 15.3 * hs, hy + sideOn * 15.3 * hc];
-    set(el.head.axle, 'd', poly(ring2(axle[0], axle[1], HEAD_Z, hc, hs, 0, 0, 0, 1, 2.3, 18)));
-    set(el.head.hub, 'd', poly(ring2(axle[0], axle[1], HEAD_Z, hc, hs, 0, 0, 0, 1, 1, 12)));
+    // the pivot the head nods on, on the arm that faces us: a disc whose marks turn with the
+    // nod. The far arm paints under the head, the near one over it.
+    const pw = sideOn * (ARM_W[1] + .1), qx = hx - pw * hs, qy = hy + pw * hc;
+    set(el.head.pivot, 'd', poly(ring2(qx, qy, HEAD_Z, hc, hs, 0, 0, 0, 1, 2.7, 20)));
+    let pd = poly(ring2(qx, qy, HEAD_Z, hc, hs, 0, 0, 0, 1, 1.1, 12));
+    for (let k = 0; k < 3; k++) {
+      const a = Math.PI / 2 + pitch.x + k * Math.PI * 2 / 3, c = Math.cos(a), sn = Math.sin(a);
+      pd += seg(P(qx + hc * c * 1.1, qy + hs * c * 1.1, HEAD_Z + sn * 1.1), P(qx + hc * c * 2.2, qy + hs * c * 2.2, HEAD_Z + sn * 2.2));
+    }
+    set(el.head.hub, 'd', pd);
     const nearArm = el.head.arms.find(a => a.side === sideOn), farArm = el.head.arms.find(a => a.side !== sideOn);
-    if (el.head.g.firstChild !== farArm.g) el.head.g.insertBefore(farArm.g, el.head.g.firstChild);
-    if (nearArm.g.nextSibling !== el.head.axle) el.head.g.insertBefore(nearArm.g, el.head.axle);
+    if (el.head.notches.nextSibling !== farArm.g) el.head.g.insertBefore(farArm.g, el.head.notches.nextSibling);
+    if (nearArm.g.nextSibling !== el.head.pivot) el.head.g.insertBefore(nearArm.g, el.head.pivot);
     // Antenna: a mast with a ball on top that leans toward the pointer.
     const [ax0, ay0] = at(ANT[0], ANT[1]);
     put(el.antenna.base, prism(P, front, xf(circ(2.3, 18), ax0, ay0, 0), null, 29, 32));
@@ -257,20 +405,20 @@
     anchors.antenna = P(tip[0], tip[1], tip[2] + 2.3);
     const nearWheel = el.sides.find(sd => sd.side === nearSide).wheels.reduce((a, b) => (b.depth > a.depth ? b : a));
     const wi = el.sides.find(sd => sd.side === nearSide).wheels.indexOf(nearWheel);
-    const [wx, wy] = at(WHEEL_U[wi], nearSide * (WHEEL_W + WHW));
+    const [wx, wy] = at(WHEEL_U[wi], nearSide * (WHEEL_W + WHW + .9));
     anchors.wheel = P(wx, wy, WZ);
 
-    // Paint order: far wheels, far rocker, chassis, near rocker, near wheels, then the deck
-    // parts from the back. Reordered only when the order actually changes.
+    // Paint order: smoke behind, far wheels, far rocker, chassis, near rocker, near wheels, the
+    // deck parts from the back, then smoke in front. Reordered only when the order changes.
     const far = el.sides.find(sd => sd.side !== nearSide), near = el.sides.find(sd => sd.side === nearSide);
     const byDepth = list => list.slice().sort((a, b) => a.depth - b.depth);
     el.head.depth = hx + hy; el.lidar.depth = lx + ly; el.antenna.depth = ax0 + ay0;
     const bumperFront = facing(c, s);
     const order = [
-      ...byDepth(far.wheels).map(w => w.g), far.rocker,
+      smokeBack.g, ...byDepth(far.wheels).map(w => w.g), far.rocker,
       ...(bumperFront ? [el.chassis.g, el.bumper.g] : [el.bumper.g, el.chassis.g]),
       near.rocker, ...byDepth(near.wheels).map(w => w.g),
-      ...byDepth([el.head, el.lidar, el.antenna]).map(p => p.g)
+      ...byDepth([el.head, el.lidar, el.antenna]).map(p => p.g), smokeFront.g
     ];
     if (order.some((node, i) => roverG.children[i] !== node)) roverG.append(...order);
   }
@@ -576,15 +724,51 @@
   }
 
   // ---- pointer ---------------------------------------------------------------------------
-  let pointer = null;
+  let pointer = null, pointerOn = null;
   let lastInput = performance.now();
-  addEventListener('pointermove', e => { if (e.pointerType === 'touch' && !e.isPrimary) return; pointer = [e.clientX, e.clientY]; lastInput = performance.now(); schedule(); }, { passive: true });
+  addEventListener('pointermove', e => { if (e.pointerType === 'touch' && !e.isPrimary) return; pointer = [e.clientX, e.clientY]; pointerOn = e.target; lastInput = performance.now(); schedule(); }, { passive: true });
   addEventListener('pointerdown', e => { pointer = [e.clientX, e.clientY]; lastInput = performance.now(); schedule(); }, { passive: true });
   const release = e => { if (e.pointerType !== 'mouse') { pointer = null; schedule(); } };
   addEventListener('pointerup', release, { passive: true });
   addEventListener('pointercancel', release, { passive: true });
   document.documentElement.addEventListener('pointerleave', () => { pointer = null; schedule(); });
   addEventListener('blur', () => { pointer = null; schedule(); });
+
+  // A click on a wheel (not on the page's own controls or text over it) sets its axle spinning;
+  // more clicks keep it going a while longer.
+  const PASS = 'a, button, input, select, textarea, label, summary, dialog, [tabindex], .topic, article, h1, h2, h3, h4, p';
+  const inside = ([x, y], pts) => {
+    let c = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const [xi, yi] = pts[i], [xj, yj] = pts[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+    }
+    return c;
+  };
+  /** The axle of the wheel at a screen point, or -1: near wheels first, far ones only where the body does not hide them. */
+  function wheelAt(x, y, target) {
+    const C = state.cam;
+    if (!C || reduced || intro || state.phi > 2.4 || target?.closest?.(PASS)) return -1;
+    const q = [(x - C.ox) / C.S, (y - C.oy) / C.S];
+    let hit = -1, best = -Infinity;
+    for (const sd of el.sides) {
+      const near = sd.side === nearNow;
+      sd.wheels.forEach((w, i) => {
+        const rank = w.depth + (near ? 1e6 : 0);
+        if (w.hit && rank > best && inside(q, w.hit) && (near || !inside(q, bodyHit))) { hit = i; best = rank; }
+      });
+    }
+    return hit;
+  }
+  addEventListener('click', e => {
+    const i = e.button ? -1 : wheelAt(e.clientX, e.clientY, e.target);
+    if (i < 0) return;
+    const now = performance.now(), b = burns[i];
+    b.until = Math.min(now + 3600, Math.max(b.until, now) + 1500);
+    burnGlad = b.until + 2600;
+    lastInput = now;
+    schedule();
+  });
 
   // ---- the loop ----------------------------------------------------------------------------
   let raf = 0, last = 0, part = '', settled = false, drawnPose = '', drawnTrail = '', windFrom = null;
@@ -636,6 +820,10 @@
     pose.x = at.x; pose.y = at.y;
     pose.h = h0 + wrap(at.h - h0) * smooth(k);
     pose.spin += moved / WR;
+    pose.step = Math.abs(moved) / WR;
+    if (stepBurns(now, dt)) busy = true;
+    // a burnout slews the rover a little either way about where it stands
+    pose.h += Math.sin(now * .013) * .05 * burnI;
     const trailKey = `${state.routeShown.toFixed(4)} ${s.toFixed(2)}`;
     if (trailKey !== drawnTrail) {
       drawnTrail = trailKey;
@@ -677,7 +865,9 @@
       // the head nods up to a pointer above it and down to one below
       const up = pointer[1] - (C.oy + C.S * P(hx, hy, HEAD_Z)[1]);
       pitch.t = clamp(-up / (C.S * 110), -1, 1) * (up < 0 ? .4 : .28);
+      document.documentElement.classList.toggle('over-wheel', wheelAt(pointer[0], pointer[1], pointerOn) >= 0);
     } else {
+      document.documentElement.classList.remove('over-wheel');
       yaw.t = reduced ? .32 : .32 * (1 - k); lookX.t = .45; lookZ.t = -.2; leanX.t = 0; leanY.t = 0; pitch.t = 0;
     }
     // The face's mood: glad with the pointer on it, intent while it hurries along the trail,
@@ -685,14 +875,18 @@
     let want = 'open';
     if (!reduced && !intro) {
       const top = anchors.head && [C.ox + C.S * anchors.head[0], C.oy + C.S * anchors.head[1]];
-      if (pointer && top && Math.hypot(pointer[0] - top[0], pointer[1] - top[1] - C.S * 8) < C.S * 30) want = 'happy';
+      if (burnI > .15) want = 'squint';
+      else if (pointer && top && Math.hypot(pointer[0] - top[0], pointer[1] - top[1] - C.S * 8) < C.S * 30) want = 'happy';
       else if (Math.abs(moved) > .8) want = 'squint';
+      else if (now < burnGlad) want = 'happy';
       else if (now - lastInput > 6000) want = 'sleepy';
       else if (now < moodUntil) want = mood;
     }
     if (want === 'sleepy') pitch.t = -.22;
     // with the pointer on its head it turns to the one looking at it
     else if (want === 'happy') { yaw.t = clamp(wrap(Math.PI / 4 - pose.h), -.95, .95); pitch.t = .16; lookX.t = 0; lookZ.t = .2; }
+    // the antenna whips about over a burnout
+    if (burnI) { leanX.t += Math.sin(now * .023) * 2.6 * burnI; leanY.t += Math.cos(now * .019) * 2.6 * burnI; }
     for (const sp of [yaw, lookX, lookZ, leanX, leanY, pitch]) if (stepS(sp, dt)) busy = true;
     if (stepFace(want, dt)) { busy = true; faceVer++; }
     if (Math.abs(moved) > 1e-3) { const kick = clamp(moved, -3, 3) * 2.5; leanX.v -= Math.cos(pose.h) * kick; leanY.v -= Math.sin(pose.h) * kick; }
@@ -714,7 +908,7 @@
     }
     // Wake once more when it is time to doze, so the face can get drowsy.
     if (!reduced && phi < 2.7 && want !== 'sleepy') { clearTimeout(napTimer); napTimer = setTimeout(schedule, Math.max(60, 6050 - (now - lastInput))); }
-    const poseKey = [pose.x, pose.y, pose.h, pose.spin, yaw.x, lookX.x, lookZ.x, leanX.x, leanY.x, pitch.x, blink].map(v => v.toFixed(3)).join() + faceVer + m;
+    const poseKey = [pose.x, pose.y, pose.h, pose.spin, pose.step, ...burns.flatMap(b => [b.spin, b.step]), yaw.x, lookX.x, lookZ.x, leanX.x, leanY.x, pitch.x, blink].map(v => v.toFixed(3)).join() + faceVer + m;
     const changed = poseKey !== drawnPose;
     if (changed) { drawnPose = poseKey; drawRover(); }
     else drawSlit(...slitAt);
@@ -729,6 +923,7 @@
       }
       if (name === 'rest' && pointer[0] > C.fx - C.S * 70 && pointer[0] < C.fx + C.S * 70 && Math.abs(pointer[1] - C.fy) < C.S * 60) name = `tracking ${String(Math.round(((pose.h + yaw.x) * 180 / Math.PI % 360 + 360) % 360)).padStart(3, '0')}°`;
     }
+    if (burnI > .1) name = 'burnout';
     if (readout && name !== part) { part = name; readout.textContent = name; }
 
     // Pages that hang lines off the drawing only hear about frames where something moved.

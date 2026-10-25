@@ -78,6 +78,9 @@ html{scrollbar-color:var(--line-2) transparent;scrollbar-width:thin}
 .world :where(.screen){fill:var(--hl-screen);stroke:var(--hl-hi)}
 .world :where(.glare){stroke:var(--hl-glare)}
 .world :where(.eye){fill:var(--accent);stroke:none}
+.world :where(.puff){stroke-width:calc(var(--hl-w) * 2)}
+.world :where(.puff-fill){stroke:none}
+html.over-wheel{cursor:pointer}
 .world .grid{fill:none;stroke:var(--hl-lo);stroke-width:1}
 .world .stars circle{fill:var(--hl-edge);stroke:none}
 .world .stars circle.b{fill:var(--hl-hi)}
