@@ -98,6 +98,9 @@ html.over-wheel{cursor:pointer}
 .world[data-stars] .stars .tw{animation-play-state:running}
 html.project-modal-open .world .stars .tw{animation-play-state:paused}
 @keyframes twinkle{50%{opacity:.2}}
+@keyframes cosmos-pulse{50%{opacity:.3;transform:scale(.84)}}
+.world .cosmos-tw{transform-box:fill-box;transform-origin:center;animation:cosmos-pulse var(--tw-d,5s) ease-in-out var(--tw-dl,0s) infinite}
+html.project-modal-open .world .cosmos-tw{animation-play-state:paused}
 /* The entrance: each part of the plinth and the rover draws its strokes, then fills its plates. */
 .world[data-intro] path.draw:not(.dash),.world[data-intro] .draw path:not(.dash){stroke-dasharray:1 1;stroke-dashoffset:calc(1 - var(--d,0));stroke-opacity:min(1,calc(var(--d,0) * 40));fill-opacity:var(--f,0)}
 .world[data-intro] .draw .dash{opacity:var(--f,0)}
@@ -145,7 +148,7 @@ html.theme-vt::view-transition-new(root){z-index:2}
 @media(prefers-reduced-motion:reduce){
   .motion-ready .reveal{translate:none;filter:none;transition:opacity .3s linear}
   :is(.theme-toggle,.sound-toggle) *{transition:none!important}
-  .world .stars .tw{animation:none}
+  .world .stars .tw,.world .cosmos-tw{animation:none}
   .world-readout{display:none}
 }
 .motion-reduced .world-readout{display:none}

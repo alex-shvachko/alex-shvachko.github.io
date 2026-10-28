@@ -2,7 +2,7 @@
    the pointer above one wide plate of three columns; text is centred and set large. */
 #contact{position:relative;display:flex;flex-direction:column;min-height:100svh;padding:calc(var(--topbar) + 2svh) var(--gutter) 26px;scroll-margin-top:0;color:var(--ink)}
 .contact-symbols{position:absolute;width:0;height:0;overflow:hidden}
-.contact-signal{display:grid;justify-items:center;margin:0 auto 10px}
+.contact-signal{display:grid;justify-items:center;align-content:center;min-height:calc(86svh - var(--topbar) - 2svh);margin:0 auto 10px}
 .signal-figure{width:min(320px,70vw);aspect-ratio:5/4}
 .signal-read{display:flex;align-items:center;gap:10px;margin:2px 0 0;font:400 11px/1 var(--mono);letter-spacing:.02em;color:var(--muted);font-variant-numeric:tabular-nums}
 .signal-read i{width:18px;height:1px;background:var(--line-2)}

@@ -39,7 +39,7 @@
   // A tree that sways repaints only the scene, never the masked floor under it, and the
   // layers fade as wholes on the compositor.
   const layer = () => mk('svg', { 'aria-hidden': 'true', focusable: 'false' }, root);
-  const sky = layer(), floorSvg = layer(), svg = layer();
+  const sky = layer(), nearSvg = layer(), fxSvg = layer(), floorSvg = layer(), svg = layer();
   const defs = mk('defs', {}, floorSvg);
   const grad = mk('radialGradient', { id: 'world-fade-g', gradientUnits: 'userSpaceOnUse' }, defs);
   mk('stop', { offset: 0, 'stop-color': '#fff', 'stop-opacity': 1 }, grad);
@@ -49,6 +49,8 @@
   const maskRect = mk('rect', { x: 0, y: 0, fill: 'url(#world-fade-g)' }, mask);
 
   const starsG = mk('g', { class: 'stars' }, sky);
+  // The signal's sky: planets, moons, constellations and shooting stars over the stars (cosmos.js).
+  const cosmos = window.HLCosmos ? window.HLCosmos({ far: sky, near: nearSvg, fx: fxSvg }) : null;
   const floor = mk('g', { mask: 'url(#world-fade)' }, floorSvg);
   const floorCam = mk('g', {}, floor);
   const gridCoarse = mk('path', { class: 'grid' }, floorCam);
@@ -560,7 +562,7 @@
     const n = clamp(Math.round(W * tall / 8000), 60, 240);
     for (let i = 0; i < n; i++) {
       const bright = rnd() < .12, twinkle = rnd() < .35;
-      const c = mk('circle', { cx: (rnd() * W).toFixed(1), cy: (rnd() * tall * 1.15).toFixed(1), r: (bright ? 1.1 + rnd() * .6 : .5 + rnd() * .5).toFixed(2) }, starsG);
+      const c = mk('circle', { cx: (rnd() * W).toFixed(1), cy: ((rnd() * 1.25 - .1) * tall).toFixed(1), r: (bright ? 1.1 + rnd() * .6 : .5 + rnd() * .5).toFixed(2) }, starsG);
       if (bright) c.classList.add('b');
       if (twinkle) { c.classList.add('tw'); c.style.setProperty('--tw-d', `${(3 + rnd() * 5).toFixed(1)}s`); c.style.setProperty('--tw-dl', `${(-rnd() * 8).toFixed(1)}s`); }
     }
@@ -575,7 +577,7 @@
   // The drawing is sized to the fixed layer itself, which excludes a classic scrollbar, so
   // its pixels are the page's pixels; breakpoints still follow the viewport, as CSS does.
   function sizeCanvas() {
-    [sky, floorSvg, svg].forEach(s => s.setAttribute('viewBox', `0 0 ${W} ${H}`));
+    [sky, nearSvg, fxSvg, floorSvg, svg].forEach(s => s.setAttribute('viewBox', `0 0 ${W} ${H}`));
     mask.setAttribute('width', W); mask.setAttribute('height', H);
     maskRect.setAttribute('width', W); maskRect.setAttribute('height', H);
   }
@@ -664,7 +666,10 @@
     const C = 48;
     gridCoarse.setAttribute('d', gridPath(Math.floor(x0 / C) * C - C, Math.floor(y0 / C) * C - C, x1 + C, y1 + C, C));
     gridFine.setAttribute('d', gridPath(-216, -216, 216, 216, 12));
-    if (starSize !== String(W)) { starSize = String(W); buildStars(); }
+    if (starSize !== `${W}x${H}`) {
+      starSize = `${W}x${H}`; buildStars();
+      cosmos?.build({ W, H, tall: Math.max(H, window.screen.height || H), narrow });
+    }
     drawnPose = drawnTrail = '';
     drawn = null;
     measureKeys();
@@ -857,9 +862,10 @@
     const sceneOn = reduced ? (scrollY < innerHeight * .6 ? 1 : .35) : phi < 2.55 ? 1 : phi < 3 ? lerp(1, .18, smooth((phi - 2.55) / .45)) : lerp(.18, 0, smooth(clamp(phi - 3, 0, 1)));
     fadeTo(floorSvg, sceneOn); fadeTo(svg, sceneOn);
     const starsOn = reduced ? 0 : smooth(clamp((phi - 3.05) / .8, 0, 1));
-    fadeTo(sky, starsOn);
-    // the stars drift up as a whole layer, moved by the compositor
-    if (starsOn > 0) sky.style.transform = `translateY(${(-(phi - 3) * H * .08).toFixed(1)}px)`;
+    fadeTo(sky, starsOn); fadeTo(nearSvg, starsOn); fadeTo(fxSvg, starsOn);
+    // the sky rises into place and leans to the pointer on its own loop, moved by the compositor
+    if (cosmos) cosmos.drive(starsOn > 0, phi);
+    else if (starsOn > 0) sky.style.transform = `translateY(${(-(phi - 3) * H * .08).toFixed(1)}px)`;
     root.toggleAttribute('data-stars', starsOn > 0);
 
     // Trail and rover.
