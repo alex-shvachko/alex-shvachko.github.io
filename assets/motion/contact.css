@@ -2,11 +2,35 @@
    the pointer above one wide plate of three columns; text is centred and set large. */
 #contact{position:relative;display:flex;flex-direction:column;min-height:100svh;padding:calc(var(--topbar) + 2svh) var(--gutter) 26px;scroll-margin-top:0;color:var(--ink)}
 .contact-symbols{position:absolute;width:0;height:0;overflow:hidden}
-.contact-signal{display:grid;justify-items:center;align-content:center;min-height:calc(86svh - var(--topbar) - 2svh);margin:0 auto 10px}
-.signal-figure{width:min(320px,70vw);aspect-ratio:5/4}
-.signal-read{display:flex;align-items:center;gap:10px;margin:2px 0 0;font:400 11px/1 var(--mono);letter-spacing:.02em;color:var(--muted);font-variant-numeric:tabular-nums}
+/* The signal instrument sits directly above the panel, so at full scroll it is still on screen:
+   noise runs in on the left, the dish takes it apart, a clean signal runs out on the right. */
+.contact-signal{display:grid;justify-items:center;align-content:end;min-height:calc(86svh - var(--topbar) - 2svh);margin:0 auto 34px;text-align:center}
+.signal-rig{position:relative;width:min(760px,100%);height:190px}
+.signal-scope{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.signal-scope :where(path,circle){fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.signal-scope .base{stroke:var(--line-2);stroke-dasharray:2 5}
+.signal-scope .tick{stroke:var(--line-2)}
+.signal-scope .raw{stroke:var(--muted);stroke-width:1}
+.signal-scope .raw2{stroke:var(--line-2);stroke-width:1}
+.signal-scope .res{stroke:var(--muted);stroke-width:1;opacity:.85}
+.signal-scope .out{stroke:var(--ink);stroke-width:1.5}
+.signal-scope .live{fill:var(--accent);stroke:none}
+.signal-scope .ring{stroke:var(--accent);stroke-width:1;transition:opacity .4s}
+.signal-figure{position:absolute;left:50%;top:0;width:min(220px,56vw);aspect-ratio:5/4;transform:translateX(-50%)}
+.signal-tag{position:absolute;bottom:6px;font:400 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.signal-tag-l{left:0}.signal-tag-r{right:0}
+.signal-read{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin:6px 0 0;font:400 11px/1.4 var(--mono);letter-spacing:.02em;color:var(--muted);font-variant-numeric:tabular-nums}
 .signal-read i{width:18px;height:1px;background:var(--line-2)}
 .signal-read b{font-weight:400;color:var(--ink)}
+.signal-snr{min-width:11ch;color:var(--ink)}
+.signal-state{min-width:9ch;text-align:left;transition:color .3s}
+.contact-signal[data-state=locked] .signal-state{color:var(--accent)}
+.signal-meter{display:flex;gap:4px;margin:12px 0 0}
+.signal-meter i{width:3px;height:11px;border-radius:2px;background:var(--line-2);transition:background-color .25s}
+.signal-meter i.on{background:var(--ink)}
+.signal-title{margin:34px 0 0;max-width:18ch;font:520 clamp(2.2rem,4.6vw,4rem)/1 var(--sans);letter-spacing:-.04em;text-wrap:balance}
+.signal-title em{display:inline-block;margin-right:-.04em;font:italic 400 1.16em/.84 var(--serif);letter-spacing:-.01em}
+.signal-copy{max-width:50ch;margin:18px 0 0;font-size:17px;line-height:1.6;color:var(--ink-2);text-wrap:pretty}
 
 #contact .contact-panel{display:grid;grid-template-columns:32% 29% 39%;width:100%;max-width:1320px;margin:0 auto;border-radius:22px;background:var(--plate);box-shadow:var(--card),var(--lift-lg);text-align:center}
 .contact-panel>section{padding:30px 28px 28px;min-width:0}

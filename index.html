@@ -19,6 +19,7 @@
   <script src="assets/hairline/kernel.js" defer></script>
   <script src="assets/hairline/forest.js" defer></script>
   <script src="assets/hairline/cosmos.js" defer></script>
+  <script src="assets/hairline/signal.js" defer></script>
   <script src="assets/hairline/world.js" defer></script>
   <script src="assets/hairline/archive.js" defer></script>
   <script src="assets/motion/portfolio.js" defer></script>
@@ -84,7 +85,18 @@
     <symbol id="contact-pin" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 1a8 8 0 0 0-8 8c0 6 8 14 8 14s8-8 8-14a8 8 0 0 0-8-8m0 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8"/></symbol>
   </defs></svg>
   
-  <div class="contact-signal"><div class="signal-figure" data-figure="dish"></div><p class="signal-read" aria-hidden="true"><span>signal</span><i></i><b>rest</b></p></div>
+  <section class="contact-signal" aria-labelledby="signal-title">
+    <div class="signal-rig">
+      <svg class="signal-scope" viewBox="0 0 760 190" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div class="signal-figure" data-figure="dish"></div>
+      <span class="signal-tag signal-tag-l" aria-hidden="true">noise in</span>
+      <span class="signal-tag signal-tag-r" aria-hidden="true">signal out</span>
+    </div>
+    <p class="signal-read" aria-hidden="true"><span>signal</span><i></i><b>rest</b><i></i><span class="signal-snr">snr +0.0 dB</span><i></i><span class="signal-state">searching</span></p>
+    <div class="signal-meter" aria-hidden="true"></div>
+    <h2 class="signal-title" id="signal-title">I turn noise into <em>signal</em>.</h2>
+    <p class="signal-copy">In data, in models, in ideas, most of what comes in is noise. I build the pipelines, agents and creative systems that find what matters and make it land.</p>
+  </section>
   <div class="contact-panel">
     <section class="contact-opportunities" aria-labelledby="current-focus-title">
       <h2 class="contact-label" id="current-focus-title">MY BACKGROUND</h2>

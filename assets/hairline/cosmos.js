@@ -13,8 +13,38 @@ window.HLCosmos = function ({ far, near, fx }) {
   const mulberry = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
   const defs = mk('defs', {}, near);
-  const farG = mk('g', {}, far), nearG = mk('g', {}, near), fxG = mk('g', {}, fx);
-  let W = 0, H = 0, u = 1, clipN = 0, moons = [], rnd = Math.random;
+  const farG = mk('g', {}, far), nearG = mk('g', {}, near), fxG = mk('g', {}, fx), beaconG = mk('g', {}, fx);
+  let calmQ = -1;
+  // Once the page is read rather than looked at, the sky recedes behind the text and the beacon stays bright.
+  function calm(p) {
+    const q = Math.round(clamp(p, 0, 1) * 40);
+    if (q === calmQ) return;
+    calmQ = q;
+    const k = q / 40;
+    farG.style.opacity = (1 - .66 * k).toFixed(2);
+    nearG.style.opacity = (1 - .68 * k).toFixed(2);
+    fxG.style.opacity = (1 - .5 * k).toFixed(2);
+  }
+  let W = 0, H = 0, u = 1, clipN = 0, moons = [], rnd = Math.random, beacon = null, lockQ = -1;
+  const off = [0, 0];
+
+  // How well the signal is locked on, 0 to 1: the beacon's reticle closes round it.
+  function lock(v) {
+    if (!beacon) return;
+    const q = Math.round(clamp(v, 0, 1) * 30);
+    if (q === lockQ) return;
+    lockQ = q;
+    const k = q / 30, r = beacon.r * (3.1 - 1.9 * k);
+    beacon.ring.setAttribute('r', f(r));
+    beacon.ring.setAttribute('class', k > .8 ? 'nf hi' : 'nf lo');
+    let d = '';
+    for (let i = 0; i < 4; i++) {
+      const a = i * TAU / 4 + Math.PI / 4, c = Math.cos(a), s = Math.sin(a);
+      d += `M${f(beacon.x + c * (r - 6))} ${f(beacon.y + s * (r - 6))}L${f(beacon.x + c * (r + 6))} ${f(beacon.y + s * (r + 6))}`;
+    }
+    beacon.ticks.setAttribute('d', d);
+    beacon.ticks.setAttribute('class', k > .8 ? 'nf hi' : 'nf lo');
+  }
 
   const disc = (cx, cy, r) => `M${f(cx - r)} ${f(cy)}a${f(r)} ${f(r)} 0 1 0 ${f(2 * r)} 0a${f(r)} ${f(r)} 0 1 0 ${f(-2 * r)} 0Z`;
   const spark = (x, y, r, c = .16) => {
@@ -114,8 +144,8 @@ window.HLCosmos = function ({ far, near, fx }) {
   }
 
   // A burst of fine rays round a four-point spark, the brightest kind of star.
-  function burst(x, y, r) {
-    const g = mk('g', { class: 'cosmos-tw' }, fxG);
+  function burst(x, y, r, parent = fxG) {
+    const g = mk('g', { class: 'cosmos-tw' }, parent);
     g.style.setProperty('--tw-d', `${(4 + rnd() * 4).toFixed(1)}s`);
     g.style.setProperty('--tw-dl', `${(-rnd() * 6).toFixed(1)}s`);
     let rays = '';
@@ -136,11 +166,12 @@ window.HLCosmos = function ({ far, near, fx }) {
     const { tall, narrow } = opts;
     rnd = mulberry(20261028);
     u = narrow ? Math.min(H / 900, W / 520) : Math.min(W / 1440, H / 900);
-    for (const g of [farG, nearG, fxG]) g.replaceChildren();
+    for (const g of [farG, nearG, fxG, beaconG]) g.replaceChildren();
     defs.replaceChildren();
     moons = []; shots.forEach(s => { s.on = false; s.g.style.display = 'none'; });
     const at = (fx, fy) => [W * fx, H * fy];
-    const zone = narrow ? { x0: W * .1, x1: W * .9, y0: H * .28, y1: H * .64 } : { x0: W * .5 - 215 * u, x1: W * .5 + 215 * u, y0: H * .2, y1: H * .66 };
+    // the column the dish and the statement occupy, whether the page is just reached or read to its end
+    const zone = narrow ? { x0: W * .04, x1: W * .96, y0: H * .3, y1: H * .95 } : { x0: W * .5 - 340 * u, x1: W * .5 + 340 * u, y0: H * .2, y1: H * .94 };
     const inZone = (x, y, pad = 0) => x > zone.x0 - pad && x < zone.x1 + pad && y > zone.y0 - pad && y < zone.y1 + pad;
     const solids = [];
 
@@ -195,7 +226,7 @@ window.HLCosmos = function ({ far, near, fx }) {
     const A = narrow ? at(.7, .15) : at(.76, .27), RA = (narrow ? 145 : 178) * Math.max(u, .55);
     giant(A[0], A[1], RA, -17);
     solids.push({ x: A[0], y: A[1], r: RA * 2.3 });
-    const B = narrow ? at(.2, .68) : at(.2, .37), RB = Math.max(40, (narrow ? 64 : 70) * u);
+    const B = narrow ? at(.14, .26) : at(.2, .37), RB = Math.max(40, (narrow ? 64 : 70) * u);
     rock(B[0], B[1], RB, -Math.PI / 4, 'hi');
     solids.push({ x: B[0], y: B[1], r: RB * 1.9 });
     {
@@ -206,7 +237,7 @@ window.HLCosmos = function ({ far, near, fx }) {
       ink(nearG, t, 'nf lo');
     }
     {
-      const C = narrow ? at(.12, .3) : at(.63, .13), RC = Math.max(8, 17 * u), tilt = -22;
+      const C = narrow ? at(.88, .33) : at(.63, .13), RC = Math.max(8, 17 * u), tilt = -22;
       const rot = `rotate(${tilt} ${f(C[0])} ${f(C[1])})`;
       const back = mk('g', { transform: rot }, nearG);
       ink(back, `M${f(C[0] - RC * 2.2)} ${f(C[1])}A${f(RC * 2.2)} ${f(RC * .55)} 0 0 1 ${f(C[0] + RC * 2.2)} ${f(C[1])}`, 'nf sil');
@@ -236,7 +267,7 @@ window.HLCosmos = function ({ far, near, fx }) {
     orbit(B, RB * 2.2, RB * .8, 14, Math.max(3.5, 5 * u), .22, 2.2, { x: B[0], y: B[1], r: RB });
 
     // ---- far: three constellations, nodes joined by fine lines
-    const clusters = narrow ? [[.5, .66, 90], [.3, .1, 70]] : [[.34, .17, 120], [.62, .74, 110], [.89, .5, 100]];
+    const clusters = narrow ? [[.25, .12, 70], [.9, .22, 50]] : [[.34, .15, 120], [.88, .74, 100], [.9, .46, 90], [.12, .88, 90]];
     for (const [fx, fy, spread] of clusters) {
       const c = at(fx, fy), pts = [];
       for (let i = 0, tries = 0; i < 7 && tries < 60; tries++) {
@@ -270,10 +301,22 @@ window.HLCosmos = function ({ far, near, fx }) {
       }
       return null;
     };
-    const bursts = narrow ? [[.9, .38, 26], [.12, .78, 20]] : [[.91, .16, 44], [.43, .1, 24], [.08, .63, 34], [.65, .6, 18], [.34, .76, 14]];
+    const bursts = narrow ? [[.1, .2, 22]] : [[.43, .1, 24], [.08, .63, 34], [.9, .62, 20], [.14, .8, 15]];
     for (const [fx, fy, r] of bursts) {
       const [x, y] = at(fx, fy);
       if (!inZone(x, y, 30)) burst(x, y, Math.max(7, r * u));
+    }
+    // The beacon: the brightest burst, with a reticle that tightens as the signal locks on.
+    {
+      const [x, y] = narrow ? at(.9, .5) : at(.91, .16), r = Math.max(9, (narrow ? 26 : 44) * u);
+      burst(x, y, r, beaconG);
+      const g = mk('g', {}, beaconG);
+      const ring = mk('circle', { cx: f(x), cy: f(y), r: f(r * 3.1), class: 'nf lo' }, g);
+      const ticks = ink(g, '', 'nf lo');
+      mk('circle', { cx: f(x), cy: f(y), r: 2.6, class: 'dot accent' }, g);
+      beacon = { x, y, r, ring, ticks };
+      lockQ = -1;
+      lock(0);
     }
     const small = narrow ? 8 : 18;
     for (let i = 0; i < small; i++) {
@@ -354,9 +397,10 @@ window.HLCosmos = function ({ far, near, fx }) {
     ptr[0] += (ptrT[0] - ptr[0]) * k; ptr[1] += (ptrT[1] - ptr[1]) * k;
     // the sky rises into place as the floor falls away: the nearer, the further it comes
     const rise = 1 - smooth(clamp((phi - 3.05) / .95, 0, 1));
+    off[0] = ptr[0] * -18; off[1] = rise * H * .14 + ptr[1] * -10;
     place(far, ptr[0] * -7, rise * H * .06 + ptr[1] * -4);
-    place(near, ptr[0] * -18, rise * H * .14 + ptr[1] * -10);
-    place(fx, ptr[0] * -18, rise * H * .14 + ptr[1] * -10);
+    place(near, off[0], off[1]);
+    place(fx, off[0], off[1]);
     for (const m of moons) {
       m.a += m.w * dt;
       const ex = Math.cos(m.a) * m.rx, ey = Math.sin(m.a) * m.ry, c = Math.cos(m.tilt), s = Math.sin(m.tilt);
@@ -377,5 +421,5 @@ window.HLCosmos = function ({ far, near, fx }) {
   }
   document.addEventListener('visibilitychange', () => { last = 0; if (on && !raf) raf = requestAnimationFrame(frame); });
 
-  return { build, drive };
+  return { build, drive, lock, calm, beacon: () => beacon && [beacon.x + off[0], beacon.y + off[1]] };
 };

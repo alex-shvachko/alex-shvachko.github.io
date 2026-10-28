@@ -1000,6 +1000,7 @@
     marker: i => marks[i] ? screen(P(marks[i].x, marks[i].y, 0)) : null,
     markerShown: i => !!marks[i] && state.routeShown * route.len >= route.stops[i],
     roverScale: () => state.cam ? state.cam.S : 1,
+    sky: cosmos,
     onFrame: fn => { listeners.add(fn); return () => listeners.delete(fn); },
     get phase() { return state.phi; },
     layout,

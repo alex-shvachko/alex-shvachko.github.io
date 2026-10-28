@@ -10,7 +10,7 @@ const options = {
 document.querySelectorAll('[data-figure]').forEach(host => {
   const make = figures[host.dataset.figure];
   if (!make) return;
-  const read = host.parentElement.querySelector('.signal-read b');
+  const read = host.closest('.contact-signal')?.querySelector('.signal-read b');
   const watch = new IntersectionObserver(([entry]) => {
     if (!entry.isIntersecting) return;
     watch.disconnect();
