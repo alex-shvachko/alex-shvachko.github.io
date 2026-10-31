@@ -65,7 +65,7 @@
   // trees and markers fixed and the rover slotted in among them as it goes.
   const plinthG = mk('g', {}, cam);
   const waterG = mk('g', {}, cam);
-  const trailG = mk('g', {}, cam);
+  const trailG = mk('g', { class: 'journey-trail' }, cam);
   const groundG = mk('g', {}, cam);
   const objects = mk('g', {}, cam);
   const roverG = mk('g', {}, objects);

@@ -30,11 +30,6 @@
   const res = mk('path', { class: 'res' }), out = mk('path', { class: 'out' });
   const ring = mk('circle', { class: 'ring', r: 6 }), live = mk('circle', { class: 'live', r: 3 });
 
-  // The meter: twenty ticks that fill with the lock.
-  const meter = section.querySelector('.signal-meter');
-  const bars = Array.from({ length: 20 }, () => meter.appendChild(document.createElement('i')));
-  const snrEl = section.querySelector('.signal-snr'), stateEl = section.querySelector('.signal-state');
-
   // One beat of the signal: a small lift, a sharp spike with its dip, a slow settle.
   const g = (d, s) => Math.exp(-(d / s) * (d / s));
   const pulse = (x, t) => {
@@ -72,7 +67,7 @@
   }
 
   // ---- the lock: the beacon found with the pointer, else what the scroll and the quiet give
-  let lock = 0, pointer = null, visible = false, raf = 0, last = 0, lastDraw = 0, lit = -1, snrText = '', state = '';
+  let lock = 0, pointer = null, visible = false, raf = 0, last = 0, lastDraw = 0;
   addEventListener('pointermove', e => { pointer = [e.clientX, e.clientY]; }, { passive: true });
   addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(() => { pointer = null; }, 1400); }, { passive: true });
   document.documentElement.addEventListener('pointerleave', () => { pointer = null; });
@@ -87,12 +82,6 @@
     return clamp(t, 0, 1);
   }
   function report() {
-    const snr = -6 + 30 * lock, text = `snr ${snr < 0 ? '−' : '+'}${Math.abs(snr).toFixed(1)} dB`;
-    if (text !== snrText) { snrText = text; snrEl.textContent = text; }
-    const n = Math.round(lock * bars.length);
-    if (n !== lit) { lit = n; bars.forEach((el, i) => el.classList.toggle('on', i < n)); }
-    const s = lock > .82 ? 'locked' : lock > .45 ? 'tracking' : 'searching';
-    if (s !== state) { state = s; stateEl.textContent = s; section.dataset.state = s; }
     window.World?.sky?.lock(lock);
   }
   // The sky is the whole screen on arrival and recedes behind the text as the page is scrolled to its end.

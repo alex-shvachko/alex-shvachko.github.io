@@ -5,9 +5,6 @@
   const opening = document.querySelector('.opening');
   const cta = opening.querySelector('.scroll-link');
   const journeyStage = document.querySelector('.journey-stage');
-  // Only the rover's read-out fades with the home UI; set on <html>, the value would restyle the
-  // whole page (the line world included) on every frame of the scroll.
-  const readout = document.querySelector('.world-readout');
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const smooth = value => value * value * (3 - 2 * value);
@@ -24,7 +21,6 @@
     opening.style.transform = `translateY(${(1 - home) * -40}px)`;
     // Only the button leaves the tab order; the heading stays readable to assistive tech.
     cta.inert = home === 0;
-    readout.style.setProperty('--home-ui', String(smooth(home)));
     // Journey UI arrives with the aerial view and leaves before the stage scrolls away.
     const arrive = clamp((innerHeight * .35 - rect.top) / (innerHeight * .55), 0, 1);
     const leave = clamp((rect.bottom - innerHeight * .35) / (innerHeight * .5), 0, 1);
@@ -41,7 +37,6 @@
     if (!enabled) {
       opening.style.opacity = ''; opening.style.transform = '';
       cta.inert = false;
-      readout.style.removeProperty('--home-ui');
       journeyStage.style.removeProperty('--journey-ui');
       journeyStage.style.removeProperty('--journey-shift');
       return;
@@ -88,8 +83,7 @@
       ], { duration: 1300, delay: 420, easing: ease, fill: 'backwards' }),
       rise(opening.querySelector('.intro'), 520),
       rise(opening.querySelector('.scroll-link'), 660),
-      rise(document.querySelector('.topbar'), 300),
-      rise(document.querySelector('.world-readout'), 1500)
+      rise(document.querySelector('.topbar'), 300)
     ];
   }
 })();

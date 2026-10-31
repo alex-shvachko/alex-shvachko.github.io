@@ -564,7 +564,6 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
         if (s >= .9995) it.g.removeAttribute('transform');
         else it.g.setAttribute('transform', `matrix(${grown} 0 0 ${grown} ${f(it.foot[0] * (1 - s))} ${f(it.foot[1] * (1 - s))})`);
       }
-      if (s < 1) busy = true;
     }
     if (grass) {
       // the grass is grown by the journey, and past that stays as drawn until the wind finds it

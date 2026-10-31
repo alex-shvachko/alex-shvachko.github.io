@@ -1,0 +1,81 @@
+{
+  "v": 1,
+  "stage": "final",
+  "look": "THE BLACK BOX: Ultra-minimalist futuristic industrial design, precision watchmaking, advanced semiconductor engineering, and mysterious science-fiction technology. An Apple-level luxury product reveal, a science-fiction title sequence and a high-budget mechanical engineering visualization: a black titanium monolith in darkness opens into an exploded view of glass, circuit boards, counter-rotating rings and a glowing octagonal core, then reassembles; hairline engineering annotations; exceptional contrast and negative space.",
+  "palettes": [
+    [
+      "#020305",
+      "#62E6FF",
+      "#F4FAFF",
+      "#FFAD60"
+    ]
+  ],
+  "theirs": 1,
+  "width": 1920,
+  "height": 1080,
+  "fps": 60,
+  "background": "#020305",
+  "fonts": {
+    "display": {
+      "family": "Michroma",
+      "or": "inter-display",
+      "weights": [
+        400
+      ]
+    },
+    "sans": {
+      "family": "Barlow",
+      "or": "instrument-sans",
+      "weights": [
+        300,
+        500
+      ]
+    },
+    "mono": {
+      "family": "Azeret Mono",
+      "or": "dm-mono",
+      "weights": [
+        300,
+        500
+      ]
+    }
+  },
+  "scenes": [
+    {
+      "id": "unknown",
+      "name": "Unknown object",
+      "dur": 4,
+      "desc": "A thin light sweep finds a black monolith floating in darkness; a seam pulses once; dormant labels appear."
+    },
+    {
+      "id": "separate",
+      "name": "First separation",
+      "dur": 4,
+      "desc": "Cyan escapes the seam; shell, glass cover, plates and boards separate into an aligned exploded stack."
+    },
+    {
+      "id": "enter",
+      "name": "Into the machine",
+      "dur": 5,
+      "desc": "The camera pushes through the layers as traces light up and stabilization rings counter-rotate."
+    },
+    {
+      "id": "core",
+      "name": "Core awakens",
+      "dur": 5,
+      "desc": "The octagonal core ignites, rings accelerate, and a pulse at 17 seconds freezes everything."
+    },
+    {
+      "id": "rebuild",
+      "name": "Reassembly",
+      "dur": 4,
+      "desc": "Every component returns along its path; panels lock; a ring pulse runs the outer seam."
+    },
+    {
+      "id": "reveal",
+      "name": "Identity reveal",
+      "dur": 3,
+      "desc": "A line traces the silhouette and becomes the OBSIDIAN X-01 title beside the still monolith."
+    }
+  ]
+}

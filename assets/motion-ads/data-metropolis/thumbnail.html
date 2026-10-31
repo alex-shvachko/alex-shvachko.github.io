@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Metropolis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #03070D; color: #ECF4FA; font-family: "JetBrains Mono", ui-monospace, monospace; }
+  body { display: flex; flex-direction: column; }
+  #view { flex: 1; position: relative; overflow: hidden; min-height: 0; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0;
+    --mono: "JetBrains Mono", "DM Mono", ui-monospace, monospace; --display: "Unbounded", "Inter", system-ui, sans-serif; --sans: "Space Grotesk", system-ui, sans-serif; }
+  #stage > .scene { position: absolute; inset: 0; display: none; }
+  #bar { display: flex; align-items: center; gap: 16px; padding: 10px 18px; border-top: 1px solid #0f2233; font-size: 13px; }
+  #bar button { font: inherit; color: #03070D; background: #4DE5FF; border: 0; border-radius: 3px; padding: 6px 14px; min-width: 72px; cursor: pointer; }
+  #bar button:focus-visible, #scrub:focus-visible { outline: 2px solid #FFB86B; outline-offset: 3px; }
+  #scrub { flex: 1; accent-color: #4DE5FF; }
+  #time { font-variant-numeric: tabular-nums; color: #8fb3c4; min-width: 120px; text-align: right; }
+#stage { --ground:#03070D; --main:#4DE5FF; --second:#ECF4FA; --accent:#FFB86B; color:var(--second); font-family:var(--mono, ui-monospace, monospace) }
+.ground { position:absolute; inset:0; background:var(--ground) }
+.words { position:absolute; margin:0; display:flex; flex-direction:column; gap:24px } .words > * { margin:0 }
+.line { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:120px; line-height:1; font-weight:300; letter-spacing:.02em } .sub { font-size:28px; letter-spacing:.32em }
+.scrim { position:absolute; inset:0; background:linear-gradient(to right, color-mix(in srgb, var(--ground) 88%, transparent), color-mix(in srgb, var(--ground) 45%, transparent) 42%, transparent 62%) }
+.title { width:880px; font-size:100px; line-height:1.04; letter-spacing:.05em; color:var(--second) }
+.tagline { font-size:24px; font-weight:400; letter-spacing:.42em; color:color-mix(in srgb, var(--main) 78%, var(--second)); display:flex; align-items:center; gap:22px; white-space:nowrap }
+.tagline::before { content:''; display:block; width:56px; height:2px; background:var(--accent) }
+
+</style>
+<style>#bar{display:none!important}</style></head>
+<body>
+<div id="view"><div id="stage"></div></div>
+<div id="bar">
+  <button id="play" type="button">Play</button>
+  <input id="scrub" type="range" min="0" max="22" step="0.001" value="0" aria-label="Position in the film">
+  <span id="time">0.00 / 22.00 s</span>
+</div>
+<script>
+/* Standalone player for the Data Metropolis film: a minimal stand-in for the Motion player's kit.
+   Everything on screen is a pure function of film time t. Sound (film/modules/score.js) plays only in the Motion player. */
+(function () {
+  'use strict';
+  var SCENES = [{"id": "signal", "name": "The first signal", "dur": 3}, {"id": "awakening", "name": "Architectural awakening", "dur": 4}, {"id": "alive", "name": "The city comes alive", "dur": 5}, {"id": "inside", "name": "Inside the data", "dur": 4}, {"id": "reveal", "name": "The impossible reveal", "dur": 4}, {"id": "metropolis", "name": "Data Metropolis", "dur": 2}];
+  var clamp01 = function (x) { return x < 0 ? 0 : x > 1 ? 1 : x; };
+  var seg = function (t, a, b) { return clamp01((t - a) / (b - a)); };
+  var lerp = function (a, b, p) { return a + (b - a) * p; };
+  var eo = function (x) { x = clamp01(x); return 1 - Math.pow(1 - x, 3); };
+  var ei = function (x) { x = clamp01(x); return x * x * x; };
+  var eio = function (x) { x = clamp01(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  var fonts = { mono: '"JetBrains Mono", "DM Mono", ui-monospace, monospace', display: '"Unbounded", "Inter", system-ui, sans-serif', sans: '"Space Grotesk", system-ui, sans-serif' };
+  var TextFx = {
+    fadeFromRight: function (el, t, t0, o) {
+      o = o || {}; var st = o.stagger == null ? 0.11 : o.stagger, du = o.dur == null ? 0.5 : o.dur, dx = o.dx == null ? 26 : o.dx;
+      if (!el._words) {
+        var words = el.textContent.split(' '); el.textContent = '';
+        el._words = words.map(function (w, i) {
+          var s = document.createElement('span'); s.textContent = w; s.style.display = 'inline-block';
+          el.appendChild(s); if (i < words.length - 1) el.appendChild(document.createTextNode(' ')); return s;
+        });
+      }
+      el._words.forEach(function (s, i) { var p = eo(seg(t, t0 + i * st, t0 + i * st + du)); s.style.opacity = p; s.style.transform = 'translateX(' + (1 - p) * dx + 'px)'; });
+      return t0 + (el._words.length - 1) * st + du;
+    }
+  };
+  var h = function (html) { var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
+  var stage = document.getElementById('stage'), defs = {}, list = [], start = 0, DUR = 0;
+  function makeKit(box, s, d) {
+    return { stage: box, start: s, dur: d, fonts: fonts, W: 1920, H: 1080, seg: seg, lerp: lerp, clamp01: clamp01, eo: eo, ei: ei, eio: eio, TextFx: TextFx, h: h,
+      scene: function (id, def) { defs[id] = def; } };
+  }
+  (function () {
+  'use strict';
+  var W = 1920, H = 1080, PXR = 2, D2R = Math.PI / 180, TAU = Math.PI * 2, NEAR = 0.25;
+  function clamp01(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+  function seg(t, a, b) { return clamp01((t - a) / (b - a)); }
+  function lerp(a, b, p) { return a + (b - a) * p; }
+  function eo(x) { x = clamp01(x); return 1 - (1 - x) * (1 - x) * (1 - x); }
+  function ei(x) { x = clamp01(x); return x * x * x; }
+  function eio(x) { x = clamp01(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function eo4(x) { x = clamp01(x); return 1 - Math.pow(1 - x, 4); }
+  function eob(x, s) { x = clamp01(x); var c = s + 1; return 1 + c * Math.pow(x - 1, 3) + s * Math.pow(x - 1, 2); }
+  function frac(x) { return x - Math.floor(x); }
+  function hash(a, b, c) {
+    var h = Math.imul(a | 0, 374761393) ^ Math.imul((b | 0) + 7, 668265263) ^ Math.imul((c | 0) + 13, 1274126177);
+    h = Math.imul(h ^ (h >>> 15), 2246822519); h = Math.imul(h ^ (h >>> 13), 3266489917);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+
+  // Palette (the brief's five colours)
+  var CY = [77, 229, 255], AM = [255, 184, 107], IV = [236, 244, 250], NV = [6, 17, 30], BK = [3, 7, 13];
+  function mixc(a, b, p) { return [a[0] + (b[0] - a[0]) * p, a[1] + (b[1] - a[1]) * p, a[2] + (b[2] - a[2]) * p]; }
+  function rgba(c, a) { return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + (a < 0 ? 0 : a > 1 ? 1 : Math.round(a * 1000) / 1000) + ')'; }
+
+  // The dataset: every tower height is value x HS, exactly
+  var VALS = [20, 32, 48, 65, 83, 100], YEARS = ['2019', '2020', '2021', '2022', '2023', '2024'];
+  var HS = 0.6, HW = 2.5, AXZ = 5, WZ = -5, XL = -31, XR = 31, GRIDV = [20, 40, 60, 80, 100], FH = 0.95;
+  function BX(i) { return (i - 2.5) * 10; }
+
+  // Film-time cues (seconds); scenes: 0 signal, 3 awakening, 7 alive, 12 inside, 16 reveal, 20 title
+  var TT = { dot: -0.45, axis: 0.35, yaxis: 0.85, grid: 1.15, bars: 1.4, trend: 2.4, extrude: 3.3, glass: 3.6,
+    edge: 3.9, win: 4.0, fins: 4.6, roof: 5.3, fold: 7.0, cross: 7.5, blocks: 8.2, flow: 8.5, lift: 8.8, bridge: 9.2,
+    freeze: 16.0, hold: 0.3, sink: 16.9, unfold: 17.7, labels: 18.3 };
+  function AT(T) { return T < TT.freeze ? T : T < TT.freeze + TT.hold ? TT.freeze : T - TT.hold; }
+  var WAVES = [{ t: 12.5, x: 25, y: 0, z: 0, v: 34, w: 5, a: 1 }, { t: 14.1, x: -25, y: 0, z: -24, v: 34, w: 5, a: 0.9 },
+    { t: 19.3, x: -30, y: 0, z: 5, v: 30, w: 4, a: 0.45 }, { t: 20.8, x: -30, y: 0, z: 5, v: 30, w: 4, a: 0.45 }];
+  function waveAt(A, x, y, z) {
+    var s = 0;
+    for (var k = 0; k < WAVES.length; k++) {
+      var w = WAVES[k], dt = A - w.t; if (dt < 0 || dt > 4) continue;
+      var q = (Math.sqrt((x - w.x) * (x - w.x) + (y - w.y) * (y - w.y) + (z - w.z) * (z - w.z)) - dt * w.v) / w.w;
+      s += w.a * Math.exp(-q * q) * (1 - dt / 4);
+    }
+    return s;
+  }
+  function towerH(i, T) { var a = TT.bars + i * 0.17; return VALS[i] * HS * eob(seg(T, a, a + 0.8), 1.15); }
+  function depthAt(T) { return lerp(0.04, HW, eio(seg(T, TT.extrude, TT.extrude + 1.3))); }
+  function foldK(T) { return eio(seg(T, TT.fold, TT.fold + 1.4)) - eio(seg(T, TT.unfold, TT.unfold + 1.1)); }
+
+  // ---------- the district around the chart (procedural, fixed) ----------
+  var CROSS = [-51, -41, -31, -20, -10, 0, 10, 20, 31, 41, 51];
+  var ZROWS = [17, 5, -5, -17, -29, -41, -53, -65];
+  var BLD = [];
+  (function () {
+    var n = 0;
+    for (var a = 0; a < CROSS.length - 1; a++) for (var b = 0; b < ZROWS.length - 1; b++) {
+      var x0 = CROSS[a] + 1.1, x1 = CROSS[a + 1] - 1.1, z1 = ZROWS[b] - 1.1, z0 = ZROWS[b + 1] + 1.1;
+      var front = ZROWS[b] === 17, row = ZROWS[b] === 5;
+      if (row && x0 > -32 && x1 < 32) continue;
+      var nx = 2, nz = front || row ? 1 : 2;
+      for (var u = 0; u < nx; u++) for (var v = 0; v < nz; v++) {
+        n++; if (hash(n, 1, 0) < 0.1) continue;
+        var lx0 = lerp(x0, x1, u / nx) + 0.3, lx1 = lerp(x0, x1, (u + 1) / nx) - 0.3;
+        var lz0 = lerp(z0, z1, v / nz) + 0.3, lz1 = lerp(z0, z1, (v + 1) / nz) - 0.3;
+        var sx = (lx1 - lx0) * 0.14 * hash(n, 2, 0), sz = (lz1 - lz0) * 0.14 * hash(n, 3, 0);
+        var cx = (lx0 + lx1) / 2, cz = (lz0 + lz1) / 2, dist = Math.hypot(cx, cz), r = hash(n, 4, 0);
+        var h = front ? 1.2 + r * 2.8 : row ? 3 + r * 6 : 2.4 + r * r * 8.2;
+        BLD.push({ x0: lx0 + sx, x1: lx1 - sx, z0: lz0 + sz, z1: lz1 - sz, h: h, cx: cx, cz: cz, id: n,
+          warm: hash(n, 5, 0) < 0.2, tr: TT.blocks + dist / 72 * 1.6 + hash(n, 6, 0) * 0.35,
+          ts: TT.sink + clamp01(1 - dist / 80) * 0.9 + hash(n, 7, 0) * 0.2 });
+      }
+    }
+  })();
+  var BR = [{ a: 1, y: 14 }, { a: 2, y: 22 }, { a: 3, y: 31 }, { a: 4, y: 37 }];
+  var ROADS = [];
+  (function () {
+    var id = 0;
+    function add(x1, z1, x2, z2, kind) { ROADS.push({ x1: x1, z1: z1, x2: x2, z2: z2, len: Math.hypot(x2 - x1, z2 - z1), kind: kind, id: id++ }); }
+    add(-52, AXZ, 52, AXZ, 'blvd'); add(-52, 17, 52, 17, 'front'); add(-52, WZ, 52, WZ, 'grid');
+    for (var j = 0; j < 5; j++) add(-52, WZ - GRIDV[j] * HS, 52, WZ - GRIDV[j] * HS, 'grid');
+    for (var k = 0; k < CROSS.length; k++) add(CROSS[k], 17, CROSS[k], -69, 'cross');
+  })();
+
+  // ---------- camera ----------
+  var C = null;
+  function camFrom(E, F, fov, ox, oy, dT) {
+    var fl = Math.hypot(F[0], F[1], F[2]), fx = F[0] / fl, fy = F[1] / fl, fz = F[2] / fl;
+    var rx = -fz, rz = fx, rl = Math.hypot(rx, rz) || 1; rx /= rl; rz /= rl;
+    return { ex: E[0], ey: E[1], ez: E[2], rx: rx, rz: rz, ux: -rz * fy, uy: rz * fx - rx * fz, uz: rx * fy,
+      fx: fx, fy: fy, fz: fz, f: (H / 2) / Math.tan(fov * D2R / 2), ox: ox, oy: oy, dT: dT };
+  }
+  function orbitCam(o) {
+    var f = (H / 2) / Math.tan(o.fov * D2R / 2), d = f / o.s;
+    var cy = Math.cos(o.yaw * D2R), sy = Math.sin(o.yaw * D2R), cp = Math.cos(o.pitch * D2R), sp = Math.sin(o.pitch * D2R);
+    var dir = [sy * cp, sp, cy * cp];
+    return camFrom([o.px + d * dir[0], o.py + d * dir[1], o.pz + d * dir[2]], [-dir[0], -dir[1], -dir[2]], o.fov, o.ox, o.oy, d);
+  }
+  function orbitAB(T) {
+    var pa = eio(seg(T, 1.45, 3.0));
+    var o = { px: 0, py: 30 * pa, pz: lerp(AXZ, 0, pa), yaw: 0, pitch: 0, s: lerp(12.6, 13.2, seg(T, 0, 3)), fov: 1.2, ox: 960, oy: 540 };
+    var pb = eio(seg(T, 3.0, 6.95));
+    if (T > 3.0) {
+      o.px = lerp(0, -1.5, pb); o.py = lerp(30, 27, pb); o.pz = lerp(0, -5, pb);
+      o.yaw = lerp(0, -32, pb) + 2.2 * Math.sin(Math.PI * seg(T, 3.0, 3.5)) * (1 - pb);
+      o.pitch = lerp(0, 22, pb); o.s = Math.exp(lerp(Math.log(13.2), Math.log(12.0), pb)); o.fov = lerp(1.2, 30, pb);
+    }
+    return o;
+  }
+  // one continuous flight, 7 s to 16 s: eye E, look-at L, fov
+  var FK = [[7.0, null, [-1.5, 27, -5], 30], [8.9, [-50, 24, 40], [-4, 14, -12], 42], [10.5, [-12, 11, 30], [10, 20, -10], 50],
+    [12.0, [14, 16, 34], [24, 27, -4], 52], [13.3, [19.5, 24, 15], [22, 38, -20], 58], [13.85, [19.8, 27, 6.5], [20.5, 42, -8], 62], [14.4, [20, 29.5, 0], [20, 33, -30], 64],
+    [15.3, [20, 27, -13], [12, 2, -44], 60], [16.0, [20, 25, -27], [9, 0, -58], 58]];
+  var FL = FK.length - 1;
+  (function () { var c = orbitCam(orbitAB(7)); FK[0][1] = [c.ex, c.ey, c.ez]; })();
+  function hermK(K, T, sel, startK, endMove) {
+    var n = K.length, i = 0; while (i < n - 2 && T > K[i + 1][0]) i++;
+    var t0 = K[i][0], t1 = K[i + 1][0], h = t1 - t0, u = clamp01((T - t0) / h);
+    function tan(k) {
+      if (k === 0) return startK * (sel(K[1]) - sel(K[0])) / (K[1][0] - K[0][0]);
+      if (k === n - 1) return endMove ? (sel(K[k]) - sel(K[k - 1])) / (K[k][0] - K[k - 1][0]) : 0;
+      return (sel(K[k + 1]) - sel(K[k - 1])) / (K[k + 1][0] - K[k - 1][0]);
+    }
+    var u2 = u * u, u3 = u2 * u;
+    return (2 * u3 - 3 * u2 + 1) * sel(K[i]) + (u3 - 2 * u2 + u) * h * tan(i) + (-2 * u3 + 3 * u2) * sel(K[i + 1]) + (u3 - u2) * h * tan(i + 1);
+  }
+  function herm(T, sel) { return hermK(FK, T, sel, 0, true); }
+  var SEL = [];
+  for (var q = 0; q < 3; q++) (function (q) { SEL.push(function (k) { return k[1][q]; }); })(q);
+  for (var q2 = 0; q2 < 3; q2++) (function (q) { SEL.push(function (k) { return k[2][q]; }); })(q2);
+  SEL.push(function (k) { return k[3]; });
+  function flightCam(T) {
+    var E = [herm(T, SEL[0]), herm(T, SEL[1]), herm(T, SEL[2])], L = [herm(T, SEL[3]), herm(T, SEL[4]), herm(T, SEL[5])];
+    var F = [L[0] - E[0], L[1] - E[1], L[2] - E[2]];
+    return camFrom(E, F, herm(T, SEL[6]), 960, 540, Math.hypot(F[0], F[1], F[2]));
+  }
+  var D0 = (function () {
+    var E = FK[FL][1], L = FK[FL][2], v = [E[0] - L[0], E[1] - L[1], E[2] - L[2]], d = Math.hypot(v[0], v[1], v[2]);
+    return { px: L[0], py: L[1], pz: L[2], yaw: Math.atan2(v[0], v[2]) / D2R, pitch: Math.asin(v[1] / d) / D2R, fov: FK[FL][3],
+      s: ((H / 2) / Math.tan(FK[FL][3] * D2R / 2)) / d, ox: 960, oy: 540 };
+  })();
+  var DF = { px: -2, py: 28, pz: -4, yaw: -26, pitch: 24, fov: 11, s: 12.5, ox: 1340, oy: 540 };
+  var DK = [[16.3, D0], [17.35, { px: 4, py: 6, pz: -30, yaw: 2, pitch: 72, fov: 40, s: 9.5, ox: 1010, oy: 540 }], [18.9, DF]];
+  var OKEYS = ['px', 'py', 'pz', 'yaw', 'pitch', 'fov', 'ox', 'oy'], OSEL = {};
+  OKEYS.forEach(function (k) { OSEL[k] = function (K) { return K[1][k]; }; });
+  OSEL.ls = function (K) { return Math.log(K[1].s); };
+  function orbitD(T) {
+    var q = eio(seg(T, 18.9, 22.2)), o = {}, Tc = Math.min(T, 18.9);
+    OKEYS.forEach(function (k) { o[k] = hermK(DK, Tc, OSEL[k], 0.9, false); });
+    o.s = Math.exp(hermK(DK, Tc, OSEL.ls, 0.9, false)) * (1 + 0.025 * q);
+    o.yaw += 2.6 * q;
+    return o;
+  }
+  function camAt(T) {
+    if (T <= 7) return orbitCam(orbitAB(T));
+    if (T < 16.3) return flightCam(Math.min(T, 16));
+    return orbitCam(orbitD(T));
+  }
+
+  // ---------- projection ----------
+  var ctx = null, PB = new Float64Array(48), TMP = new Float64Array(3);
+  function cs(x, y, z, o, k) {
+    var dx = x - C.ex, dy = y - C.ey, dz = z - C.ez;
+    o[k] = dx * C.rx + dz * C.rz; o[k + 1] = dx * C.ux + dy * C.uy + dz * C.uz; o[k + 2] = dx * C.fx + dy * C.fy + dz * C.fz;
+  }
+  function sp(x, y, z) { cs(x, y, z, TMP, 0); if (TMP[2] < NEAR) return null; return [C.ox + C.f * TMP[0] / TMP[2], C.oy - C.f * TMP[1] / TMP[2], TMP[2]]; }
+  function depth(x, y, z) { cs(x, y, z, TMP, 0); return TMP[2]; }
+  function fogK(zc) { return clamp01((zc / C.dT - 1.15) / 1.8) * 0.72; }
+  function poly(p) {
+    var n = p.length / 3, inside = 0, i, first = true;
+    for (i = 0; i < n; i++) { cs(p[3 * i], p[3 * i + 1], p[3 * i + 2], PB, 3 * i); if (PB[3 * i + 2] > NEAR) inside++; }
+    if (!inside) return false;
+    for (i = 0; i < n; i++) {
+      var a = 3 * i, b = 3 * ((i + 1) % n), za = PB[a + 2], zb = PB[b + 2], sx, sy;
+      if (za > NEAR) { sx = C.ox + C.f * PB[a] / za; sy = C.oy - C.f * PB[a + 1] / za; if (first) { ctx.moveTo(sx, sy); first = false; } else ctx.lineTo(sx, sy); }
+      if ((za > NEAR) !== (zb > NEAR)) {
+        var k = (NEAR - za) / (zb - za), X = PB[a] + (PB[b] - PB[a]) * k, Y = PB[a + 1] + (PB[b + 1] - PB[a + 1]) * k;
+        sx = C.ox + C.f * X / NEAR; sy = C.oy - C.f * Y / NEAR; if (first) { ctx.moveTo(sx, sy); first = false; } else ctx.lineTo(sx, sy);
+      }
+    }
+    ctx.closePath(); return true;
+  }
+  function line(x1, y1, z1, x2, y2, z2) {
+    cs(x1, y1, z1, PB, 0); cs(x2, y2, z2, PB, 3);
+    var za = PB[2], zb = PB[5]; if (za <= NEAR && zb <= NEAR) return false;
+    var ax = PB[0], ay = PB[1], bx = PB[3], by = PB[4], k;
+    if (za <= NEAR) { k = (NEAR - za) / (zb - za); ax += (bx - ax) * k; ay += (by - ay) * k; za = NEAR; }
+    else if (zb <= NEAR) { k = (NEAR - zb) / (za - zb); bx += (ax - bx) * k; by += (ay - by) * k; zb = NEAR; }
+    ctx.moveTo(C.ox + C.f * ax / za, C.oy - C.f * ay / za); ctx.lineTo(C.ox + C.f * bx / zb, C.oy - C.f * by / zb); return true;
+  }
+  // box faces: 0 +z, 1 -z, 2 -x, 3 +x, 4 top
+  function vis(f, x0, x1, y1, z0, z1) {
+    return f === 0 ? C.ez > z1 : f === 1 ? C.ez < z0 : f === 2 ? C.ex < x0 : f === 3 ? C.ex > x1 : C.ey > y1;
+  }
+  function quad(f, x0, x1, y0, y1, z0, z1) {
+    switch (f) {
+      case 0: return [x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1];
+      case 1: return [x1, y0, z0, x0, y0, z0, x0, y1, z0, x1, y1, z0];
+      case 2: return [x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0];
+      case 3: return [x1, y0, z1, x1, y0, z0, x1, y1, z0, x1, y1, z1];
+      default: return [x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0];
+    }
+  }
+  function solidBox(x0, x1, y0, y1, z0, z1, side, front, top, edgeA, fog) {
+    var e = false;
+    for (var f = 0; f < 5; f++) {
+      if (!vis(f, x0, x1, y1, z0, z1)) continue;
+      ctx.beginPath(); if (!poly(quad(f, x0, x1, y0, y1, z0, z1))) continue;
+      ctx.fillStyle = rgba(mixc(f === 4 ? top : f < 2 ? front : side, BK, fog), 1); ctx.fill();
+      if (edgeA > 0.01) { ctx.strokeStyle = rgba(CY, edgeA); ctx.stroke(); }
+      e = true;
+    }
+    return e;
+  }
+
+  // ---------- ground: grid, chart axes, streets, flow ----------
+  function roadQuad(x1, z1, x2, z2, w, fillA, lineA, col) {
+    var dx = x2 - x1, dz = z2 - z1, L = Math.hypot(dx, dz); if (L < 0.01) return;
+    var nx = -dz / L * w / 2, nz = dx / L * w / 2;
+    if (fillA > 0.003) { ctx.beginPath(); if (poly([x1 + nx, 0, z1 + nz, x2 + nx, 0, z2 + nz, x2 - nx, 0, z2 - nz, x1 - nx, 0, z1 - nz])) { ctx.fillStyle = rgba(CY, fillA); ctx.fill(); } }
+    if (lineA > 0.003) { ctx.beginPath(); if (line(x1, 0, z1, x2, 0, z2)) { ctx.strokeStyle = rgba(col || CY, lineA); ctx.stroke(); } }
+  }
+  function drawGround(T, A) {
+    var x, z, j, k;
+    ctx.lineWidth = 1;
+    var gA = 0.075 * seg(T, 6.2, 7.6) * (1 - 0.45 * seg(T, 17.5, 18.8));
+    if (gA > 0.003) {
+      ctx.beginPath();
+      for (x = -60; x <= 60; x += 4) line(x, 0, 28, x, 0, -84);
+      for (z = 28; z >= -84; z -= 4) line(-60, 0, z, 60, 0, z);
+      ctx.strokeStyle = rgba(CY, gA); ctx.stroke();
+    }
+    var fk = foldK(T), th = fk * Math.PI / 2, ct = Math.cos(th), st = Math.sin(th);
+    var ext = eo(seg(T, 8.1, 8.9)) * (1 - eio(seg(T, 17.35, 17.8)));
+    // footprints of the district (its plan stays when the buildings sink)
+    var fpA = 0.17 * seg(T, TT.blocks, TT.blocks + 1.2);
+    if (fpA > 0.003) {
+      ctx.beginPath();
+      for (k = 0; k < BLD.length; k++) { var b = BLD[k]; if (T < b.tr) continue; poly([b.x0, 0, b.z0, b.x1, 0, b.z0, b.x1, 0, b.z1, b.x0, 0, b.z1]); }
+      ctx.strokeStyle = rgba(CY, fpA); ctx.stroke();
+    }
+    // cross streets, front street
+    for (k = 0; k < CROSS.length; k++) {
+      x = CROSS[k]; if (x === XL) continue;
+      var cp = eo(seg(T, TT.cross + Math.abs(x) / 52 * 0.5, TT.cross + Math.abs(x) / 52 * 0.5 + 0.9));
+      if (cp <= 0) continue;
+      var ca = 1 - 0.35 * seg(T, 17.4, 18.4);
+      roadQuad(x, AXZ + (17 - AXZ) * cp, x, AXZ + (-69 - AXZ) * cp, 0.8, 0.07 * ca, 0.42 * ca);
+    }
+    var fp = eo(seg(T, 7.9, 8.8));
+    if (fp > 0) roadQuad(-52 * fp, 17, 52 * fp, 17, 0.8, 0.07, 0.38);
+    // the x-axis: drawn as a chart line, becomes the boulevard
+    var ax = eo(seg(T, TT.axis, TT.axis + 0.8));
+    if (ax > 0) {
+      var bx = 31 * ax + 21 * ext;
+      roadQuad(-bx, AXZ, bx, AXZ, 1.5, 0.13 * seg(T, 5, 7), 0, CY);
+      ctx.lineWidth = 2; ctx.beginPath(); line(-bx, 0, AXZ, bx, 0, AXZ); ctx.strokeStyle = rgba(mixc(CY, IV, 0.5), 0.92); ctx.stroke(); ctx.lineWidth = 1;
+    }
+    // minor grid (chart only)
+    var mA = 0.07 * seg(T, 1.3, 2.0) * (1 - seg(T, 6.0, 6.9));
+    if (mA > 0.003) { ctx.beginPath(); for (j = 10; j <= 90; j += 20) line(XL, j * HS, WZ, XR, j * HS, WZ); ctx.strokeStyle = rgba(CY, mA); ctx.stroke(); }
+    // gridlines: on the chart's wall, they fold down to become streets and stand back up at the reveal
+    for (j = -1; j < 5; j++) {
+      var hh = j < 0 ? 0 : GRIDV[j] * HS, y = hh * ct, zz = WZ - hh * st;
+      var gp = eo(seg(T, TT.grid + (j + 1) * 0.07, TT.grid + (j + 1) * 0.07 + 0.6));
+      if (gp <= 0) continue;
+      var la = (0.24 + 0.3 * fk) * gp, x2 = XL + (XR - XL) * gp;
+      if (fk > 0.6) roadQuad(XL - 21 * ext, zz, XR + 21 * ext, zz, 0.8, 0.08 * seg(fk, 0.6, 1), 0);
+      ctx.beginPath(); line(XL - 21 * ext, y, zz, x2 + 21 * ext * (gp >= 1 ? 1 : 0), y, zz); ctx.strokeStyle = rgba(CY, la); ctx.stroke();
+      if (j >= 0) { // y-axis ticks
+        var ta = 0.8 * seg(T, TT.yaxis + 0.3, TT.yaxis + 0.7) * (1 - fk);
+        if (ta > 0.01) { ctx.beginPath(); line(XL - 0.9, y, zz, XL, y, zz); ctx.strokeStyle = rgba(IV, ta); ctx.stroke(); }
+      }
+    }
+    // the y-axis: folds into a street too
+    var yp = eo(seg(T, TT.yaxis, TT.yaxis + 0.7));
+    if (yp > 0) {
+      var yl = 64 * yp;
+      if (fk > 0.6) roadQuad(XL, WZ, XL, WZ - yl, 0.8, 0.08 * seg(fk, 0.6, 1), 0);
+      ctx.lineWidth = 2; ctx.beginPath(); line(XL, 0, WZ, XL, yl * ct, WZ - yl * st); ctx.strokeStyle = rgba(mixc(CY, IV, 0.5), 0.9); ctx.stroke(); ctx.lineWidth = 1;
+    }
+    // data flowing along the streets
+    var pf = seg(T, TT.flow, TT.flow + 0.8);
+    if (pf > 0) {
+      var paths = [[], []];
+      ctx.lineWidth = 2.2;
+      for (k = 0; k < ROADS.length; k++) {
+        var r = ROADS[k], ra;
+        if (r.kind === 'grid') ra = pf * seg(fk, 0.9, 1) * (1 - seg(T, 17.2, 17.6));
+        else if (r.kind === 'cross') ra = pf * (1 - 0.55 * seg(T, 17.4, 18.4));
+        else ra = pf * (1 - 0.45 * seg(T, 17.4, 18.4));
+        if (ra < 0.02) continue;
+        var n = Math.floor(r.len / 2.4);
+        for (var p = 0; p < n; p++) {
+          var dir = hash(r.id, p, 1) < 0.5 ? 1 : -1, spd = (5 + 8 * hash(r.id, p, 2)) / r.len;
+          var u = frac(hash(r.id, p, 3) + dir * spd * A), u2 = u - dir * 1.3 / r.len;
+          if (u2 < 0 || u2 > 1) continue;
+          paths[hash(r.id, p, 4) < 0.22 ? 1 : 0].push(r, u, u2, ra);
+        }
+      }
+      for (var c = 0; c < 2; c++) {
+        var arr = paths[c];
+        for (var a5 = 0; a5 < 3; a5++) {
+          ctx.beginPath(); var any = false;
+          for (k = 0; k < arr.length; k += 4) {
+            if (Math.min(2, Math.floor(arr[k + 3] * 3)) !== a5) continue;
+            var R = arr[k], uu = arr[k + 1], vv = arr[k + 2];
+            if (line(R.x1 + (R.x2 - R.x1) * uu, 0.12, R.z1 + (R.z2 - R.z1) * uu, R.x1 + (R.x2 - R.x1) * vv, 0.12, R.z1 + (R.z2 - R.z1) * vv)) any = true;
+          }
+          if (any) { ctx.strokeStyle = rgba(c ? AM : mixc(CY, IV, 0.35), 0.35 + 0.3 * a5); ctx.stroke(); }
+        }
+      }
+      ctx.lineWidth = 1;
+    }
+    // traffic pulses on the beat: the boulevard sends light down every street
+    var pulseA = seg(T, 8.0, 8.4) * (1 - seg(T, 16.0, 16.3)) + 0.55 * seg(T, 19.0, 19.6);
+    if (pulseA > 0.01) {
+      var ph = A < 16 ? frac(A - 8) : frac((A - 19.0) / 1.5), head = ph * 74;
+      ctx.lineWidth = 3; ctx.beginPath();
+      for (k = 0; k < CROSS.length; k++) { x = CROSS[k]; line(x, 0.1, AXZ - head + 5, x, 0.1, AXZ - head); }
+      line(-head * 0.7, 0.1, AXZ, -head * 0.7 - 5, 0.1, AXZ); line(head * 0.7, 0.1, AXZ, head * 0.7 + 5, 0.1, AXZ);
+      ctx.strokeStyle = rgba(mixc(CY, IV, 0.5), pulseA * (1 - ph) * 0.9); ctx.stroke(); ctx.lineWidth = 1;
+    }
+  }
+
+  // ---------- towers ----------
+  var WB = []; for (var wb = 0; wb < 3 * 8; wb++) WB.push([]);
+  var WCOL = [CY, IV, AM];
+  function drawTower(i, T, A) {
+    var h = towerH(i, T); if (h < 0.05) return;
+    var Hf = VALS[i] * HS, D = depthAt(T), cx = BX(i), x0 = cx - HW, x1 = cx + HW, z0 = -D, z1 = D;
+    var g = eio(seg(T, TT.glass, TT.glass + 1.4)), fog = fogK(depth(cx, h * 0.5, 0));
+    var cap = (1 - g) + 0.45 * seg(T, 18.2, 19.0);
+    var visF = [], f, k;
+    for (f = 0; f < 5; f++) visF.push(vis(f, x0, x1, h, z0, z1));
+    // body
+    for (f = 0; f < 5; f++) {
+      if (!visF[f]) continue;
+      var Q = quad(f, x0, x1, 0, h, z0, z1);
+      ctx.beginPath(); if (!poly(Q)) continue;
+      if (f === 4) ctx.fillStyle = rgba(mixc(mixc(mixc(NV, CY, 0.24), mixc(CY, NV, 0.1), cap), BK, fog), 1);
+      else {
+        var bar = mixc(CY, NV, f < 2 ? 0.12 : 0.42), lo = mixc(BK, NV, 0.7), hi = mixc(NV, CY, f < 2 ? 0.17 : 0.1);
+        var cA = mixc(mixc(bar, lo, g), BK, fog), cB = mixc(mixc(bar, hi, g), BK, fog);
+        var pb = sp((Q[0] + Q[3]) / 2, 0, (Q[2] + Q[5]) / 2), pt = sp((Q[0] + Q[3]) / 2, h, (Q[2] + Q[5]) / 2);
+        if (pb && pt) { var gr = ctx.createLinearGradient(pb[0], pb[1], pt[0], pt[1]); gr.addColorStop(0, rgba(cA, 1)); gr.addColorStop(1, rgba(cB, 1)); ctx.fillStyle = gr; }
+        else ctx.fillStyle = rgba(cB, 1);
+      }
+      ctx.fill();
+    }
+    // windows
+    if (T > TT.win - 0.1) {
+      for (k = 0; k < WB.length; k++) WB[k].length = 0;
+      for (f = 0; f < 4; f++) if (visF[f]) windows(i, f, x0, x1, z0, z1, h, Hf, T, A, g, fog);
+      for (k = 0; k < WB.length; k++) {
+        var L = WB[k]; if (!L.length) continue;
+        ctx.beginPath();
+        for (var m = 0; m < L.length; m += 8) { ctx.moveTo(L[m], L[m + 1]); ctx.lineTo(L[m + 2], L[m + 3]); ctx.lineTo(L[m + 4], L[m + 5]); ctx.lineTo(L[m + 6], L[m + 7]); ctx.closePath(); }
+        ctx.fillStyle = rgba(WCOL[(k / 8) | 0], ((k % 8) + 1) / 8); ctx.fill();
+      }
+    }
+    // edges
+    ctx.lineWidth = 1.2; ctx.beginPath();
+    for (f = 0; f < 5; f++) if (visF[f]) poly(quad(f, x0, x1, 0, h, z0, z1));
+    ctx.strokeStyle = rgba(mixc(CY, IV, 0.25), (0.95 - 0.4 * g) * (1 - fog)); ctx.stroke();
+    // light racing up the corners
+    var races = [TT.edge + i * 0.1, 8 + i * 0.07, 10 + i * 0.07, 12 + i * 0.07, 14 + i * 0.07, 20.15 + i * 0.07];
+    var corners = [[x0, z1, 0, 2], [x1, z1, 0, 3], [x1, z0, 1, 3], [x0, z0, 1, 2]];
+    for (var r = 0; r < races.length; r++) {
+      var rp = seg(A, races[r], races[r] + 0.75); if (rp <= 0 || rp >= 1) continue;
+      var head = h * eo(rp), tail = Math.max(0, head - 7), ra = (r === 0 ? 1 : 0.7) * (1 - rp * 0.6) * (1 - fog);
+      ctx.beginPath();
+      for (k = 0; k < 4; k++) { var cc = corners[k]; if (visF[cc[2]] || visF[cc[3]]) line(cc[0], tail, cc[1], cc[0], head, cc[1]); }
+      ctx.lineWidth = 6; ctx.strokeStyle = rgba(CY, 0.25 * ra); ctx.stroke();
+      ctx.lineWidth = 2.2; ctx.strokeStyle = rgba(IV, 0.95 * ra); ctx.stroke();
+    }
+    ctx.lineWidth = 1;
+    // facades slide up: slim fins
+    var fp = eob(seg(T, TT.fins + i * 0.08, TT.fins + i * 0.08 + 0.7), 1.2) * (1 - eio(seg(T, 17.1 + i * 0.05, 17.7 + i * 0.05)));
+    if (fp > 0.01) {
+      var fh = h * fp, finS = mixc(mixc(NV, CY, 0.16), BK, fog), finF = mixc(mixc(NV, CY, 0.26), BK, fog), ea = 0.5 * (1 - fog);
+      for (var s = -1; s <= 1; s += 2) {
+        var fx = cx + s * 1.25, fz = s * 1.25 * D / HW;
+        if (visF[0]) solidBox(fx - 0.1, fx + 0.1, 0, fh, z1, z1 + 0.38, finS, finF, finF, ea, 0);
+        if (visF[1]) solidBox(fx - 0.1, fx + 0.1, 0, fh, z0 - 0.38, z0, finS, finF, finF, ea, 0);
+        if (visF[2]) solidBox(x0 - 0.38, x0, 0, fh, fz - 0.1, fz + 0.1, finF, finS, finF, ea, 0);
+        if (visF[3]) solidBox(x1, x1 + 0.38, 0, fh, fz - 0.1, fz + 0.1, finF, finS, finF, ea, 0);
+      }
+    }
+    if (i === 5 && visF[0]) display(T, A, x0, x1, z1, h, fog);
+    // rooftop structures and antenna
+    var rp2 = eob(seg(T, TT.roof + i * 0.08, TT.roof + i * 0.08 + 0.55), 1.5) * (1 - eio(seg(T, 17.0 + i * 0.04, 17.55 + i * 0.04)));
+    if (rp2 > 0.01) {
+      var dk = D / HW, rS = mixc(mixc(NV, CY, 0.12), BK, fog), rT = mixc(mixc(NV, CY, 0.3), BK, fog);
+      solidBox(cx - 2.0, cx - 0.5, h, h + 1.1 * rp2, -1.9 * dk, -0.4 * dk, rS, rS, rT, 0.55 * (1 - fog), 0);
+      solidBox(cx + 0.6, cx + 1.7, h, h + 0.6 * rp2, -1.7 * dk, -0.7 * dk, rS, rS, rT, 0.55 * (1 - fog), 0);
+      var al = (2.2 + i * 0.55) * eo(seg(T, TT.roof + 0.35 + i * 0.08, TT.roof + 0.95 + i * 0.08)) * (1 - eio(seg(T, 17.0, 17.5)));
+      if (al > 0.05) {
+        ctx.beginPath(); line(cx + 1.6, h, 1.4 * dk, cx + 1.6, h + al, 1.4 * dk); ctx.strokeStyle = rgba(IV, 0.7 * (1 - fog)); ctx.lineWidth = 1.4; ctx.stroke(); ctx.lineWidth = 1;
+        var bp = sp(cx + 1.6, h + al, 1.4 * dk);
+        if (bp) {
+          var ba = (0.55 + 0.45 * Math.sin(TAU * (A / 1.7 + i * 0.13))) * (1 - fog);
+          ctx.beginPath(); ctx.arc(bp[0], bp[1], 7, 0, TAU); ctx.fillStyle = rgba(AM, 0.18 * ba); ctx.fill();
+          ctx.beginPath(); ctx.arc(bp[0], bp[1], 2.4, 0, TAU); ctx.fillStyle = rgba(AM, ba); ctx.fill();
+        }
+      }
+    }
+  }
+  var QW = new Float64Array(9);
+  function windows(i, f, x0, x1, z0, z1, h, Hf, T, A, g, fog) {
+    var ox, oz, ux, uz, Wd;
+    if (f === 0) { ox = x0; oz = z1; ux = 1; uz = 0; Wd = x1 - x0; }
+    else if (f === 1) { ox = x1; oz = z0; ux = -1; uz = 0; Wd = x1 - x0; }
+    else if (f === 2) { ox = x0; oz = z0; ux = 0; uz = 1; Wd = z1 - z0; }
+    else { ox = x1; oz = z1; ux = 0; uz = -1; Wd = z1 - z0; }
+    if (Wd < 0.6) return;
+    cs(ox, 0, oz, QW, 0); cs(ox + ux, 0, oz + uz, QW, 3); cs(ox, 1, oz, QW, 6);
+    var c0x = QW[0], c0y = QW[1], c0z = QW[2], dux = QW[3] - c0x, duy = QW[4] - c0y, duz = QW[5] - c0z, dvx = QW[6] - c0x, dvy = QW[7] - c0y, dvz = QW[8] - c0z;
+    var nR = Math.floor((Hf - 1.1) / FH), cell = Wd / 4, ww = cell * 0.56, wh = 0.5, cxw = BX(i);
+    var dimA = 0.09 * g * (1 - fog), fade = (1 - fog * 0.75) * (1 - 0.25 * seg(T, 18.4, 19.2));
+    var wz = (z0 + z1) / 2, dsp = i === 5 && f === 0 ? dispA(T) : 0;
+    for (var r = 0; r < nR; r++) {
+      var y = 0.75 + r * FH; if (y + wh > h - 0.25) break;
+      var wave = waveAt(A, cxw, y, wz);
+      for (var c = 0; c < 4; c++) {
+        var id = i * 8 + f, k1 = hash(id, r, c), k2 = hash(id, r, c + 11), k3 = hash(id, r + 37, c);
+        var lit = k1 < 0.78, a, col;
+        if (lit) {
+          var tOn = TT.win + i * 0.13 + r * 0.024 + k2 * 0.35 + (f > 1 ? 0.12 : 0);
+          a = (0.45 + 0.55 * k3) * seg(T, tOn, tOn + 0.2) * (0.82 + 0.18 * Math.sin(TAU * (A / 4.3 + k2 * 7))) + 0.6 * wave;
+          col = k2 < 0.07 ? 2 : k3 < 0.15 ? 1 : 0;
+        } else { a = dimA + 0.3 * wave * g; col = 0; }
+        a *= fade; if (dsp > 0 && y > 15.5 && y < 38) a *= 1 - dsp; if (a < 0.03) continue;
+        var u = cell * (c + 0.5) - ww / 2;
+        var px = [u, u + ww, u + ww, u], py = [y, y, y + wh, y + wh], out = [], ok = true, zmin = 1e9;
+        for (var q = 0; q < 4; q++) {
+          var X = c0x + dux * px[q] + dvx * py[q], Y = c0y + duy * px[q] + dvy * py[q], Z = c0z + duz * px[q] + dvz * py[q];
+          if (Z < 1.0) { ok = false; break; }
+          if (Z < zmin) zmin = Z;
+          out.push(C.ox + C.f * X / Z, C.oy - C.f * Y / Z);
+        }
+        if (!ok) continue;
+        a *= seg(zmin, 1.2, 4.5); if (a < 0.03) continue;
+        var L = WB[col * 8 + Math.min(7, Math.floor(a * 8))];
+        for (var o = 0; o < 8; o++) L.push(out[o]);
+      }
+    }
+  }
+  // the 2024 tower's lower front becomes a display: the dataset itself streams up it
+  var GROW = ['BASE', '+60.0%', '+50.0%', '+35.4%', '+27.7%', '+20.5%'];
+  function dispA(T) { return seg(T, 11.3, 11.9) * (1 - seg(T, 16.6, 17.2)); }
+  function display(T, A, x0, x1, z1, h, fog) {
+    var a = dispA(T) * (1 - fog); if (a < 0.01) return;
+    var y0 = 16, y1 = Math.min(38, h - 1), zf = z1 + 0.46, xa = x0 + 0.3, xb = x1 - 0.3, xm = (xa + xb) / 2;
+    ctx.beginPath();
+    if (poly([xa, y0, zf, xb, y0, zf, xb, y1, zf, xa, y1, zf])) { ctx.fillStyle = rgba(BK, 0.9 * a); ctx.fill(); ctx.strokeStyle = rgba(CY, 0.85 * a); ctx.lineWidth = 1.5; ctx.stroke(); ctx.lineWidth = 1; }
+    var rowH = 1.2, n = Math.floor((y1 - y0 - 0.5) / rowH), off = A * 3.4;
+    ctx.save(); ctx.textBaseline = 'top'; ctx.font = '600 40px ' + FONTS.mono;
+    for (var r = 0; r < n; r++) {
+      var v = r * rowH + off, yy = y0 + 0.25 + (v % (n * rowH)), gen = Math.floor(v / (n * rowH)), k = (r + gen * n) % 6;
+      var e = Math.min(seg(yy, y0 + 0.25, y0 + 1.6), seg(y1 - 0.25, yy + 0.8, yy + 2.2)) * a;
+      if (e < 0.02) continue;
+      var parts = [[xa + 0.15, xm - 0.05, YEARS[k] + ' ' + ('  ' + VALS[k]).slice(-3), k === 5 ? AM : IV], [xm + 0.1, xb - 0.1, GROW[k], k === 5 ? AM : CY]];
+      for (var q = 0; q < 2; q++) {
+        var P = parts[q], p0 = sp(P[0], yy + 0.82, zf), p1 = sp(P[1], yy + 0.82, zf), p2 = sp(P[0], yy, zf);
+        if (!p0 || !p1 || !p2 || p0[2] < 2 || p2[2] < 2) continue;
+        ctx.setTransform(PXR * (p1[0] - p0[0]) / 220, PXR * (p1[1] - p0[1]) / 220, PXR * (p2[0] - p0[0]) / 64, PXR * (p2[1] - p0[1]) / 64, PXR * p0[0], PXR * p0[1]);
+        ctx.fillStyle = rgba(P[3], e * 0.95); ctx.fillText(P[2], 0, 6);
+      }
+    }
+    ctx.restore(); ctx.setTransform(PXR, 0, 0, PXR, 0, 0);
+    var sy = y0 + (y1 - y0) * frac(A * 0.55);
+    ctx.beginPath(); line(xa, sy, zf + 0.01, xb, sy, zf + 0.01); ctx.strokeStyle = rgba(CY, 0.5 * a); ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1;
+  }
+
+  // ---------- district buildings ----------
+  function drawBld(b, T, A) {
+    var p = eob(seg(T, b.tr, b.tr + 0.65), 1.3) * (1 - ei(seg(T, b.ts, b.ts + 0.55)));
+    if (p <= 0.01) return;
+    var h = b.h * p, fog = fogK(depth(b.cx, h * 0.5, b.cz));
+    var tint = 0.03 * hash(b.id, 10, 0), side = mixc(mixc(mixc(BK, NV, 0.9), CY, tint), BK, fog), front = mixc(mixc(NV, CY, 0.06 + tint), BK, fog), top = mixc(mixc(NV, CY, 0.16 + tint), BK, fog);
+    var vf = [];
+    for (var f = 0; f < 5; f++) vf.push(vis(f, b.x0, b.x1, h, b.z0, b.z1));
+    solidBox(b.x0, b.x1, 0, h, b.z0, b.z1, side, front, top, 0.26 * (1 - fog), 0);
+    // ribbon windows
+    var wave = waveAt(A, b.cx, 1, b.cz), lit = seg(T, b.tr + 0.3, b.tr + 0.9);
+    if (lit <= 0) return;
+    ctx.beginPath();
+    var any = false;
+    for (var fl = 0; fl * 1.05 + 0.8 < h - 0.4; fl++) {
+      var y = 0.8 + fl * 1.05;
+      if (hash(b.id, fl, 1) > 0.72) continue;
+      if (vf[0]) any = line(b.x0 + 0.25, y, b.z1, b.x1 - 0.25, y, b.z1) || any;
+      if (vf[1]) any = line(b.x0 + 0.25, y, b.z0, b.x1 - 0.25, y, b.z0) || any;
+      if (vf[2]) any = line(b.x0, y, b.z0 + 0.25, b.x0, y, b.z1 - 0.25) || any;
+      if (vf[3]) any = line(b.x1, y, b.z0 + 0.25, b.x1, y, b.z1 - 0.25) || any;
+    }
+    if (any) { ctx.lineWidth = 2.1; ctx.strokeStyle = rgba(b.warm ? AM : CY, lit * (0.42 + 0.9 * wave) * (1 - fog * 0.7) * (1 - 0.3 * seg(T, 18.4, 19.2))); ctx.stroke(); ctx.lineWidth = 1; }
+    if (hash(b.id, 9, 9) < 0.3 && vf[4]) {
+      var rp = sp(b.cx, h + 0.05, b.cz);
+      if (rp) { ctx.beginPath(); ctx.arc(rp[0], rp[1], 1.8, 0, TAU); ctx.fillStyle = rgba(b.warm ? AM : IV, lit * (0.5 + 0.4 * Math.sin(TAU * (A / 2.3 + hash(b.id, 8, 8)))) * (1 - fog)); ctx.fill(); }
+    }
+  }
+  function drawBridge(k, T, A) {
+    var br = BR[k], p = eo(seg(T, TT.bridge + k * 0.16, TT.bridge + k * 0.16 + 0.7)) * (1 - eio(seg(T, 16.9 + k * 0.06, 17.5 + k * 0.06)));
+    if (p <= 0.01) return;
+    var xa = BX(br.a) + HW, xb = xa + 5 * p, y0 = br.y, y1 = br.y + 1.3, fog = fogK(depth((xa + xb) / 2, y0, 0));
+    solidBox(xa, xb, y0, y1, -0.9, 0.9, mixc(mixc(NV, CY, 0.1), BK, fog), mixc(mixc(NV, CY, 0.18), BK, fog), mixc(mixc(NV, CY, 0.3), BK, fog), 0.6 * (1 - fog), 0);
+    ctx.beginPath();
+    if (C.ez > 0.9) line(xa, y0 + 0.65, 0.92, xb, y0 + 0.65, 0.92); else line(xa, y0 + 0.65, -0.92, xb, y0 + 0.65, -0.92);
+    if (C.ey < y0) { line(xa, y0 - 0.01, -0.5, xb, y0 - 0.01, -0.5); line(xa, y0 - 0.01, 0.5, xb, y0 - 0.01, 0.5); }
+    ctx.lineWidth = 1.6; ctx.strokeStyle = rgba(CY, 0.85 * (1 - fog)); ctx.stroke();
+    var pu = frac(A * 0.9 + k * 0.27), px = xa + 5 * pu;
+    if (px < xb) { ctx.beginPath(); line(Math.max(xa, px - 1.2), y0 + 0.65, C.ez > 0.9 ? 0.93 : -0.93, px, y0 + 0.65, C.ez > 0.9 ? 0.93 : -0.93); ctx.lineWidth = 4; ctx.strokeStyle = rgba(IV, 0.9 * (1 - fog)); ctx.stroke(); }
+    ctx.lineWidth = 1;
+  }
+  // the trend line through the bar tops: lifts into an elevated skyway, then settles back
+  function skyLift(T) { return 2.4 * eio(seg(T, TT.lift, TT.lift + 0.8)) * (1 - eio(seg(T, 17.5, 18.2))); }
+  function drawSky(k, T, A) {
+    var tp = clamp01(seg(T, TT.trend, TT.trend + 0.7) * 5 - k); if (tp <= 0) return;
+    var L = skyLift(T), ln = L / 2.4, xa = BX(k), xb = BX(k + 1), ya = towerH(k, T) + L, yb = towerH(k + 1, T) + L;
+    xb = xa + (xb - xa) * tp; yb = ya + (yb - ya) * tp;
+    var fog = fogK(depth((xa + xb) / 2, (ya + yb) / 2, 0));
+    if (ln > 0.01) {
+      ctx.beginPath(); line(xa, ya - L, 0, xa, ya, 0); if (tp >= 1 && k === 4) line(BX(5), yb - L, 0, BX(5), yb, 0);
+      ctx.strokeStyle = rgba(CY, 0.6 * ln * (1 - fog)); ctx.lineWidth = 1.4; ctx.stroke();
+    }
+    ctx.beginPath(); line(xa, ya, 0, xb, yb, 0);
+    ctx.lineWidth = 2 + 6 * ln; ctx.strokeStyle = rgba(CY, (0.14 + 0.12 * ln) * (1 - fog)); ctx.stroke();
+    ctx.lineWidth = 1.5 + 1.3 * ln; ctx.strokeStyle = rgba(mixc(CY, IV, 0.55), 0.92 * (1 - fog)); ctx.stroke();
+    var pa = seg(T, 9.0, 9.6) * (1 - seg(T, 17.3, 17.7));
+    if (pa > 0) {
+      ctx.fillStyle = rgba(IV, pa * (1 - fog));
+      for (var m = 0; m < 14; m++) {
+        var u = frac(m / 14 + A * 0.16) * 5 - k; if (u < 0 || u >= tp) continue;
+        var pp = sp(xa + (BX(k + 1) - xa) * u, ya + (towerH(k + 1, T) + L - ya) * u, 0);
+        if (pp) { ctx.beginPath(); ctx.arc(pp[0], pp[1], 2.6 + 1.5 * ln, 0, TAU); ctx.fill(); }
+      }
+    }
+    ctx.lineWidth = 1;
+    var nodes = k === 4 && tp >= 1 ? [[xa, ya], [xb, yb]] : [[xa, ya]];
+    for (var q = 0; q < nodes.length; q++) {
+      var np = sp(nodes[q][0], nodes[q][1], 0); if (!np) continue;
+      ctx.beginPath(); ctx.arc(np[0], np[1], 3.2 + 1.5 * ln, 0, TAU); ctx.fillStyle = rgba(IV, 0.95 * (1 - fog)); ctx.fill();
+    }
+  }
+
+  // ---------- type in the world ----------
+  var FONTS = { mono: 'ui-monospace, monospace', display: 'system-ui, sans-serif' };
+  function txt(s, x, y, size, weight, col, a, align, spacing) {
+    if (a < 0.01) return;
+    ctx.font = weight + ' ' + size + 'px ' + FONTS.mono; ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = (spacing || 0) + 'px';
+    ctx.fillStyle = rgba(col, a); ctx.fillText(s, x, y);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  }
+  // HUD callouts: steady labels at the left, leader lines that follow their anchors in the city
+  function callout(s, lx, ly, wx, wy, wz, a) {
+    if (a < 0.01) return;
+    var sl = 24 * (1 - eo(a)), x = lx - sl;
+    ctx.font = '600 24px ' + FONTS.mono; if ('letterSpacing' in ctx) ctx.letterSpacing = '2.5px';
+    var tw = ctx.measureText(s).width; if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+    ctx.fillStyle = rgba(BK, 0.78 * a); ctx.fillRect(x - 14, ly - 22, tw + 28, 44);
+    ctx.fillStyle = rgba(AM, a); ctx.fillRect(x - 14, ly - 22, 3, 44);
+    txt(s, x, ly + 1, 24, 600, IV, a, 'left', 2.5);
+    var p = sp(wx, wy, wz); if (!p || p[2] < 2.5) return;
+    var ax = p[0], ay = p[1]; if (ax < 0 || ax > W || ay < 0 || ay > H) return;
+    var sx = x + tw + 14, mx = sx + 40, lp = clamp01(a * 1.5 - 0.3);
+    ctx.lineWidth = 1.2; ctx.strokeStyle = rgba(CY, 0.8 * a);
+    ctx.beginPath(); ctx.moveTo(sx, ly); ctx.lineTo(sx + (mx - sx) * clamp01(lp * 3), ly);
+    if (lp > 0.33) { var q = (lp - 0.33) / 0.67; ctx.lineTo(mx + (ax - mx) * q, ly + (ay - ly) * q); }
+    ctx.stroke();
+    if (lp >= 1) {
+      ctx.beginPath(); ctx.arc(ax, ay, 7, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(ax, ay, 2.6, 0, TAU); ctx.fillStyle = rgba(IV, a); ctx.fill();
+    }
+    ctx.lineWidth = 1;
+  }
+  function drawLabels(T, A) {
+    var i, fk = foldK(T), th = fk * Math.PI / 2;
+    // the first signal
+    var da = eo(seg(T, TT.dot, TT.dot + 0.6)) * (1 - 0.75 * seg(T, 1.3, 2.0)) * (1 - seg(T, 2.6, 3.2));
+    if (da > 0.01) {
+      var dp = sp(0, 0, AXZ);
+      if (dp) {
+        var br = 1 + 0.12 * Math.sin(TAU * T / 1.6), gr = ctx.createRadialGradient(dp[0], dp[1], 0, dp[0], dp[1], 70 * br);
+        gr.addColorStop(0, rgba(CY, 0.55 * da)); gr.addColorStop(0.25, rgba(CY, 0.16 * da)); gr.addColorStop(1, rgba(CY, 0));
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(dp[0], dp[1], 70 * br, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(dp[0], dp[1], 5, 0, TAU); ctx.fillStyle = rgba(mixc(CY, IV, 0.6), da); ctx.fill();
+      }
+    }
+    // y-axis values
+    var ya = seg(T, TT.yaxis + 0.4, TT.yaxis + 0.9) * (1 - seg(T, 6.7, 7.1)) + seg(T, 18.7, 19.3);
+    for (i = 0; i < 5; i++) {
+      var hh = GRIDV[i] * HS, p = sp(XL, hh * Math.cos(th), WZ - hh * Math.sin(th));
+      if (p) txt(String(GRIDV[i]), p[0] - 16, p[1], 17, 400, mixc(IV, CY, 0.35), 0.7 * clamp01(ya), 'right', 1);
+    }
+    // years along the axis (street signs later)
+    for (i = 0; i < 6; i++) {
+      var yA = seg(T, TT.bars + i * 0.17, TT.bars + i * 0.17 + 0.5) * (1 - seg(T, 8.0, 8.6)) + seg(T, 18.4 + i * 0.05, 19.0 + i * 0.05);
+      var yp = sp(BX(i), 0, AXZ); if (yp) txt(YEARS[i], yp[0], yp[1] + 30, 18, 400, IV, 0.78 * clamp01(yA), 'center', 2);
+    }
+    // values on the roofs
+    var D = depthAt(T);
+    for (i = 0; i < 6; i++) {
+      var h = towerH(i, T), vA = seg(T, TT.bars + i * 0.17 + 0.1, TT.bars + i * 0.17 + 0.5) * (1 - seg(T, 9.6, 10.2)) + seg(T, TT.labels + i * 0.05, TT.labels + 0.6 + i * 0.05);
+      var vp = sp(BX(i), h + skyLift(T), D * (1 - skyLift(T) / 2.4));
+      if (!vp) continue;
+      var cnt = T < TT.bars + i * 0.17 + 0.9 ? Math.round(VALS[i] * clamp01(h / (VALS[i] * HS))) : VALS[i];
+      txt(String(cnt), vp[0], vp[1] - 24, 22, 600, IV, 0.95 * clamp01(vA), 'center', 1);
+    }
+    // the annotations inside the city
+    var ap = sp(BX(5), towerH(5, T), D);
+    callout('2024 / 100', 120, 236, 22.6, 27.2, 2.96, seg(T, 12.15, 12.6) * (1 - seg(T, 14.2, 14.5)));
+    callout('GROWTH +400%', 120, 304, 22.6, 20.5, 2.96, seg(T, 12.45, 12.9) * (1 - seg(T, 14.2, 14.5)));
+    callout('DATA FLOW ACTIVE', 120, 372, 19.5, 37, 0.9, seg(T, 12.9, 13.3) * (1 - seg(T, 14.2, 14.5)));
+    void ap; void A;
+  }
+
+  // ---------- frame ----------
+  var canvas = null, c2d = null;
+  function mount(kit) {
+    if (!canvas) {
+      canvas = kit.stage.ownerDocument.createElement('canvas');
+      canvas.width = W * PXR; canvas.height = H * PXR;
+      canvas.setAttribute('style', 'position:absolute;left:0;top:0;width:1920px;height:1080px');
+      c2d = canvas.getContext('2d');
+      FONTS = { mono: kit.fonts.mono || 'ui-monospace, monospace', display: kit.fonts.display || kit.fonts.sans || 'system-ui, sans-serif' };
+    }
+    return { stage: kit.stage };
+  }
+  function draw(v, T) {
+    if (canvas.parentNode !== v.stage) v.stage.insertBefore(canvas, v.stage.firstChild);
+    ctx = c2d; var A = AT(T); C = camAt(T);
+    ctx.setTransform(PXR, 0, 0, PXR, 0, 0); ctx.globalAlpha = 1; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.fillStyle = rgba(BK, 1); ctx.fillRect(0, 0, W, H);
+    var gc = sp(0, 0, -18) || [960, 640], gr = ctx.createRadialGradient(gc[0], gc[1], 0, gc[0], gc[1], 1150);
+    gr.addColorStop(0, rgba(NV, 1)); gr.addColorStop(0.55, rgba(NV, 0.5)); gr.addColorStop(1, rgba(NV, 0));
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+    drawGround(T, A);
+    var objs = [], k;
+    for (k = 0; k < 6; k++) objs.push([depth(BX(k), 0, 0), 0, k]);
+    if (T > TT.blocks) for (k = 0; k < BLD.length; k++) { var b = BLD[k]; if (T > b.tr && T < b.ts + 0.6) objs.push([depth(b.cx, 0, b.cz), 1, k]); }
+    if (T > TT.bridge) for (k = 0; k < BR.length; k++) objs.push([depth(BX(BR[k].a) + 5, 0, 0), 2, k]);
+    if (T > TT.trend) for (k = 0; k < 5; k++) objs.push([depth(BX(k) + 5, 0, 0) - 0.01, 3, k]);
+    objs.sort(function (a, b) { return b[0] - a[0]; });
+    for (k = 0; k < objs.length; k++) {
+      var o = objs[k];
+      if (o[1] === 0) drawTower(o[2], T, A); else if (o[1] === 1) drawBld(BLD[o[2]], T, A); else if (o[1] === 2) drawBridge(o[2], T, A); else drawSky(o[2], T, A);
+    }
+    drawLabels(T, A);
+    var vg = ctx.createRadialGradient(960, 540, 420, 960, 540, 1150);
+    vg.addColorStop(0, rgba(BK, 0)); vg.addColorStop(1, rgba(BK, 0.62));
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  }
+  window.DM = { mount: mount, draw: draw, TT: TT };
+})();
+
+  var MODS = {
+  "signal": function (kit) {
+kit.scene('signal', {
+  init(kit) { this.v = DM.mount(kit); this.t0 = kit.start; },
+  render(t) { DM.draw(this.v, this.t0 + t); },
+});
+
+  },
+  "awakening": function (kit) {
+kit.scene('awakening', {
+  init(kit) { this.v = DM.mount(kit); this.t0 = kit.start; },
+  render(t) { DM.draw(this.v, this.t0 + t); },
+});
+
+  },
+  "alive": function (kit) {
+kit.scene('alive', {
+  init(kit) { this.v = DM.mount(kit); this.t0 = kit.start; },
+  render(t) { DM.draw(this.v, this.t0 + t); },
+});
+
+  },
+  "inside": function (kit) {
+kit.scene('inside', {
+  init(kit) { this.v = DM.mount(kit); this.t0 = kit.start; },
+  render(t) { DM.draw(this.v, this.t0 + t); },
+});
+
+  },
+  "reveal": function (kit) {
+kit.scene('reveal', {
+  init(kit) { this.v = DM.mount(kit); this.t0 = kit.start; },
+  render(t) { DM.draw(this.v, this.t0 + t); },
+});
+
+  },
+  "metropolis": function (kit) {
+const { seg, eo, TextFx } = kit;
+kit.scene('metropolis', {
+  init(kit) {
+    this.v = DM.mount(kit); this.t0 = kit.start;
+    kit.stage.append(kit.h('<div class="scrim metropolis-scrim"></div>'));
+    kit.stage.append(kit.h('<div class="words metropolis-words" style="left:118px;bottom:150px"><h1 class="line title">DATA METROPOLIS</h1><p class="sub tagline metropolis-tag">EVERY NUMBER BUILDS A WORLD.</p></div>'));
+    this.title = kit.stage.querySelector('.title');
+    this.tag = kit.stage.querySelector('.metropolis-tag').style;
+    this.scrim = kit.stage.querySelector('.metropolis-scrim').style;
+  },
+  render(t) {
+    DM.draw(this.v, this.t0 + t);
+    this.scrim.opacity = eo(seg(t, 0, 0.6));
+    TextFx.fadeFromRight(this.title, t, 0.0, { stagger: 0.16, dur: 0.6, dx: 34 });
+    const p = eo(seg(t, 0.5, 1.05));
+    this.tag.opacity = p; this.tag.transform = 'translateX(' + (1 - p) * 26 + 'px)';
+  },
+});
+
+  }
+  };
+  SCENES.forEach(function (s) {
+    var box = document.createElement('div'); box.className = 'scene'; stage.appendChild(box);
+    var kit = makeKit(box, start, s.dur); MODS[s.id](kit);
+    list.push({ id: s.id, start: start, dur: s.dur, box: box, kit: kit }); start += s.dur;
+  });
+  DUR = start;
+  var current = null, t = 0, playing = false, last = 0;
+  function render(T) {
+    T = Math.max(0, Math.min(DUR - 1e-6, T));
+    var sc = list[list.length - 1];
+    for (var i = 0; i < list.length; i++) if (T < list[i].start + list[i].dur) { sc = list[i]; break; }
+    if (current !== sc) { if (current) current.box.style.display = 'none'; sc.box.style.display = 'block'; current = sc; }
+    defs[sc.id].render(T - sc.start, sc.kit);
+    scrub.value = T; time.textContent = T.toFixed(2) + ' / ' + DUR.toFixed(2) + ' s';
+  }
+  var view = document.getElementById('view'), scrub = document.getElementById('scrub'), time = document.getElementById('time'), btn = document.getElementById('play');
+  scrub.max = DUR;
+  function fit() { var k = Math.min(view.clientWidth / 1920, view.clientHeight / 1080); stage.style.transform = 'translate(' + (view.clientWidth - 1920 * k) / 2 + 'px,' + (view.clientHeight - 1080 * k) / 2 + 'px) scale(' + k + ')'; }
+  function loop(now) { if (!playing) return; t += (now - last) / 1000; last = now; if (t >= DUR) { t = 0; } render(t); if (playing) requestAnimationFrame(loop); }
+  function setPlaying(p) { playing = p; btn.textContent = p ? 'Pause' : 'Play'; if (p) { if (t >= DUR - 0.01) t = 0; last = performance.now(); requestAnimationFrame(loop); } }
+  btn.addEventListener('click', function () { setPlaying(!playing); });
+  scrub.addEventListener('input', function () { setPlaying(false); t = +scrub.value; render(t); });
+  window.addEventListener('keydown', function (e) {
+    if (e.target === scrub && e.key !== ' ') return;
+    if (e.key === ' ') { e.preventDefault(); setPlaying(!playing); }
+    else if (e.key === 'ArrowRight') { setPlaying(false); t = Math.min(DUR, t + 1 / 60); render(t); }
+    else if (e.key === 'ArrowLeft') { setPlaying(false); t = Math.max(0, t - 1 / 60); render(t); }
+  });
+  window.addEventListener('resize', fit);
+  window.seekFilm = function (s) { setPlaying(false); t = s; render(t); };
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
+    return Promise.all(list.map(function (s) { return defs[s.id].init && defs[s.id].init(s.kit); }));
+  }).then(function () {
+    fit(); render(0);
+    if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) setPlaying(true);
+  });
+})();
+</script>
+</body>
+</html>

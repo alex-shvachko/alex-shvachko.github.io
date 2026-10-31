@@ -1,0 +1,8 @@
+#stage { --ground:#03070D; --main:#4DE5FF; --second:#ECF4FA; --accent:#FFB86B; color:var(--second); font-family:var(--mono, ui-monospace, monospace) }
+.ground { position:absolute; inset:0; background:var(--ground) }
+.words { position:absolute; margin:0; display:flex; flex-direction:column; gap:24px } .words > * { margin:0 }
+.line { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:120px; line-height:1; font-weight:300; letter-spacing:.02em } .sub { font-size:28px; letter-spacing:.32em }
+.scrim { position:absolute; inset:0; background:linear-gradient(to right, color-mix(in srgb, var(--ground) 88%, transparent), color-mix(in srgb, var(--ground) 45%, transparent) 42%, transparent 62%) }
+.title { width:880px; font-size:100px; line-height:1.04; letter-spacing:.05em; color:var(--second) }
+.tagline { font-size:24px; font-weight:400; letter-spacing:.42em; color:color-mix(in srgb, var(--main) 78%, var(--second)); display:flex; align-items:center; gap:22px; white-space:nowrap }
+.tagline::before { content:''; display:block; width:56px; height:2px; background:var(--accent) }

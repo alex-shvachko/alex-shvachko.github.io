@@ -104,9 +104,6 @@ html.project-modal-open .world .cosmos-tw{animation-play-state:paused}
 /* The entrance: each part of the plinth and the rover draws its strokes, then fills its plates. */
 .world[data-intro] path.draw:not(.dash),.world[data-intro] .draw path:not(.dash){stroke-dasharray:1 1;stroke-dashoffset:calc(1 - var(--d,0));stroke-opacity:min(1,calc(var(--d,0) * 40));fill-opacity:var(--f,0)}
 .world[data-intro] .draw .dash{opacity:var(--f,0)}
-.world-readout{position:fixed;right:var(--gutter);bottom:22px;z-index:2;display:flex;gap:10px;align-items:center;font:400 11px/1 var(--mono);letter-spacing:.02em;color:var(--muted);font-variant-numeric:tabular-nums;pointer-events:none;opacity:var(--home-ui,1);transition:opacity .3s}
-.world-readout b{font-weight:400;color:var(--ink)}
-.world-readout i{width:18px;height:1px;background:var(--line-2)}
 
 main>section,main>footer{position:relative;z-index:1}
 
@@ -149,6 +146,4 @@ html.theme-vt::view-transition-new(root){z-index:2}
   .motion-ready .reveal{translate:none;filter:none;transition:opacity .3s linear}
   :is(.theme-toggle,.sound-toggle) *{transition:none!important}
   .world .stars .tw,.world .cosmos-tw{animation:none}
-  .world-readout{display:none}
 }
-.motion-reduced .world-readout{display:none}

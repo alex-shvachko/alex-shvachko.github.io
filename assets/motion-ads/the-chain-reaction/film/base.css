@@ -1,0 +1,16 @@
+#stage { --ground:#F7F3EA; --main:#FF4B45; --second:#18243B; --accent:#386BFF; --sun:#FFD644; --teal:#2DD4BF; --lime:#B8ED5C; --lav:#A78BFA; --copper:#F49B45; --mag:color-mix(in srgb, var(--main) 50%, var(--lav)); color:var(--second); font-family:var(--sans, system-ui, sans-serif) }
+.ground { position:absolute; inset:0; background:var(--ground); overflow:hidden }
+.words { position:absolute; margin:0; display:flex; flex-direction:column; gap:24px } .words > * { margin:0 }
+.line { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:96px; line-height:1; font-weight:400; letter-spacing:.01em } .sub { font-size:30px; letter-spacing:.32em; font-weight:700 }
+.tag { font-family:var(--mono, ui-monospace, monospace); font-size:15px; letter-spacing:.14em; text-transform:uppercase; font-weight:600 }
+.art { position:absolute; inset:0; width:100%; height:100%; overflow:visible }
+.k { stroke:var(--second); stroke-width:3; stroke-linejoin:round; stroke-linecap:round } .nf { fill:none }
+.rail { fill:none; stroke:var(--second); stroke-width:6; stroke-linecap:round; stroke-linejoin:round }
+.glass { fill:color-mix(in srgb, var(--accent) 7%, var(--ground)); stroke:var(--second); stroke-width:3; stroke-linejoin:round }
+.lite { fill:none; stroke:var(--sun); stroke-width:6; stroke-linecap:round }
+.dot { fill:color-mix(in srgb, var(--second) 13%, var(--ground)) } .shade { fill:rgba(0,0,0,.07) }
+.far { fill:none; stroke:color-mix(in srgb, var(--second) 9%, var(--ground)); stroke-width:2 }
+.f-main{fill:var(--main)} .f-acc{fill:var(--accent)} .f-sun{fill:var(--sun)} .f-teal{fill:var(--teal)} .f-lime{fill:var(--lime)} .f-lav{fill:var(--lav)} .f-cop{fill:var(--copper)} .f-mag{fill:var(--mag)} .f-ivo{fill:var(--ground)} .f-navy{fill:var(--second)}
+.f-steel{fill:color-mix(in srgb, var(--ground) 78%, var(--second))} .f-plate{fill:color-mix(in srgb, var(--ground) 93%, var(--second))} .f-mdk{fill:color-mix(in srgb, var(--main) 68%, var(--second))}
+.mx-sw { fill:none; stroke:var(--ground); opacity:.45; stroke-linecap:round }
+.mono { font-family:var(--mono, ui-monospace, monospace); font-size:12px; letter-spacing:.12em; font-weight:600; fill:var(--second) }

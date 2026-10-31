@@ -1,0 +1,15 @@
+#stage { --ground:#020408; --main:#48E5FF; --second:#ECF8FF; --accent:#FF334F; --navy:#07111D; --steel:#122333; --amber:#FFB347; color:var(--second); font-family:var(--mono, ui-monospace, monospace) }
+.ground { position:absolute; inset:0; background:var(--ground) }
+.words { position:absolute; margin:0; display:flex; flex-direction:column; gap:24px } .words > * { margin:0 }
+.line { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:84px; line-height:1.05; font-weight:400 } .sub { font-size:36px }
+.layer { position:absolute; left:0; top:0; width:1920px; height:1080px }
+.hud { position:absolute; margin:0; display:flex; flex-direction:column; gap:10px; font-size:21px; line-height:1.25; font-weight:400; letter-spacing:.2em; text-transform:uppercase; white-space:nowrap; font-variant-numeric:tabular-nums }
+.hud > * { margin:0 }
+.dim { color:color-mix(in srgb, var(--second) 50%, var(--ground)) }
+.sig { color:var(--main) } .warn { color:var(--amber) } .crit { color:var(--accent) }
+.alert { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:38px; letter-spacing:.24em; line-height:1.2 }
+.count { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:112px; letter-spacing:.08em; line-height:1; font-variant-numeric:tabular-nums }
+.title { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:156px; line-height:1; letter-spacing:.05em; padding-left:.05em; color:var(--second); text-shadow:-3px 0 0 color-mix(in srgb, var(--accent) 75%, transparent), 0 0 22px color-mix(in srgb, var(--accent) 28%, transparent) }
+.cap { font-size:24px; letter-spacing:.6em; padding-left:.6em; color:color-mix(in srgb, var(--second) 58%, var(--ground)) }
+.vignette { position:absolute; inset:0; background:radial-gradient(75% 70% at 50% 50%, transparent 55%, color-mix(in srgb, var(--ground) 88%, transparent) 100%) }
+.rule { height:1px; background:color-mix(in srgb, var(--second) 30%, transparent) }

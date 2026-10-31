@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Chain Reaction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<script>if (new URLSearchParams(location.search).has("embed")) document.documentElement.classList.add("embedded");</script>
+<link rel="stylesheet" href="page.css">
+<link rel="stylesheet" href="film/base.css">
+</head>
+<body>
+<main>
+  <div class="film">
+    <header>
+      <h1>The Chain Reaction</h1>
+      <span class="time"><span id="now">0.00</span> / <span id="total">35.00</span> s</span>
+    </header>
+    <div class="frame"><div id="stage"></div></div>
+    <div class="controls">
+      <button id="play" type="button" aria-pressed="false">Play</button>
+      <div class="track" id="track" role="slider" tabindex="0" aria-label="Position in the film" aria-valuemin="0" aria-valuemax="35" aria-valuenow="0">
+        <div class="segs"></div>
+        <div class="playhead"></div>
+      </div>
+      <div class="labels" aria-label="Shots"></div>
+    </div>
+    <p class="hint"><kbd>Space</kbd> plays or pauses. <kbd>←</kbd> <kbd>→</kbd> step one frame, with <kbd>Shift</kbd> one second. Drag the bar to scrub.</p>
+  </div>
+</main>
+<script src="player.js"></script>
+<script src="film/shared.js"></script>
+<script src="film/shots/1-drop.js"></script>
+<script src="film/shots/2-dominoes.js"></script>
+<script src="film/shots/3-gears.js"></script>
+<script src="film/shots/4-cascade.js"></script>
+<script src="film/shots/5-pinball.js"></script>
+<script src="film/shots/6-switch.js"></script>
+<script src="film/shots/7-connects.js"></script>
+<script>FILM.start();</script>
+</body>
+</html>

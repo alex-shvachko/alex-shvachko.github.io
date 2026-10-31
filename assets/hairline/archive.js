@@ -14,7 +14,6 @@
   const frame = root.querySelector('.archive-preview');
   const live = root.querySelector('#archive-live');
   const caption = {
-    count: root.querySelector('.archive-count'), category: root.querySelector('.archive-category'),
     title: root.querySelector('.archive-title'), sub: root.querySelector('.archive-sub'),
     open: root.querySelector('.archive-open')
   };
@@ -90,19 +89,18 @@
     NEAR.forEach(([d, cls]) => mk('path', { d, class: cls }, near));
     const label = mk('g', { transform: LETTERING, class: 'label' }, near);
     mk('text', { x: X0 + 8, y: -10.6 }, label).textContent = category === 'All' ? 'ALL' : category.toUpperCase();
-    const count = mk('text', { x: X1 - 8, y: -10.6, 'text-anchor': 'end' }, label);
-    return { index, category, el, cardsG, count, items: [], folders: [], active: -1, slot: () => 0 };
+    return { index, category, el, cardsG, items: [], folders: [], active: -1, slot: () => 0 };
   });
 
   // ---- the folders ---------------------------------------------------------------------------
   const read = tile => ({
     tile,
-    number: tile.querySelector('.project-number').textContent.trim(),
     title: tile.querySelector('h3').textContent.trim(),
     sub: tile.querySelector('.project-meta p').textContent.trim(),
     category: tile.dataset.category,
     image: tile.querySelector('img').getAttribute('src'),
-    video: tile.querySelector('video')?.getAttribute('src') || null
+    video: tile.querySelector('video')?.getAttribute('src') || null,
+    preview: tile.dataset.preview || null
   });
   // cur is the tray in front: the only one whose folders stand up, take input and show the preview.
   let cur = trays.find(tray => filters[tray.index].getAttribute('aria-pressed') === 'true') || trays[0], shown = false;
@@ -123,18 +121,15 @@
       const back = mk('path', { class: 'lo' }, g), face = mk('path', { class: 'sil' }, g);
       const image = mk('image', { width: BW, height: BH, preserveAspectRatio: 'xMidYMid slice' }, g);
       const window_ = mk('path', { class: 'nf' }, g);
-      // The project's number is punched on the tab, one hole of twelve, as in Riffle.
       const punch = [];
-      const no = clamp(Number(item.number) - 1 || 0, 0, 11);
-      for (let p = 0; p < 12; p++) punch.push(mk('circle', { r: .95, class: p === no ? 'dot m' : 'dot off' }, g));
+      for (let p = 0; p < 12; p++) punch.push(mk('circle', { r: .95, class: 'dot off' }, g));
       const a = tween(REST), z = tween(entering ? 34 : 0);
       if (entering) tset(z, 0, now, 80 + idx * STAGGER);
-      return { item, k, t0, shape, g, back, face, image, window: window_, punch, no, a, z, drawn: '' };
+      return { item, k, t0, shape, g, back, face, image, window: window_, punch, a, z, drawn: '' };
     });
     // Back to front in the paint order: the front folder is the first project.
     tray.folders.slice().sort((p, q) => p.k - q.k).forEach(f => tray.cardsG.append(f.g));
     if (shown) tray.folders.forEach(f => f.image.setAttribute('href', f.item.image));
-    tray.count.textContent = `${String(n).padStart(2, '0')} ${n === 1 ? 'PROJECT' : 'PROJECTS'}`;
     tray.active = -1;
   }
 
@@ -182,6 +177,15 @@
   // Each project's picture and video are made once and kept, so passing over the folders again
   // never reloads the picture or starts a new decoder; the video leaving pauses.
   const previews = new Map();
+  let archiveVisible = false, previewItem = null;
+  function syncLivePreview() {
+    const running = archiveVisible && !document.hidden && !reducedQuery.matches && !document.documentElement.classList.contains('project-modal-open');
+    const current = frame.querySelector('iframe');
+    if (!running || !previewItem?.preview) { if (current) current.remove(); return; }
+    if (!current) {
+      const iframe = document.createElement('iframe'); iframe.src = previewItem.preview; iframe.title = ''; iframe.tabIndex = -1; iframe.setAttribute('aria-hidden', 'true'); frame.append(iframe);
+    }
+  }
   function fillFrame(item) {
     let nodes = previews.get(item.tile);
     if (!nodes) {
@@ -197,9 +201,12 @@
       previews.set(item.tile, nodes);
     }
     frame.querySelectorAll('video').forEach(video => video.pause());
+    frame.querySelectorAll('iframe').forEach(iframe => iframe.remove());
     const shown = nodes.filter(node => node.tagName === 'IMG' || !reducedQuery.matches);
     frame.replaceChildren(...shown);
-    shown.forEach(node => { if (node.tagName === 'VIDEO') node.play().catch(() => {}); });
+    previewItem = item;
+    syncLivePreview();
+    shown.forEach(node => { if (node.tagName === 'VIDEO' && archiveVisible && !document.hidden && !document.documentElement.classList.contains('project-modal-open')) node.play().catch(() => {}); });
   }
 
   /** Pulls folder a of the tray in front (0 = its front folder) after wait ms; the stagger spreads out from it. */
@@ -214,16 +221,13 @@
       tset(f.a, f.k < ka ? BACK : f.k > ka ? FWD : 0, now, delay);
       tset(f.z, f.k === ka ? LIFT : 0, now, delay);
       f.face.classList.toggle('hi', f.k === ka);
-      f.punch[f.no].setAttribute('class', f.k === ka ? 'dot' : 'dot m');
     });
     const item = items[a];
-    caption.count.textContent = `${item.number} / ${String(allTiles.length).padStart(2, '0')}`;
-    caption.category.textContent = item.category;
     caption.title.textContent = item.title;
     caption.sub.textContent = item.sub;
     caption.open.setAttribute('aria-label', `Open ${item.title}`);
     fillFrame(item);
-    if (announce) live.textContent = `${item.number}, ${item.title}`;
+    if (announce) live.textContent = item.title;
     frameKey = '';
     loop.wake();
   }
@@ -236,7 +240,6 @@
       tset(f.a, REST, now, delay);
       tset(f.z, 0, now, delay);
       f.face.classList.remove('hi');
-      f.punch[f.no].setAttribute('class', 'dot m');
     });
     tray.active = -1;
   }
@@ -363,11 +366,15 @@
   // The pulled folder's video plays only while the archive is on screen; scrolled away, it would
   // keep a decoder busy for nothing.
   new IntersectionObserver(([entry]) => {
+    archiveVisible = entry.isIntersecting;
+    syncLivePreview();
     frame.querySelectorAll('video').forEach(video => {
       if (!entry.isIntersecting) video.pause();
       else if (!reducedQuery.matches && !document.documentElement.classList.contains('project-modal-open')) video.play().catch(() => {});
     });
   }).observe(stage);
+  section.addEventListener('project-preview-state', syncLivePreview);
+  document.addEventListener('visibilitychange', syncLivePreview);
   // Pictures load only once the archive comes near the viewport.
   new IntersectionObserver(([entry]) => {
     if (!entry.isIntersecting || shown) return;

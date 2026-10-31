@@ -1,0 +1,18 @@
+#stage { --ground:#020305; --main:#62E6FF; --second:#F4FAFF; --accent:#FFAD60; --graphite:#101318; --titanium:#242A32; --silver:#8997A5; color:var(--second); font-family:var(--sans, system-ui, sans-serif) }
+.ground { position:absolute; inset:0; background:var(--ground) }
+.words { position:absolute; margin:0; display:flex; flex-direction:column; gap:24px } .words > * { margin:0 }
+.line { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:84px; line-height:1.05; font-weight:400 } .sub { font-size:36px }
+.mono { font-family:var(--mono, ui-monospace, monospace) }
+.art { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none }
+.vig { position:absolute; inset:0; background:radial-gradient(72% 74% at 50% 50%, transparent 56%, color-mix(in srgb, var(--ground) 82%, transparent)) }
+.tag { position:absolute; display:flex; flex-direction:column; gap:8px; line-height:1; font-family:var(--mono, ui-monospace, monospace); white-space:nowrap }
+.tag-l { transform:translateX(-100%); align-items:flex-end; text-align:right }
+.tag-k { font-size:11px; letter-spacing:.34em; color:var(--main); font-weight:500 }
+.tag-v { font-size:16px; letter-spacing:.24em; color:var(--second); font-weight:300 }
+.tag-a .tag-k { color:var(--accent) }
+.lead { fill:none; stroke:color-mix(in srgb, var(--silver) 75%, transparent); stroke-width:1 }
+.dot { fill:var(--main) }
+.read { position:absolute; display:flex; flex-direction:column; gap:12px; font-family:var(--mono, ui-monospace, monospace); font-size:12px; letter-spacing:.26em; line-height:1; color:var(--silver); white-space:pre }
+.read > * { margin:0 }
+.beam { position:absolute; left:0; height:2px; margin-top:-1px; background:linear-gradient(90deg, transparent, var(--main) 28%, var(--second) 50%, var(--main) 72%, transparent) }
+.halo { position:absolute; border-radius:50%; background:radial-gradient(closest-side, color-mix(in srgb, var(--main) 55%, transparent), color-mix(in srgb, var(--main) 14%, transparent) 45%, transparent) }

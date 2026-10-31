@@ -1,0 +1,75 @@
+{
+  "v": 1,
+  "stage": "final",
+  "look": "Data Metropolis: futuristic architectural visualization meets premium sci-fi cinematic motion graphics. Sophisticated isometric architecture, abstract digital worlds, precision engineering, monumental scale; elegant geometric towers with hundreds of tiny illuminated windows, glowing infrastructure, small flowing data particles, restrained HUD annotations, refined typography; midnight navy #06111E, near-black #03070D, electric cyan #4DE5FF, warm amber #FFB86B, soft ivory #ECF4FA. A bar chart (2019 20, 2020 32, 2021 48, 2022 65, 2023 83, 2024 100) becomes a city and back, one continuous camera, no crossfades.",
+  "palettes": [
+    [
+      "#03070D",
+      "#4DE5FF",
+      "#ECF4FA",
+      "#FFB86B"
+    ]
+  ],
+  "theirs": 1,
+  "width": 1920,
+  "height": 1080,
+  "fps": 60,
+  "background": "#03070D",
+  "fonts": {
+    "display": {
+      "family": "Unbounded",
+      "or": "inter-display",
+      "weights": [
+        300,
+        600
+      ]
+    },
+    "sans": "space-grotesk",
+    "mono": {
+      "family": "JetBrains Mono",
+      "or": "dm-mono",
+      "weights": [
+        400,
+        600
+      ]
+    }
+  },
+  "scenes": [
+    {
+      "id": "signal",
+      "name": "The first signal",
+      "dur": 3,
+      "desc": "In darkness one cyan point lights, the axes and grid draw out, and six bars rise to their values."
+    },
+    {
+      "id": "awakening",
+      "name": "Architectural awakening",
+      "dur": 4,
+      "desc": "The camera turns into isometric space as the bars extrude into towers, windows cascade on and rooftops unfold."
+    },
+    {
+      "id": "alive",
+      "name": "The city comes alive",
+      "dur": 5,
+      "desc": "The grid folds down into streets, a district rises around the towers and the camera glides low through traffic of light."
+    },
+    {
+      "id": "inside",
+      "name": "Inside the data",
+      "dur": 4,
+      "desc": "The camera races under a skybridge beside the 2024 tower as numbers stream up its facade and a wave of light crosses the city."
+    },
+    {
+      "id": "reveal",
+      "name": "The impossible reveal",
+      "dur": 4,
+      "desc": "The city freezes, the camera pulls back and up, and streets fold back into the axes and grid of the original chart."
+    },
+    {
+      "id": "metropolis",
+      "name": "Data Metropolis",
+      "dur": 2,
+      "desc": "Wide isometric chart-city with the title Data Metropolis and the line Every number builds a world."
+    }
+  ]
+}

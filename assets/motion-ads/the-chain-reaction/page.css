@@ -1,0 +1,52 @@
+:root {
+  color-scheme: light;
+  --page: #ECE6D8;
+  --ink: #18243B;
+  --soft: color-mix(in srgb, var(--ink) 58%, var(--page));
+  --rail: color-mix(in srgb, var(--ink) 16%, var(--page));
+  --marble: #FF4B45;
+}
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; --page: #101A2B; --ink: #F1ECE1; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { background: var(--page); color: var(--ink); font-family: 'Archivo', system-ui, sans-serif; font-size: 16px; line-height: 1.4; }
+main { min-height: 100dvh; display: grid; place-content: center; padding: 24px; }
+.film { width: min(calc(100vw - 48px), calc((100dvh - 230px) * 16 / 9)); min-width: 280px; }
+header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 14px; }
+h1 { font-family: 'Archivo Black', 'Archivo', system-ui, sans-serif; font-weight: 400; font-size: clamp(20px, 2.2vw, 28px); line-height: 1.1; margin: 0; }
+.time { font-variant-numeric: tabular-nums; color: var(--soft); white-space: nowrap; }
+.frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 6px; background: #F7F3EA; box-shadow: 0 0 0 1px var(--rail); }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #F7F3EA;
+  --display: 'Archivo Black', 'Archivo', system-ui, sans-serif; --sans: 'Archivo', system-ui, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, monospace; }
+.shot { position: absolute; inset: 0; }
+.controls { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 18px; row-gap: 0; margin-top: 16px; }
+#play { font: inherit; font-weight: 700; min-width: 7.6em; padding: 9px 18px; border-radius: 999px; border: 2px solid var(--ink); background: var(--ink); color: var(--page); cursor: pointer; }
+#play:hover { background: transparent; color: var(--ink); }
+.track { position: relative; height: 30px; cursor: pointer; touch-action: none; border-radius: 4px; }
+.segs { position: absolute; left: 0; right: 0; top: 13px; height: 4px; display: flex; gap: 3px; }
+.segs span { position: relative; flex-basis: 0; background: var(--rail); border-radius: 2px; overflow: hidden; }
+.segs i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--ink); }
+.playhead { position: absolute; top: 6px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: var(--marble); border: 2px solid #18243B; pointer-events: none; }
+.playhead::after { content: ''; position: absolute; left: 3px; top: 2px; width: 5px; height: 3px; border-radius: 50%; background: #F7F3EA; transform: rotate(-38deg); }
+.labels { grid-column: 2; display: flex; gap: 3px; margin-top: -10px; }
+.labels button { flex-basis: 0; min-width: 0; font: inherit; font-size: 13px; color: var(--soft); background: none; border: 0; padding: 2px 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.labels button.on { color: var(--ink); font-weight: 700; }
+.labels button:hover { color: var(--ink); }
+.hint { margin: 18px 0 0; font-size: 13px; color: var(--soft); }
+kbd { font-family: inherit; font-weight: 700; color: var(--ink); }
+:focus-visible { outline: 3px solid var(--marble); outline-offset: 3px; }
+@media (max-width: 760px) {
+  .labels button:not(.on) { visibility: hidden; }
+  .hint { display: none; }
+}
+
+/* Compact portfolio player: the film and its controls share the available frame. */
+html.embedded, .embedded body { height: 100%; min-height: 0; overflow: hidden; }
+.embedded main { height: 100%; min-height: 0; padding: 0; display: grid; place-items: center; }
+.embedded .film { width: min(100vw, calc((100dvh - 54px) * 16 / 9)); min-width: 0; }
+.embedded header, .embedded .labels, .embedded .hint { display: none; }
+.embedded .frame { border-radius: 0; }
+.embedded .controls { margin: 0; padding: 5px 12px; gap: 12px; }
+.embedded #play { min-width: 4.5em; padding: 5px 12px; }

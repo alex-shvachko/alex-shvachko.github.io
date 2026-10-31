@@ -1,0 +1,48 @@
+{
+  "v": 1,
+  "stage": "final",
+  "look": "Dark futuristic intelligence system: classified cyber intelligence, futuristic tactical cartography, advanced computer systems and cinematic sci-fi interface design. An enormous encrypted digital city observed through a secret high-tech surveillance terminal; architecturally precise, restrained, extraordinarily detailed. Cyan = the signal, muted blue = the city, amber = suspicion, red = the breach. ONE continuous camera shot until the final hard cut to black.",
+  "palettes": [
+    [
+      "#020408",
+      "#48E5FF",
+      "#ECF8FF",
+      "#FF334F"
+    ]
+  ],
+  "theirs": 1,
+  "width": 1920,
+  "height": 1080,
+  "fps": 60,
+  "background": "#020408",
+  "fonts": {
+    "display": {
+      "family": "Michroma",
+      "or": "inter-display",
+      "weights": [
+        400
+      ]
+    },
+    "mono": {
+      "family": "Share Tech Mono",
+      "or": "dm-mono",
+      "weights": [
+        400
+      ]
+    }
+  },
+  "scenes": [
+    {
+      "id": "heist",
+      "name": "The heist",
+      "dur": 21,
+      "desc": "One unbroken camera move: the city assembles, the cyan signal slips past scanners, escapes a trap, outruns the alarm, threads the vault rings and turns the whole network red."
+    },
+    {
+      "id": "breached",
+      "name": "Breached",
+      "dur": 3,
+      "desc": "Hard cut to black; BREACHED. rises in cold white with a red edge."
+    }
+  ]
+}
