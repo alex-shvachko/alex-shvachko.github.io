@@ -40,6 +40,7 @@ body { display:grid; grid-template-rows:1fr auto }
 .bar input { flex:1; accent-color:#62E6FF }
 .bar .now { min-width:118px; color:#F4FAFF }
 .bar .shot { min-width:150px; text-align:right }
+@media(max-width:600px){.bar{gap:6px;padding:8px}.bar input{min-width:0}.bar .now{min-width:0;white-space:nowrap;font-size:10px}.bar .shot{display:none}}
 </style>
 </head>
 <body>

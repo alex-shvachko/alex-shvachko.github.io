@@ -72,7 +72,7 @@
   .journey-card:nth-child(1){top:10%}.journey-card:nth-child(2){top:25%}.journey-card:nth-child(3){top:40%}.journey-card:nth-child(4){top:55%}.journey-card:nth-child(5){top:70%}
 }
 
-/* Stacked (phone and tablet): no pinning, links or globe. */
+/* Stacked (phone and tablet): cards and the interactive globe. */
 @media(max-width:1100px){
   .journey{height:auto}
   .journey-stage{position:relative;display:flex;flex-direction:column;height:auto;min-height:0;padding:calc(var(--topbar) + 24px) var(--gutter) 72px;overflow:visible}
@@ -86,8 +86,8 @@
   .journey-live .journey-card:not(.revealed){opacity:1;transform:none;clip-path:inset(-64px round 14px);filter:none}
   .journey-live .journey-card:not(.revealed) h3{clip-path:inset(-4px -4px -6px)}
   .journey-card.active{transform:none}
-  .skills-orbit{display:none}
-  .sphere-rim,.tag-sphere,.sphere-caption{display:none}
+  .skills-orbit{position:relative;left:auto;top:auto;align-self:center;width:min(82vw,380px);max-width:100%;margin:32px 0 58px}
+  .sphere-rim,.tag-sphere,.sphere-caption{display:block}
 }
 @media(min-width:701px) and (max-width:1100px){
   .journey-cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}

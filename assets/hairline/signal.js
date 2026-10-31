@@ -69,6 +69,7 @@
   // ---- the lock: the beacon found with the pointer, else what the scroll and the quiet give
   let lock = 0, pointer = null, visible = false, raf = 0, last = 0, lastDraw = 0;
   addEventListener('pointermove', e => { pointer = [e.clientX, e.clientY]; }, { passive: true });
+  addEventListener('pointerdown', e => { pointer = [e.clientX, e.clientY]; }, { passive: true });
   addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(() => { pointer = null; }, 1400); }, { passive: true });
   document.documentElement.addEventListener('pointerleave', () => { pointer = null; });
   function aim(now) {

@@ -1,5 +1,5 @@
 (() => {
-  // The top bar: the theme switch (light unless the visitor chose dark), the sound switch, and
+  // The top bar: the theme switch (light unless the visitor chose dark) and
   // their presence (clear over the hero, frosted after it).
   const root = document.documentElement;
   const bar = document.querySelector('.topbar');
@@ -39,25 +39,7 @@
   system.addEventListener('change', paint);
   paint();
 
-  // Sound: off until the visitor turns it on, and the choice is kept. Whatever plays sound reads
-  // <html data-sound> and listens for 'sound:change'.
-  const sound = bar.querySelector('.sound-toggle');
-  function paintSound() {
-    const on = root.dataset.sound === 'on';
-    sound.dataset.mode = on ? 'on' : 'off';
-    sound.setAttribute('aria-label', on ? 'Turn sound off' : 'Turn sound on');
-  }
-  try { root.dataset.sound = localStorage.getItem('sound') === 'on' ? 'on' : 'off'; } catch { root.dataset.sound = 'off'; }
-  sound.addEventListener('click', () => {
-    const next = root.dataset.sound === 'on' ? 'off' : 'on';
-    root.dataset.sound = next;
-    try { localStorage.setItem('sound', next); } catch {}
-    paintSound();
-    dispatchEvent(new CustomEvent('sound:change', { detail: { on: next === 'on' } }));
-  });
-  paintSound();
-
-  // The switches sit clear over the hero and frost once the headline has gone.
+  // The switch sits clear over the hero and frost once the headline has gone.
   let frame = 0;
   function update() {
     frame = 0;

@@ -112,11 +112,11 @@ main>section,main>footer{position:relative;z-index:1}
 .topbar>*{pointer-events:auto}
 .topbar-right{position:relative;display:flex;align-items:center;gap:2px;padding:3px;border-radius:13px;isolation:isolate}
 .topbar-right::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;background:color-mix(in srgb,var(--paper) 78%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);box-shadow:0 0 0 1px var(--line);opacity:var(--bar-solid,0);transition:opacity .35s var(--ease-out)}
-:is(.theme-toggle,.sound-toggle){position:relative;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--ink);cursor:pointer;transition:background-color .2s,transform .16s var(--ease-out)}
-:is(.theme-toggle,.sound-toggle)::after{content:'';position:absolute;inset:-4px}
-@media(hover:hover){:is(.theme-toggle,.sound-toggle):hover{background:var(--stone)}}
-:is(.theme-toggle,.sound-toggle):active{transform:scale(.92)}
-:is(.theme-toggle,.sound-toggle) svg{width:18px;height:18px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.theme-toggle{position:relative;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--ink);cursor:pointer;transition:background-color .2s,transform .16s var(--ease-out)}
+.theme-toggle::after{content:'';position:absolute;inset:-4px}
+@media(hover:hover){.theme-toggle:hover{background:var(--stone)}}
+.theme-toggle:active{transform:scale(.92)}
+.theme-toggle svg{width:18px;height:18px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
 .theme-toggle .sun-core{vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center;transition:transform .5s var(--spring)}
 .theme-toggle .moon-bite{transition:transform .5s var(--spring)}
 .theme-toggle .sun-rays{transform-origin:12px 12px;transition:transform .5s var(--spring),opacity .3s var(--ease-out)}
@@ -127,11 +127,6 @@ main>section,main>footer{position:relative;z-index:1}
 html.theme-vt::view-transition-old(root),html.theme-vt::view-transition-new(root){animation:none;mix-blend-mode:normal}
 html.theme-vt::view-transition-new(root){z-index:2}
 /* Sound: the waves fold away and a cross comes in when it is off. */
-.sound-toggle .wave{transform-origin:12px 12px;transition:transform .5s var(--spring),opacity .3s var(--ease-out)}
-.sound-toggle .wave-2{transition-delay:.05s}
-.sound-toggle .mute-x{transform-box:fill-box;transform-origin:center;transition:transform .45s var(--spring),opacity .25s var(--ease-out)}
-.sound-toggle[data-mode=off] .wave{opacity:0;transform:scale(.55)}
-.sound-toggle[data-mode=on] .mute-x{opacity:0;transform:scale(.3) rotate(-90deg)}
 
 /* Buttons share one press: a short scale that lands at once. */
 .press{transition:transform .16s var(--ease-out)}
@@ -144,6 +139,6 @@ html.theme-vt::view-transition-new(root){z-index:2}
 @media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
 @media(prefers-reduced-motion:reduce){
   .motion-ready .reveal{translate:none;filter:none;transition:opacity .3s linear}
-  :is(.theme-toggle,.sound-toggle) *{transition:none!important}
+  .theme-toggle *{transition:none!important}
   .world .stars .tw,.world .cosmos-tw{animation:none}
 }

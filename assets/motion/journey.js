@@ -101,7 +101,7 @@
     // chapter: the buttons do, starting from the first.
     const span = mobile.matches ? section.offsetHeight - innerHeight * .4 : section.offsetHeight - innerHeight;
     let next = active < 0 ? 0 : active;
-    if (span > 1) {
+    if (span > 1 && !mobile.matches) {
       const p = mobile.matches ? clamp((innerHeight * .4 - rect.top) / span, 0, 1) : clamp(-rect.top / span, 0, 1);
       next = Math.min(4, Math.floor(p * 5));
     }
@@ -134,6 +134,7 @@
       section.querySelector('#sphere-chapter').textContent = card.querySelector('h3').textContent;
       if (reduced) paint();
       else { rotation = desiredRotation; paint(); }
+      if (mobile.matches) section.querySelector('.skills-orbit').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
     }
   }));
   sphere.addEventListener('pointerdown', event => { if (reduced) return; drag = { x: event.clientX, offset }; sphere.setPointerCapture(event.pointerId); });
