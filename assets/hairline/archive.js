@@ -169,7 +169,15 @@
 
   const loop = register(stage, (_dt, now) => {
     let moving = false;
-    trays.forEach(tray => tray.folders.forEach(f => { draw(tray, f, now); if (!tdone(f.a, now) || !tdone(f.z, now)) moving = true; }));
+    // A folder that has landed and been drawn there is skipped, so a loop woken by one tray's
+    // motion does not rebuild a key string for every folder of every tray each frame.
+    trays.forEach(tray => tray.folders.forEach(f => {
+      const done = tdone(f.a, now) && tdone(f.z, now);
+      if (done && f.settled) return;
+      draw(tray, f, now);
+      f.settled = done;
+      if (!done) moving = true;
+    }));
     placeFrame(now);
     return moving;
   });
@@ -177,24 +185,37 @@
   // Each project's picture and video are made once and kept, so passing over the folders again
   // never reloads the picture or starts a new decoder; the video leaving pauses.
   const previews = new Map();
-  let archiveVisible = false, previewItem = null;
+  let archiveVisible = false, previewItem = null, liveTimer = 0, lastScroll = 0;
+  addEventListener('scroll', () => { lastScroll = performance.now(); }, { passive: true });
+  const previewRuns = () => archiveVisible && !document.hidden && !reducedQuery.matches && !document.documentElement.classList.contains('project-modal-open');
   function syncLivePreview() {
-    const running = archiveVisible && !document.hidden && !reducedQuery.matches && !document.documentElement.classList.contains('project-modal-open');
+    const running = previewRuns();
     const current = frame.querySelector('iframe');
+    clearTimeout(liveTimer);
     if (!running || !previewItem?.preview) { if (current) current.remove(); return; }
     if (!current) {
-      const iframe = document.createElement('iframe'); iframe.src = previewItem.preview; iframe.title = ''; iframe.tabIndex = -1; iframe.setAttribute('aria-hidden', 'true'); frame.append(iframe);
+      // A live preview compiles its scene on the page's own thread, so it waits until the scroll
+      // has stopped and the page is idle; the project's picture stands in until then.
+      const quiet = lastScroll + 400 - performance.now();
+      if (quiet > 0) { liveTimer = setTimeout(syncLivePreview, quiet); return; }
+      const mount = () => {
+        if (performance.now() - lastScroll < 400) { syncLivePreview(); return; }
+        if (frame.querySelector('iframe') || !previewRuns() || !previewItem?.preview) return;
+        const iframe = document.createElement('iframe'); iframe.src = previewItem.preview; iframe.title = ''; iframe.tabIndex = -1; iframe.setAttribute('aria-hidden', 'true'); frame.append(iframe);
+      };
+      if ('requestIdleCallback' in window) liveTimer = setTimeout(() => requestIdleCallback(mount, { timeout: 800 }), 0);
+      else liveTimer = setTimeout(mount, 0);
     }
   }
   function fillFrame(item) {
     let nodes = previews.get(item.tile);
     if (!nodes) {
       const img = document.createElement('img');
-      img.src = item.image; img.alt = ''; img.decoding = 'async';
+      img.src = item.image; img.alt = ''; img.decoding = 'async'; img.loading = 'lazy';
       nodes = [img];
       if (item.video) {
         const video = document.createElement('video');
-        video.src = item.video; video.muted = true; video.loop = true; video.playsInline = true; video.preload = 'auto';
+        video.src = item.video; video.muted = true; video.loop = true; video.playsInline = true; video.preload = 'metadata';
         video.setAttribute('aria-hidden', 'true');
         nodes.push(video);
       }

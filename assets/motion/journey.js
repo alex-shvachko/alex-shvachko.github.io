@@ -74,10 +74,15 @@
     }
     orbitPath.setAttribute('d', orbit);
   }
+  let paintKey = '';
   function paint() {
     const radius = sphere.clientWidth * .35;
     const angle = reduced ? 0 : rotation + offset;
     const tilt = reduced ? 0 : -.12;
+    // Scrolling within a chapter leaves the globe where it is: skip the thirty tag writes then.
+    const key = `${radius} ${angle.toFixed(5)} ${tilt} ${active}`;
+    if (key === paintKey) return;
+    paintKey = key;
     drawWire(angle, tilt === 0 ? -.12 : tilt);
     tags.forEach(tag => {
       const x = tag.x * Math.cos(angle) + tag.z * Math.sin(angle);
