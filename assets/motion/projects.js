@@ -44,14 +44,29 @@
   views.forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
   setView('archive');
 
-  // Only load a live project thumbnail while its grid tile is visible.
+  // Only load a live project thumbnail while its grid tile is visible. A live scene compiles on
+  // the page's own thread, so it mounts once the scroll has stopped and the page is idle.
+  let lastScroll = 0;
+  addEventListener('scroll', () => { lastScroll = performance.now(); }, { passive: true });
   section.querySelectorAll('.project-tile[data-preview]').forEach(liveTile => {
     const previewImage = liveTile.querySelector('.project-image');
-    let frame = null;
+    let frame = null, seen = false, timer = 0;
+    const mount = () => {
+      clearTimeout(timer);
+      if (!seen || frame || preference.matches || modalIsOpen()) return;
+      const quiet = lastScroll + 400 - performance.now();
+      if (quiet > 0) { timer = setTimeout(mount, quiet); return; }
+      const make = () => {
+        if (!seen || frame || preference.matches || modalIsOpen()) return;
+        if (performance.now() - lastScroll < 400) { mount(); return; }
+        frame = document.createElement('iframe'); frame.src = liveTile.dataset.preview; frame.tabIndex = -1; frame.setAttribute('aria-hidden', 'true'); frame.title = ''; previewImage.append(frame);
+      };
+      if ('requestIdleCallback' in window) requestIdleCallback(make, { timeout: 800 }); else make();
+    };
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !preference.matches && !modalIsOpen()) {
-        if (!frame) { frame = document.createElement('iframe'); frame.src = liveTile.dataset.preview; frame.tabIndex = -1; frame.setAttribute('aria-hidden', 'true'); frame.title = ''; previewImage.append(frame); }
-      } else if (frame) { frame.remove(); frame = null; }
+      seen = entry.isIntersecting;
+      if (seen && !preference.matches && !modalIsOpen()) mount();
+      else { clearTimeout(timer); if (frame) { frame.remove(); frame = null; } }
     });
     function modalIsOpen() { return !!section.querySelector('.project-modal[open]'); }
     observer.observe(liveTile);
@@ -115,9 +130,24 @@
   const modalMedia = modal.querySelector('.project-modal-media');
   let opener = null, openTile = null, openSource = null, closing = false, morph = null;
   const rendered = element => !!element && element.getClientRects().length > 0;
+  // A tile's loop plays only while the tile is on screen (never while the grid is hidden, the
+  // sheet is open or motion is reduced), and its file is not fetched before it first shows.
+  const tileVideos = [...grid.querySelectorAll('.project-tile video')], videosOnScreen = new Set();
+  const syncVideo = video => {
+    if (videosOnScreen.has(video) && !reduced() && !modal.open) video.play().catch(() => {});
+    else video.pause();
+  };
+  tileVideos.forEach(video => { video.autoplay = false; video.preload = 'none'; video.pause(); });
+  const videoObserver = new IntersectionObserver(entries => entries.forEach(entry => {
+    if (entry.isIntersecting) videosOnScreen.add(entry.target); else videosOnScreen.delete(entry.target);
+    syncVideo(entry.target);
+  }));
+  tileVideos.forEach(video => videoObserver.observe(video));
+  preference.addEventListener('change', () => tileVideos.forEach(syncVideo));
   // The tiles' and the archive's loops rest behind the sheet.
   function pauseTiles(paused) {
-    section.querySelectorAll('.project-tile video, .archive-preview video').forEach(video => { if (paused) video.pause(); else if (!reduced()) video.play().catch(() => {}); });
+    section.querySelectorAll('.archive-preview video').forEach(video => { if (paused) video.pause(); else if (!reduced()) video.play().catch(() => {}); });
+    tileVideos.forEach(syncVideo);
     section.querySelectorAll('.project-image iframe').forEach(frame => { if (paused) { frame.dataset.pausedSrc = frame.getAttribute('src'); frame.src = 'about:blank'; } else if (frame.dataset.pausedSrc) { frame.src = frame.dataset.pausedSrc; delete frame.dataset.pausedSrc; } });
     section.dispatchEvent(new Event('project-preview-state'));
   }

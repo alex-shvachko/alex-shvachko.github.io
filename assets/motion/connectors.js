@@ -100,6 +100,8 @@
       // Topics retract one after another as the camera leaves the studio.
       const exit = reduced ? 1 : Math.min(landed, clamp(1 - scrollY / (innerHeight * .38) * (1 + i * .12), 0, 1));
       const value = item.hidden ? 0 : Math.min(item.intro, exit);
+      if (value === item.shown) return;
+      item.shown = value;
       const dot = easeOut(phase(value, 0, .3)), line = easeOut(phase(value, .12, .68)), tag = easeOut(phase(value, .5, 1));
       item.dot.style.transform = `scale(${dot})`;
       // A running CSS animation outranks inline styles, so the pulse is switched by class.

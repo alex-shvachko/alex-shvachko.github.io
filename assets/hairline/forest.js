@@ -206,6 +206,8 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
 
   // ---- placement -----------------------------------------------------------------------------
   let items = [], grass = null, grassAt = -1, pebbles = null, stream = null;
+  // The growth the items were last sized for: while it holds, their size and visibility hold too.
+  let grownPhi = NaN, grownReduced = null;
   const BLADE = { k: 90, c: 6, eps: .03 };
   function nearestOnRoute(route, x, y) {
     let best = Infinity;
@@ -215,6 +217,7 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
   function build({ route, pointAt, marks, plinth, toScreen, W, H, blocked, clear = [], budget, seed }) {
     water.replaceChildren(); ground.replaceChildren();
     items = [];
+    grownPhi = NaN;
     const rnd = mulberry(seed), sc = toScreen.scale;
     const screenRoute = route.pts.filter((_, i) => i % 2 === 0 && route.s[i] >= route.exit * .5).map(p => toScreen(p[0], p[1], 0));
     const pxToRoute = (sx0, sy0, sx1, sy1) => {
@@ -521,7 +524,10 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
   function update({ phi, pointer, drift, rover, moved, shown, reduced, dt }) {
     let busy = false;
     const show = smooth(clamp((phi - .38) / .35, 0, 1));
-    if (stream) stream.parts.forEach(g => { const v = show.toFixed(3); if (g.style.opacity !== v) g.style.opacity = v; });
+    // Growth follows phi alone: with phi and the motion setting as they were, nothing grows, shows or hides.
+    const grow = phi !== grownPhi || reduced !== grownReduced;
+    grownPhi = phi; grownReduced = reduced;
+    if (stream && grow) stream.parts.forEach(g => { const v = show.toFixed(3); if (g.style.opacity !== v) g.style.opacity = v; });
     // the gust: how fast the pointer sweeps over the ground, smoothed
     const ease = 1 - Math.exp(-dt * 10), step = Math.max(dt, .008);
     wind.vx += ((drift ? drift[0] / step : 0) - wind.vx) * ease;
@@ -531,9 +537,12 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
     if (pointer) { wind.x = pointer[0]; wind.y = pointer[1]; }
     for (const it of items) {
       if (it.still) continue;
-      const s = reduced ? 0 : smooth(clamp((phi - it.start) / .3, 0, 1));
-      if (s <= .001) { if (it.g.style.display !== 'none') it.g.style.display = 'none'; continue; }
-      if (it.g.style.display === 'none') it.g.style.display = '';
+      if (grow || it.s === undefined) {
+        it.s = reduced ? 0 : smooth(clamp((phi - it.start) / .3, 0, 1));
+        if (it.s <= .001) { if (it.g.style.display !== 'none') it.g.style.display = 'none'; continue; }
+        if (it.g.style.display === 'none') it.g.style.display = '';
+      } else if (it.s <= .001) continue;
+      const s = it.s;
       let stepped = !it.drawn;
       if (it.sway) {
         // the wind, and a stir as the rover goes by
@@ -556,7 +565,7 @@ window.HLForest = function ({ P, front, facing, water, ground }) {
         const qx = Math.round(it.sx.x * 10), qy = Math.round(it.sy.x * 10), key = qx + ' ' + qy;
         if (key !== it.drawn) { it.drawn = key; it.draw(1, qx / 10, qy / 10); }
       }
-      const grown = s.toFixed(3);
+      const grown = grow ? s.toFixed(3) : it.grown;
       if (grown !== it.grown) {
         it.grown = grown;
         // a growing tree keeps its strokes at a pixel while it is scaled (see .at-rest)

@@ -8,7 +8,7 @@
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const smooth = value => value * value * (3 - 2 * value);
-  let enabled = false, raf = 0, entrance = [];
+  let enabled = false, raf = 0, entrance = [], lastHome = -1, lastUI = '', lastShift = '';
 
   function paintUI() {
     raf = 0;
@@ -17,15 +17,21 @@
     const rect = journeyStage.parentElement.getBoundingClientRect();
     // Home UI leaves as the camera starts to rise off the studio.
     const home = clamp(1 - scrollY / (innerHeight * .45), 0, 1);
-    opening.style.opacity = String(smooth(home));
-    opening.style.transform = `translateY(${(1 - home) * -40}px)`;
-    // Only the button leaves the tab order; the heading stays readable to assistive tech.
-    cta.inert = home === 0;
+    // Values are written only when they change, so a long scroll through the later stages
+    // (where all of these sit still) restyles nothing.
+    if (home !== lastHome) {
+      lastHome = home;
+      opening.style.opacity = String(smooth(home));
+      opening.style.transform = `translateY(${(1 - home) * -40}px)`;
+      // Only the button leaves the tab order; the heading stays readable to assistive tech.
+      cta.inert = home === 0;
+    }
     // Journey UI arrives with the aerial view and leaves before the stage scrolls away.
     const arrive = clamp((innerHeight * .35 - rect.top) / (innerHeight * .55), 0, 1);
     const leave = clamp((rect.bottom - innerHeight * .35) / (innerHeight * .5), 0, 1);
-    journeyStage.style.setProperty('--journey-ui', String(smooth(Math.min(arrive, leave))));
-    journeyStage.style.setProperty('--journey-shift', `${(arrive < 1 ? 1 - arrive : leave - 1) * 36}px`);
+    const ui = String(smooth(Math.min(arrive, leave))), shift = `${(arrive < 1 ? 1 - arrive : leave - 1) * 36}px`;
+    if (ui !== lastUI) { lastUI = ui; journeyStage.style.setProperty('--journey-ui', ui); }
+    if (shift !== lastShift) { lastShift = shift; journeyStage.style.setProperty('--journey-shift', shift); }
   }
   function schedule() { if (!raf) raf = requestAnimationFrame(paintUI); }
   function configure() {
@@ -34,6 +40,7 @@
     if (reduced) { entrance.forEach(animation => animation.cancel()); entrance = []; }
     enabled = !reduced;
     document.body.classList.toggle('motion-ready', enabled);
+    lastHome = -1; lastUI = ''; lastShift = '';
     if (!enabled) {
       opening.style.opacity = ''; opening.style.transform = '';
       cta.inert = false;

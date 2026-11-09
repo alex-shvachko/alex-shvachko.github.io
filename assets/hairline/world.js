@@ -24,7 +24,10 @@
   // The kernel's put, writing only what changed: a path given the same d is still repainted.
   const put = (el, sh) => { set(el.sil, 'd', sh.sil); set(el.cr, 'd', sh.crease); };
   // A layer at nothing leaves the page, so it costs nothing to paint or composite.
-  const fadeTo = (el, v) => { el.style.opacity = v.toFixed(3); el.style.display = v > 0 ? '' : 'none'; };
+  const fadeTo = (el, v) => {
+    const o = v.toFixed(3);
+    if (el.fadeO !== o) { el.fadeO = o; el.style.opacity = o; const d = v > 0 ? '' : 'none'; if (el.style.display !== d) el.style.display = d; }
+  };
   const ring2 = (cx, cy, cz, ux, uy, uz, vx, vy, vz, r, n, sv = 1) => {
     const out = [];
     for (let k = 0; k < n; k++) {
@@ -806,7 +809,7 @@
   });
 
   // ---- the loop ----------------------------------------------------------------------------
-  let raf = 0, last = 0, part = '', settled = false, drawnPose = '', drawnTrail = '', windFrom = null, camM = '', still = 0, atRest = false, strokesAtRest = false, drawn = null, drawnM = '';
+  let napDue = 0, raf = 0, last = 0, part = '', settled = false, drawnPose = '', drawnTrail = '', windFrom = null, camM = '', still = 0, atRest = false, strokesAtRest = false, drawn = null, drawnM = '';
   const listeners = new Set();
   let requested = 0;
   function schedule() {
@@ -858,7 +861,7 @@
     set(grad, 'cx', drawn.fx.toFixed(1)); set(grad, 'cy', drawn.fy.toFixed(1)); set(grad, 'r', (drawn.r * (intro ? Math.max(.001, intro.grid) : 1)).toFixed(1));
     fadeTo(gridFine, clamp((C.S - 1.7) / 1.6, 0, 1));
     // Over the forest the floor steps back, so the trees carry the drawing.
-    gridCoarse.style.opacity = lerp(1, .42, smooth(clamp((phi - .35) / .6, 0, 1))).toFixed(3);
+    { const o = lerp(1, .42, smooth(clamp((phi - .35) / .6, 0, 1))).toFixed(3); if (gridCoarse.fadeO !== o) { gridCoarse.fadeO = o; gridCoarse.style.opacity = o; } }
     const sceneOn = reduced ? (scrollY < innerHeight * .6 ? 1 : .35) : phi < 2.55 ? 1 : phi < 3 ? lerp(1, .18, smooth((phi - 2.55) / .45)) : lerp(.18, 0, smooth(clamp(phi - 3, 0, 1)));
     fadeTo(floorSvg, sceneOn); fadeTo(svg, sceneOn);
     const starsOn = reduced ? 0 : smooth(clamp((phi - 3.05) / .8, 0, 1));
@@ -968,7 +971,11 @@
       }
     }
     // Wake once more when it is time to doze, so the face can get drowsy.
-    if (!reduced && phi < 2.7 && want !== 'sleepy') { clearTimeout(napTimer); napTimer = setTimeout(schedule, Math.max(60, 6050 - (now - lastInput))); }
+    // Armed once per resting moment, not on every frame: a mood or a glad spell that outlasts the wait pushes it back.
+    if (!reduced && phi < 2.7 && want !== 'sleepy') {
+      const due = Math.max(lastInput + 6050, burnGlad + 50, moodUntil + 50);
+      if (due !== napDue) { napDue = due; clearTimeout(napTimer); if (due > now) napTimer = setTimeout(schedule, due - now); }
+    }
     const poseKey = [pose.x, pose.y, pose.h, pose.spin, pose.step, ...burns.flatMap(b => [b.spin, b.step]), yaw.x, lookX.x, lookZ.x, leanX.x, leanY.x, pitch.x, blink].map(v => v.toFixed(3)).join() + faceVer + m;
     const changed = poseKey !== drawnPose;
     if (changed) { drawnPose = poseKey; drawRover(); }

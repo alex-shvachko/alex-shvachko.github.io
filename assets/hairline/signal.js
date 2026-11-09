@@ -72,9 +72,9 @@
   addEventListener('pointerdown', e => { pointer = [e.clientX, e.clientY]; }, { passive: true });
   addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(() => { pointer = null; }, 1400); }, { passive: true });
   document.documentElement.addEventListener('pointerleave', () => { pointer = null; });
-  function aim(now) {
+  function aim(now, r) {
     const b = window.World?.sky?.beacon();
-    const r = rig.getBoundingClientRect(), vh = innerHeight;
+    const vh = innerHeight;
     const clarity = smooth(clamp(1 - Math.abs(r.top + r.height / 2 - vh * .5) / (vh * .85), 0, 1));
     // a slow pass of its own now and then, for a screen with no pointer
     const pass = Math.pow(Math.max(0, Math.sin(now / 1000 * .38)), 6) * .3;
@@ -86,8 +86,8 @@
     window.World?.sky?.lock(lock);
   }
   // The sky is the whole screen on arrival and recedes behind the text as the page is scrolled to its end.
-  function recede() {
-    const c = document.querySelector('#contact').getBoundingClientRect().top;
+  const contact = document.querySelector('#contact');
+  function recede(c) {
     window.World?.sky?.calm(smooth(clamp(-c / (innerHeight * .55), 0, 1)));
   }
   function frame(now) {
@@ -95,9 +95,11 @@
     if (!visible || document.hidden) { last = 0; return; }
     const dt = last ? Math.min(.05, (now - last) / 1000) : 1 / 60;
     last = now;
-    lock += (aim(now) - lock) * (1 - Math.exp(-dt / .28));
+    // Both rects are read before anything is written, so the frame lays the page out once at most.
+    const r = rig.getBoundingClientRect(), c = contact.getBoundingClientRect().top;
+    lock += (aim(now, r) - lock) * (1 - Math.exp(-dt / .28));
     report();
-    recede();
+    recede(c);
     if (now - lastDraw > 33) { lastDraw = now; draw(now / 1000, lock); }
     raf = requestAnimationFrame(frame);
   }
